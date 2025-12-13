@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Api_Gateway</RootNamespace>
-    <UserSecretsId>299dcac6-04da-4ee4-b1e4-59647486b1a1</UserSecretsId>
+    <RootNamespace>Task_API</RootNamespace>
+    <UserSecretsId>52980148-aa46-47bb-b4fe-5d9a9e360ec5</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
