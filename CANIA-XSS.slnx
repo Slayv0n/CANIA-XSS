@@ -1,12 +1,13 @@
 <Solution>
-  <Project Path="Accounting-API/Accounting API.csproj" />
-  <Project Path="Api-Gateway/API Gateway.csproj" />
-  <Project Path="Notification-API/Notification API.csproj" />
-  <Project Path="Password-Service/Password API.csproj" />
+  <Project Path="AccountingService/Accounting API.csproj" />
+  <Project Path="APIGateway/API Gateway.csproj" />
+  <Project Path="AuthService/Auth API.csproj" Id="cae66c09-d65c-4874-8923-8229faf94fbc" />
+  <Project Path="NotificationService/Notification API.csproj" />
   <Project Path="PasswordDb/PasswordDb.csproj" />
+  <Project Path="PasswordService/Password API.csproj" />
   <Project Path="SharedModels/SharedModels.csproj" />
-  <Project Path="Subscribe-API/Subscribe API.csproj" />
-  <Project Path="Task-API/Task API.csproj" />
-  <Project Path="User-Service/User API.csproj" />
+  <Project Path="SubscribeService/Subscribe API.csproj" />
+  <Project Path="TaskService/Task API.csproj" />
   <Project Path="UserDb/UserDb.csproj" />
+  <Project Path="UserService/User API.csproj" />
 </Solution>

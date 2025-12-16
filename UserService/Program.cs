@@ -7,15 +7,31 @@ using SharedModels.Exceptions;
 using UserAPI.Models.Requests;
 using UserDb;
 using MassTransit;
+using UserAPI.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddMassTransit(x => x.UsingRabbitMq());
 
 builder.Services.AddDbContextFactory<UserContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("USER_DB_CONNECTION")));
 
 builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<PasswordCreatedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.ReceiveEndpoint("password-created-queue", e =>
+        {
+            e.ConfigureConsumer<PasswordCreatedConsumer>(context);
+
+            e.PrefetchCount = 10;
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
+        });
+    });
+
+});
 
 var app = builder.Build();
 

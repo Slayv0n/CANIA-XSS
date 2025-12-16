@@ -1,6 +1,6 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Password_API;
+using Password_API.Consumers;
 using PasswordDb;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +28,5 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-
-app.MapGet("/", () => "Hello World!");
 
 app.Run();

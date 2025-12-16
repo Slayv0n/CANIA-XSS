@@ -5,16 +5,21 @@ using PasswordDb.Models;
 using SharedModels.Users;
 using System.Text.Json;
 using SharedModels.Exceptions;
+using SharedModels.Passwords;
 
-namespace Password_API
+namespace Password_API.Consumers
 {
     public class UserCreatedConsumer : IConsumer<UserCreated>
     {
         private readonly IDbContextFactory<PasswordContext> _dbFactory;
+        private readonly ILogger<UserCreatedConsumer> _logger;
 
-        public UserCreatedConsumer(IDbContextFactory<PasswordContext> dbFactory)
+        public UserCreatedConsumer(
+            IDbContextFactory<PasswordContext> dbFactory,
+            ILogger<UserCreatedConsumer> logger)
         {
             _dbFactory = dbFactory;
+            _logger = logger;
         }
 
         public async Task Consume(ConsumeContext<UserCreated> context)
@@ -23,11 +28,16 @@ namespace Password_API
 
             var password = new Password
             {
-                HashPassword = PasswordHasher.HashPassword(context.Message.Password)
+                Id = context.Message.Id,
+                HashPassword = PasswordHasher.HashPassword(context.Message.Password),
+                Status = "Active"
             };
 
+            _logger.LogInformation($"Пароль создан {password.Id}");
             await db.Passwords.AddAsync(password);
             await db.SaveChangesAsync();
+
+            await context.Publish<PasswordCreated>(new {Id = password.Id});
         }
     }
 }
