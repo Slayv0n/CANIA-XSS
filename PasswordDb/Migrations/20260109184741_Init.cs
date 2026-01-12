@@ -17,7 +17,7 @@ namespace PasswordDb.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     HashPassword = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>

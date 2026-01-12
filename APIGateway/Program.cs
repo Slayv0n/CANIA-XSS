@@ -15,5 +15,6 @@ if (builder.Environment.IsDevelopment())
 }
 
 var app = builder.Build();
+
 await app.UseOcelot();
 await app.RunAsync();

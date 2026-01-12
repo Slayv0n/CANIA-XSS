@@ -14,6 +14,8 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<UserCreatedConsumer>();
 
+    x.AddConsumer<UserDeletedConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.ReceiveEndpoint("user-created-queue", e =>
@@ -23,10 +25,23 @@ builder.Services.AddMassTransit(x =>
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
+
+        cfg.ReceiveEndpoint("user-deleted-queue", e =>
+        {
+            e.ConfigureConsumer<UserDeletedConsumer>(context);
+
+            e.PrefetchCount = 10;
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
+        });
     });
 
 });
 
 var app = builder.Build();
+
+app.MapPut("/passwords/update/{id::guid}",async () =>
+{
+
+});
 
 app.Run();

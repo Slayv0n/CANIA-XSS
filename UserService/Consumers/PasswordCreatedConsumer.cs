@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
+using SharedModels.General;
 using SharedModels.Passwords;
 using SharedModels.Users;
 using UserDb;
@@ -29,13 +30,13 @@ namespace UserAPI.Consumers
 
             if (user == null)
             {
-                _logger.LogWarning($"Пользователь не найден: {context.Message.Id}");
-                throw new NotFoundException("Пользователь не найден");
+                _logger.LogWarning($"User not found: {context.Message.Id}");
+                throw new NotFoundException("User not found");
             }
 
-            user.Status = "Active";
+            user.Status = Status.Active;
 
-            _logger.LogInformation($"Пользователь успешно зарегистрирован {user.Id}");
+            _logger.LogInformation($"User registration success {user.Id}");
             await db.SaveChangesAsync();
 
         }

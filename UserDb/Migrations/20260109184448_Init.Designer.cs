@@ -12,7 +12,7 @@ using UserDb;
 namespace UserDb.Migrations
 {
     [DbContext(typeof(UserContext))]
-    [Migration("20251213155538_Init")]
+    [Migration("20260109184448_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -54,10 +54,8 @@ namespace UserDb.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");

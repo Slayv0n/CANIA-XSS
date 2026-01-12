@@ -31,7 +31,7 @@ namespace UserDb.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>

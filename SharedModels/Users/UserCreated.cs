@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SharedModels.General;
+using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.Users
 {
@@ -7,7 +8,7 @@ namespace SharedModels.Users
         public Guid Id { get; set; }
         public string Email { get; set; } = "";
         public string Password { get; set; } = "";
-        public string Status { get; set; } = "NotActive";
+        public Status Status { get; set; }
         public int Version { get; set; } = 0;
     }
 }

@@ -6,6 +6,7 @@ using SharedModels.Users;
 using System.Text.Json;
 using SharedModels.Exceptions;
 using SharedModels.Passwords;
+using SharedModels.General;
 
 namespace Password_API.Consumers
 {
@@ -30,7 +31,7 @@ namespace Password_API.Consumers
             {
                 Id = context.Message.Id,
                 HashPassword = PasswordHasher.HashPassword(context.Message.Password),
-                Status = "Active"
+                Status = Status.NotActive
             };
 
             _logger.LogInformation($"Пароль создан {password.Id}");

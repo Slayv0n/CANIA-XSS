@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SharedModels.General;
+using System.ComponentModel.DataAnnotations;
 
 namespace PasswordDb.Models
 {
@@ -7,8 +8,8 @@ namespace PasswordDb.Models
         public Guid Id { get; set; }
         [StringLength(512)]
         public required string HashPassword { get; set; }
-        public DateTime LastUpdate = DateTime.Now;
-        public string Status { get; set; } = "NotActive";
-        public int Version { get; set; } = 0;
+        public DateTime LastUpdate = DateTime.UtcNow;
+        public Status Status { get; set; }
+        public int Version { get; set; }
     }
 }

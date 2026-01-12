@@ -12,7 +12,7 @@ using PasswordDb;
 namespace PasswordDb.Migrations
 {
     [DbContext(typeof(PasswordContext))]
-    [Migration("20251213161435_Init")]
+    [Migration("20260109184741_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -36,9 +36,8 @@ namespace PasswordDb.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");

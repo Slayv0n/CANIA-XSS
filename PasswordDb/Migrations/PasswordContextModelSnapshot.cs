@@ -33,9 +33,8 @@ namespace PasswordDb.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");

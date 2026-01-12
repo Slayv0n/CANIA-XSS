@@ -51,10 +51,8 @@ namespace UserDb.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");

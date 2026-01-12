@@ -2,7 +2,7 @@
 
 namespace UserAPI.Models.Requests
 {
-    public class UserCreateRequest
+    public class CreateRequest
     {
         [EmailAddress]
         [StringLength(255, MinimumLength = 6, ErrorMessage = "Недопустимая длина Email")]

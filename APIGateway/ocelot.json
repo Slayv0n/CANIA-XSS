@@ -1,6 +1,6 @@
 {
   "Routes": [
-    {
+    { //Users
       "UpstreamPathTemplate": "/api/users/create",
       "UpstreamHttpMethod": [ "POST" ],
       "DownstreamPathTemplate": "/users/create",
@@ -16,6 +16,55 @@
       "UpstreamPathTemplate": "/api/users/{id}",
       "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/users/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/users/all",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/users/all",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/users/update/{id}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/users/update/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/users/delete/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/users/delete/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ]
+    },
+    //Passwords
+    {
+      "UpstreamPathTemplate": "/api/passwords/update/{id}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/passwords/update/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
