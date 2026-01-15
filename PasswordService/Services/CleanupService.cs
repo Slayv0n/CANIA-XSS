@@ -1,15 +1,15 @@
 ﻿using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using PasswordDb;
 using SharedModels.General;
-using UserDb;
 
 namespace UserAPI.Service
 {
     public class CleanupService : ICleanupService
     {
-        private readonly IDbContextFactory<UserContext> _dbFactory;
+        private readonly IDbContextFactory<PasswordContext> _dbFactory;
         private readonly ILogger<CleanupService> _logger;
-        public CleanupService(IDbContextFactory<UserContext> dbFactory,
+        public CleanupService(IDbContextFactory<PasswordContext> dbFactory,
             IConfiguration configuration,
             ILogger<CleanupService> logger)
         {
@@ -23,8 +23,8 @@ namespace UserAPI.Service
             try
             {
                 using var db = await _dbFactory.CreateDbContextAsync();
-                var deletedEntities = db.Users.Where(u => u.Status == Status.Deleted);
-                db.Users.RemoveRange(deletedEntities);
+                var deletedEntities = db.Passwords.Where(u => u.Status == Status.Deleted);
+                db.Passwords.RemoveRange(deletedEntities);
                 await db.SaveChangesAsync();
             }
             catch(Exception ex)

@@ -1,6 +1,6 @@
 ﻿namespace Password_API.Models.Requests
 {
-    public class PasswordCreateRequest
+    public class CreateRequest
     {
 
     }

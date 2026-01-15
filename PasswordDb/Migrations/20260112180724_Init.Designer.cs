@@ -12,7 +12,7 @@ using PasswordDb;
 namespace PasswordDb.Migrations
 {
     [DbContext(typeof(PasswordContext))]
-    [Migration("20260109184741_Init")]
+    [Migration("20260112180724_Init")]
     partial class Init
     {
         /// <inheritdoc />

@@ -10,6 +10,7 @@ using MassTransit;
 using UserAPI.Consumers;
 using Hangfire;
 using Hangfire.PostgreSql;
+using SharedModels.General;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,10 +58,10 @@ var app = builder.Build();
 
 app.UseHangfireDashboard();
 
-RecurringJob.AddOrUpdate<CleanupService>(
+RecurringJob.AddOrUpdate<ICleanupService>(
     "cleanup-deleted-records",
     service => service.CleanupAsync(),
-    Cron.Daily(21, 20),
+    Cron.Daily(),
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Local

@@ -60,8 +60,7 @@
         }
       ]
     },
-    //Passwords
-    {
+    { //Passwords
       "UpstreamPathTemplate": "/api/passwords/update/{id}",
       "UpstreamHttpMethod": [ "PUT" ],
       "DownstreamPathTemplate": "/passwords/update/{id}",
@@ -69,7 +68,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5001
+          "Port": 5002
         }
       ]
     }

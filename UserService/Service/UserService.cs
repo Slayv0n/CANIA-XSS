@@ -122,6 +122,12 @@ namespace UserAPI.Service
                 _logger.LogWarning($"User not found: {id}");
                 throw new NotFoundException("User not found");
             }
+            
+            if (user.Status != Status.Active)
+            {
+                _logger.LogWarning($"Invalid status for update {user.Status}");
+                throw new StatusException("Invalid status for update"); 
+            }
 
             user.Version++;
             user.Status = Status.Updated;
