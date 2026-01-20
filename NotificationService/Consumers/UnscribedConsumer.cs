@@ -7,13 +7,13 @@ using SharedModels.Subscribes;
 
 namespace Notification_API.Consumers
 {
-    public class SubscribeOffConsumer : IConsumer<SubscribeOff>
+    public class UnscribedConsumer : IConsumer<SubscribeOff>
     {
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _service;
-        private readonly ILogger<SubscribeOnConsumer> _logger;
+        private readonly ILogger<SubscribedConsumer> _logger;
 
-        public SubscribeOffConsumer(IDbContextFactory<NotificationContext> dbContextFactory, INotificationServcie service, ILogger<SubscribeOnConsumer> logger)
+        public UnscribedConsumer(IDbContextFactory<NotificationContext> dbContextFactory, INotificationServcie service, ILogger<SubscribedConsumer> logger)
         {
             _dbContextFactory = dbContextFactory;
             _service = service;
@@ -22,7 +22,7 @@ namespace Notification_API.Consumers
 
         public async Task Consume(ConsumeContext<SubscribeOff> context)
         {
-            _logger.LogInformation($"Subscribe off message send start at {DateTime.UtcNow}");
+            _logger.LogInformation($"Unscribe message send start at {DateTime.UtcNow}");
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
 

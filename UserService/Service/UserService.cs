@@ -13,11 +13,11 @@ namespace UserAPI.Service
 {
     public interface IUserService
     {
-        Task<UserResponse> CreateUser(CreateRequest request);
-        Task<UserResponse> GetUser(Guid id, string status = "");
-        Task<List<UserResponse>> GetAllUsers(string status = "");
-        Task<UserResponse> UpdateUser(Guid id, string email);
-        Task DeleteUser(Guid id); 
+        Task<UserResponse> CreateUserAsync(CreateRequest request);
+        Task<UserResponse> GetUserAsync(Guid id, string status = "");
+        Task<List<UserResponse>> GetAllUsersAsync(string status = "");
+        Task<UserResponse> UpdateUserAsync(Guid id, string email);
+        Task DeleteUserAsync(Guid id); 
         
     }
     public class UserService : IUserService
@@ -35,7 +35,7 @@ namespace UserAPI.Service
             _publishEndpoint = publishEndpoint;
         }
 
-        public async Task<UserResponse> CreateUser(CreateRequest request)
+        public async Task<UserResponse> CreateUserAsync(CreateRequest request)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
@@ -60,47 +60,7 @@ namespace UserAPI.Service
             return response;
         }
 
-        public async Task DeleteUser(Guid id)
-        {
-            using var db = await _dbContextFactory.CreateDbContextAsync();
-
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
-
-            if (user == null)
-            {
-                _logger.LogWarning($"User not found: {id}");
-                throw new NotFoundException("User not found");
-            }
-
-            user.Version++;
-            user.Status = Status.Deleted;
-            await db.SaveChangesAsync();
-
-            await _publishEndpoint.Publish<UserDeleted>(new
-            {
-                Id = user.Id
-            });
-            await _publishEndpoint.Publish<UserUpdated>(new
-            {
-                Id = user.Id,
-                Email = user.Email,
-                Status = user.Status
-            });
-        }
-
-        public async Task<List<UserResponse>> GetAllUsers(string status = "")
-        {
-            using var db = await _dbContextFactory.CreateDbContextAsync();
-
-            var usersResponse = await db.Users
-                .Where(u => u.Status.ToString().Contains(status))
-                .Select(u => new UserResponse(u))
-                .ToListAsync();
-
-            return usersResponse;
-        }
-
-        public async Task<UserResponse> GetUser(Guid id, string status = "")
+        public async Task<UserResponse> GetUserAsync(Guid id, string status = "")
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
@@ -117,7 +77,19 @@ namespace UserAPI.Service
             return response;
         }
 
-        public async Task<UserResponse> UpdateUser(Guid id, string email)
+        public async Task<List<UserResponse>> GetAllUsersAsync(string status = "")
+        {
+            using var db = await _dbContextFactory.CreateDbContextAsync();
+
+            var usersResponse = await db.Users
+                .Where(u => u.Status.ToString().Contains(status))
+                .Select(u => new UserResponse(u))
+                .ToListAsync();
+
+            return usersResponse;
+        }
+
+        public async Task<UserResponse> UpdateUserAsync(Guid id, string email)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
@@ -150,6 +122,34 @@ namespace UserAPI.Service
             var response = new UserResponse(user);
 
             return response;
+        }
+
+        public async Task DeleteUserAsync(Guid id)
+        {
+            using var db = await _dbContextFactory.CreateDbContextAsync();
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+            {
+                _logger.LogWarning($"User not found: {id}");
+                throw new NotFoundException("User not found");
+            }
+
+            user.Version++;
+            user.Status = Status.Deleted;
+            await db.SaveChangesAsync();
+
+            await _publishEndpoint.Publish<UserDeleted>(new
+            {
+                Id = user.Id
+            });
+            await _publishEndpoint.Publish<UserUpdated>(new
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Status = user.Status
+            });
         }
     }
 }

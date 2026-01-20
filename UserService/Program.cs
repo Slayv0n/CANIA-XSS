@@ -73,7 +73,7 @@ app.MapPost("/users/create", async (IUserService userService, CreateRequest requ
 {
     try
     {
-        var user = await userService.CreateUser(request);
+        var user = await userService.CreateUserAsync(request);
         return Results.Ok(user);
     }
     catch (Exception ex)
@@ -86,7 +86,7 @@ app.MapGet("/users/{id::guid}", async (IUserService userService, Guid id, string
 {
     try
     {
-        var user = await userService.GetUser(id, status);
+        var user = await userService.GetUserAsync(id, status);
         return Results.Ok(user);
     }
     catch (NotFoundException ex)
@@ -103,7 +103,7 @@ app.MapGet("/users/all", async (IUserService userService, string status = "") =>
     try
     {
         //Если будет 0, то обработайте на фронте
-        var users = await userService.GetAllUsers();
+        var users = await userService.GetAllUsersAsync();
         return Results.Ok(users);
     }
     catch (Exception ex)
@@ -115,7 +115,7 @@ app.MapPut("/users/update/{id::guid}", async (IUserService userService, Guid id,
 {
     try
     {
-        var user = await userService.UpdateUser(id, request.Email);
+        var user = await userService.UpdateUserAsync(id, request.Email);
         return Results.Ok(user);
     }
     catch (NotFoundException ex)
@@ -131,7 +131,7 @@ app.MapDelete("/users/delete/{id::guid}", async (IUserService userService, Guid 
 {
     try
     {
-        await userService.DeleteUser(id);
+        await userService.DeleteUserAsync(id);
         return Results.Ok();
     }
     catch (NotFoundException ex)

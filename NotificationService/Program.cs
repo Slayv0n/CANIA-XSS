@@ -21,9 +21,9 @@ builder.Services.AddMassTransit(x =>
 
     x.AddConsumer<PasswordUpdateConsumer>();
 
-    x.AddConsumer<SubscribeOnConsumer>();
+    x.AddConsumer<SubscribedConsumer>();
 
-    x.AddConsumer<SubscribeOffConsumer>();
+    x.AddConsumer<UnscribedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -61,7 +61,7 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ReceiveEndpoint("subscribe-on-notification-queue", e =>
         {
-            e.ConfigureConsumer<SubscribeOnConsumer>(context);
+            e.ConfigureConsumer<SubscribedConsumer>(context);
 
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
@@ -69,7 +69,7 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ReceiveEndpoint("subscribe-off-notification-queue", e =>
         {
-            e.ConfigureConsumer<SubscribeOffConsumer>(context);
+            e.ConfigureConsumer<UnscribedConsumer>(context);
 
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
