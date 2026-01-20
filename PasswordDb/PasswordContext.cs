@@ -7,5 +7,6 @@ namespace PasswordDb
     {
         public PasswordContext(DbContextOptions<PasswordContext> o) : base(o) { }
         public DbSet<Password> Passwords { get; set; }
+        public DbSet<PasswordToken> Tokens { get; set; }
     }
 }
