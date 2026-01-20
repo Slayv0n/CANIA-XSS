@@ -83,7 +83,7 @@ app.MapPut("/passwords/update/{id::guid}",async (IPasswordService service, Guid 
 {
     try
     {
-        await service.Update(id, request.Password);
+        await service.UpdateAsync(id, request.Password);
         return Results.Ok();
     }
     catch(NotFoundException ex)

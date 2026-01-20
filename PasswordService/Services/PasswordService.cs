@@ -10,8 +10,8 @@ namespace Password_API.Services
 {
     public interface IPasswordService
     {
-        Task Update(Guid id, string newPassword);
-        Task<bool> Verify(Guid id, string password);
+        Task UpdateAsync(Guid id, string newPassword);
+        Task<bool> VerifyAsync(Guid id, string password);
     }
     public class PasswordService : IPasswordService
     {
@@ -27,7 +27,7 @@ namespace Password_API.Services
             _logger = logger;
         }
 
-        public async Task Update(Guid id, string newPassword)
+        public async Task UpdateAsync(Guid id, string newPassword)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
@@ -57,7 +57,7 @@ namespace Password_API.Services
             });
         }
 
-        public async Task<bool> Verify(Guid id, string password)
+        public async Task<bool> VerifyAsync(Guid id, string password)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
