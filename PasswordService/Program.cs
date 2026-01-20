@@ -12,8 +12,6 @@ using UserAPI.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<UserCreatedConsumer>();
-
 builder.Services.AddDbContextFactory<PasswordContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("PASSWORD_DB_CONNECTION")));
 
@@ -43,7 +41,7 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.ReceiveEndpoint("user-created-queue", e =>
+        cfg.ReceiveEndpoint("user-created-password-queue", e =>
         {
             e.ConfigureConsumer<UserCreatedConsumer>(context);
 
@@ -51,7 +49,7 @@ builder.Services.AddMassTransit(x =>
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
 
-        cfg.ReceiveEndpoint("user-deleted-queue", e =>
+        cfg.ReceiveEndpoint("user-deleted-password-queue", e =>
         {
             e.ConfigureConsumer<UserDeletedConsumer>(context);
 

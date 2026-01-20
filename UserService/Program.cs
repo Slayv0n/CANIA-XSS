@@ -43,7 +43,7 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.ReceiveEndpoint("password-created-queue", e =>
+        cfg.ReceiveEndpoint("password-created-user-queue", e =>
         {
             e.ConfigureConsumer<PasswordCreatedConsumer>(context);
 

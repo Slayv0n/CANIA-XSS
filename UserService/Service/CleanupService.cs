@@ -7,13 +7,13 @@ namespace UserAPI.Service
 {
     public class CleanupService : ICleanupService
     {
-        private readonly IDbContextFactory<UserContext> _dbFactory;
+        private readonly IDbContextFactory<UserContext> _dbContextFactory;
         private readonly ILogger<CleanupService> _logger;
-        public CleanupService(IDbContextFactory<UserContext> dbFactory,
+        public CleanupService(IDbContextFactory<UserContext> dbContextFactory,
             IConfiguration configuration,
             ILogger<CleanupService> logger)
         {
-            _dbFactory = dbFactory;
+            _dbContextFactory = dbContextFactory;
             _logger = logger;
         }
         [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete)]
@@ -22,7 +22,7 @@ namespace UserAPI.Service
             _logger.LogInformation("Cleanup start");
             try
             {
-                using var db = await _dbFactory.CreateDbContextAsync();
+                using var db = await _dbContextFactory.CreateDbContextAsync();
                 var deletedEntities = db.Users.Where(u => u.Status == Status.Deleted);
                 db.Users.RemoveRange(deletedEntities);
                 await db.SaveChangesAsync();

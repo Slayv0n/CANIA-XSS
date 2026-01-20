@@ -8,4 +8,8 @@
     {
         public StatusException(string message) : base(message) { }
     }
+    public class ConfigurationException : Exception
+    {
+        public ConfigurationException(string message) : base(message) { }
+    }
 }

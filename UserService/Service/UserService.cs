@@ -22,22 +22,22 @@ namespace UserAPI.Service
     }
     public class UserService : IUserService
     {
-        private readonly IDbContextFactory<UserContext> _dbFactory;
+        private readonly IDbContextFactory<UserContext> _dbContextFactory;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<UserService> _logger;
 
-        public UserService(IDbContextFactory<UserContext> dbFactory,
+        public UserService(IDbContextFactory<UserContext> dbContextFactory,
             ILogger<UserService> logger,
             IPublishEndpoint publishEndpoint)
         {
-            _dbFactory = dbFactory;
+            _dbContextFactory = dbContextFactory;
             _logger = logger;
             _publishEndpoint = publishEndpoint;
         }
 
         public async Task<UserResponse> CreateUser(CreateRequest request)
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var user = new User() { Email = request.Email};
 
@@ -62,7 +62,7 @@ namespace UserAPI.Service
 
         public async Task DeleteUser(Guid id)
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
 
@@ -80,11 +80,17 @@ namespace UserAPI.Service
             {
                 Id = user.Id
             });
+            await _publishEndpoint.Publish<UserUpdated>(new
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Status = user.Status
+            });
         }
 
         public async Task<List<UserResponse>> GetAllUsers(string status = "")
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var usersResponse = await db.Users
                 .Where(u => u.Status.ToString().Contains(status))
@@ -96,7 +102,7 @@ namespace UserAPI.Service
 
         public async Task<UserResponse> GetUser(Guid id, string status = "")
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id && u.Status.ToString().Contains(status));
 
@@ -113,7 +119,7 @@ namespace UserAPI.Service
 
         public async Task<UserResponse> UpdateUser(Guid id, string email)
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
 
@@ -130,10 +136,16 @@ namespace UserAPI.Service
             }
 
             user.Version++;
-            user.Status = Status.Updated;
             user.Email = email;
 
             await db.SaveChangesAsync();
+
+            await _publishEndpoint.Publish<UserUpdated>(new
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Status = user.Status
+            });
 
             var response = new UserResponse(user);
 

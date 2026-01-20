@@ -15,19 +15,21 @@ namespace Password_API.Services
     }
     public class PasswordService : IPasswordService
     {
-        private readonly IDbContextFactory<PasswordContext> _dbFactory;
+        private readonly IDbContextFactory<PasswordContext> _dbContextFactory;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<PasswordService> _logger;
-        public PasswordService(IDbContextFactory<PasswordContext> dbFactory, IPublishEndpoint publishEndpoint, ILogger<PasswordService> logger)
+        public PasswordService(IDbContextFactory<PasswordContext> dbContextFactory,
+            IPublishEndpoint publishEndpoint,
+            ILogger<PasswordService> logger)
         {
-            _dbFactory = dbFactory;
+            _dbContextFactory = dbContextFactory;
             _publishEndpoint = publishEndpoint;
             _logger = logger;
         }
 
         public async Task Update(Guid id, string newPassword)
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var password = await db.Passwords.FirstOrDefaultAsync(p => p.Id == id);
 
@@ -57,7 +59,7 @@ namespace Password_API.Services
 
         public async Task<bool> Verify(Guid id, string password)
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var passwordHash = await db.Passwords.FirstOrDefaultAsync(p => p.Id == id)
                 .Select(p => (p != null ? p.HashPassword : null));

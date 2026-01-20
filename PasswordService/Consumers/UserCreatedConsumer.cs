@@ -12,20 +12,20 @@ namespace Password_API.Consumers
 {
     public class UserCreatedConsumer : IConsumer<UserCreated>
     {
-        private readonly IDbContextFactory<PasswordContext> _dbFactory;
+        private readonly IDbContextFactory<PasswordContext> _dbContextFactory;
         private readonly ILogger<UserCreatedConsumer> _logger;
 
         public UserCreatedConsumer(
-            IDbContextFactory<PasswordContext> dbFactory,
+            IDbContextFactory<PasswordContext> dbContextFactory,
             ILogger<UserCreatedConsumer> logger)
         {
-            _dbFactory = dbFactory;
+            _dbContextFactory = dbContextFactory;
             _logger = logger;
         }
 
         public async Task Consume(ConsumeContext<UserCreated> context)
         {
-            using var db = await _dbFactory.CreateDbContextAsync();
+            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var password = new Password
             {

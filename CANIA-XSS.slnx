@@ -2,6 +2,7 @@
   <Project Path="AccountingService/Accounting API.csproj" />
   <Project Path="APIGateway/API Gateway.csproj" />
   <Project Path="AuthService/Auth API.csproj" Id="cae66c09-d65c-4874-8923-8229faf94fbc" />
+  <Project Path="NotificationDb/NotificationDb.csproj" Id="1be1cd11-765e-4386-b574-e6cfdafbeb01" />
   <Project Path="NotificationService/Notification API.csproj" />
   <Project Path="PasswordDb/PasswordDb.csproj" />
   <Project Path="PasswordService/Password API.csproj" />
