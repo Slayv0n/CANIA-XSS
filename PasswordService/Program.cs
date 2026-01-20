@@ -31,6 +31,10 @@ builder.Services.AddHangfireServer(options =>
     options.Queues = new[] { "default" };
 });
 
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+builder.Services.AddScoped<IPasswordTokenService, PasswordTokenService>();
+
 builder.Services.AddScoped<ICleanupService, CleanupService>();
 
 builder.Services.AddMassTransit(x =>
@@ -91,6 +95,32 @@ app.MapPut("/passwords/update/{id::guid}",async (IPasswordService service, Guid 
         return Results.Conflict(ex.Message);
     }
     catch(Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+app.MapPost("/passwords/reset", async (IPasswordTokenService service, ResetRequest request) =>
+{
+    try
+    {
+        await service.CreateTokenAsync(request.Email);
+        return Results.Ok();
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+app.MapPost("/passwords/reset/{token}/{address}",
+    async (IPasswordTokenService service, string token, string address) =>
+{
+    try
+    {
+        return await service.VerifyTokenAsync(token, address) ? Results.Ok(true) : Results.BadRequest(false);
+    }
+    catch (Exception ex)
     {
         return Results.BadRequest(ex.Message);
     }

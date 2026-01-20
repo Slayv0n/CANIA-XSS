@@ -71,6 +71,30 @@
           "Port": 5002
         }
       ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/passwords/reset/",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/passwords/reset",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/passwords/reset/{token}/{email}",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/passwords/reset/{token}/{email}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ]
     }
   ],
   "GlobalConfiguration": {

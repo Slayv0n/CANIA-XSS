@@ -31,7 +31,7 @@ namespace Password_API.Consumers
             {
                 Id = context.Message.Id,
                 HashPassword = PasswordHasher.HashPassword(context.Message.Password),
-                Status = Status.NotActive
+                Status = Status.Active
             };
 
             _logger.LogInformation($"Пароль создан {password.Id}");

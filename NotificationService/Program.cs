@@ -19,7 +19,7 @@ builder.Services.AddMassTransit(x =>
 
     x.AddConsumer<PasswordTokenCreatedConsumer>();
 
-    x.AddConsumer<PasswordResetConsumer>();
+    x.AddConsumer<PasswordUpdateConsumer>();
 
     x.AddConsumer<SubscribeOnConsumer>();
 
@@ -51,9 +51,9 @@ builder.Services.AddMassTransit(x =>
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
 
-        cfg.ReceiveEndpoint("password-reset-notification-queue", e =>
+        cfg.ReceiveEndpoint("password-updated-notification-queue", e =>
         {
-            e.ConfigureConsumer<PasswordResetConsumer>(context);
+            e.ConfigureConsumer<PasswordUpdateConsumer>(context);
 
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));

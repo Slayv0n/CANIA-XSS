@@ -24,6 +24,21 @@ namespace PasswordDb.Migrations
                 {
                     table.PrimaryKey("PK_Passwords", x => x.Id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Tokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Token = table.Column<string>(type: "text", nullable: false),
+                    CreateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ExpiredTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tokens", x => x.Id);
+                });
         }
 
         /// <inheritdoc />
@@ -31,6 +46,9 @@ namespace PasswordDb.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Passwords");
+
+            migrationBuilder.DropTable(
+                name: "Tokens");
         }
     }
 }

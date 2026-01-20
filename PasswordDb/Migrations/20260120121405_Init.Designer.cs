@@ -12,7 +12,7 @@ using PasswordDb;
 namespace PasswordDb.Migrations
 {
     [DbContext(typeof(PasswordContext))]
-    [Migration("20260112180724_Init")]
+    [Migration("20260120121405_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -45,6 +45,32 @@ namespace PasswordDb.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Passwords");
+                });
+
+            modelBuilder.Entity("PasswordDb.Models.PasswordToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("ExpiredTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tokens");
                 });
 #pragma warning restore 612, 618
         }

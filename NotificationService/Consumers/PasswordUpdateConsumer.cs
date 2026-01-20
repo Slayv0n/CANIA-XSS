@@ -7,22 +7,22 @@ using SharedModels.Passwords;
 
 namespace Notification_API.Consumers
 {
-    public class PasswordResetConsumer : IConsumer<PasswordReseted>
+    public class PasswordUpdateConsumer : IConsumer<PasswordUpdated>
     {
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _service;
-        private readonly ILogger<PasswordResetConsumer> _logger;
+        private readonly ILogger<PasswordUpdateConsumer> _logger;
 
-        public PasswordResetConsumer(IDbContextFactory<NotificationContext> dbContextFactory,
+        public PasswordUpdateConsumer(IDbContextFactory<NotificationContext> dbContextFactory,
             INotificationServcie servcie,
-            ILogger<PasswordResetConsumer> logger)
+            ILogger<PasswordUpdateConsumer> logger)
         {
             _dbContextFactory = dbContextFactory;
             _service = servcie;
             _logger = logger;
         }
 
-        public async Task Consume(ConsumeContext<PasswordReseted> context)
+        public async Task Consume(ConsumeContext<PasswordUpdated> context)
         {
             _logger.LogInformation($"Password reseted message send start at {DateTime.UtcNow}");
 

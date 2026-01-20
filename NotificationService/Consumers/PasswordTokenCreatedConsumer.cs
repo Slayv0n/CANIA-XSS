@@ -25,8 +25,7 @@ namespace Notification_API.Consumers
             _logger.LogInformation($"Password token message send start at {DateTime.UtcNow}");
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var address = await db.Users.FirstOrDefaultAsync(u => u.Id == context.Message.Id)
-                .Select(u => u != null ? u.Email : null);
+            var address = context.Message.MessageAddress;
 
             await _servcie.SendAsync(address,
                 "Сброс пароля",

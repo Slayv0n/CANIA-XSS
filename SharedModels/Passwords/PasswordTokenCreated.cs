@@ -2,7 +2,7 @@
 {
     public class PasswordTokenCreated
     {
-        public Guid Id { get; set; }
+        public string MessageAddress { get; set; } = "";
         public string Token { get; set; } = "";
     }
 }

@@ -2,5 +2,6 @@
 {
     public class PasswordUpdated
     {
+        public Guid Id { get; set; }
     }
 }
