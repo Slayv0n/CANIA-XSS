@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
 using SharedModels.General;
+using SharedModels.Subscribes;
 using Subscribe_API.Models.Responses;
 using SubscribeDb;
 using SubscribeDb.Models;
@@ -10,9 +11,9 @@ namespace Subscribe_API.Services
 {
     public interface ISubscribeService
     {
-        Task<SubscribeResponse> Subscribe(Guid id, Tariff tariff);
-        Task<SubscribeResponse> Update(Guid id, Tariff tariff);
-        Task Unscribe(Guid id);
+        Task<SubscribeResponse> SubscribeAsync(Guid id, Tariff tariff);
+        Task<SubscribeResponse> UpdateAsync(Guid id, Tariff tariff);
+        Task UnscribeAsync(Guid id);
     }
     public class SubscribeService : ISubscribeService
     {
@@ -29,7 +30,7 @@ namespace Subscribe_API.Services
             _logger = logger;
         }
 
-        public async Task<SubscribeResponse> Subscribe(Guid id, Tariff tariff)
+        public async Task<SubscribeResponse> SubscribeAsync(Guid id, Tariff tariff)
         {
             _logger.LogInformation($"Subscribe create for {id} at {DateTime.UtcNow} ");
 
@@ -47,6 +48,13 @@ namespace Subscribe_API.Services
 
             _logger.LogInformation($"Subscribe successful for {id} at {DateTime.UtcNow}");
 
+            await _publishEndpoint.Publish<Subscribed>(new
+            {
+                Id = id,
+                Name = tariff.Name,
+                Cost = tariff.Cost
+            });
+
             return new SubscribeResponse()
             {
                 Id = subscribe.Id,
@@ -54,7 +62,7 @@ namespace Subscribe_API.Services
             };
         }
 
-        public async Task<SubscribeResponse> Update(Guid id, Tariff tariff)
+        public async Task<SubscribeResponse> UpdateAsync(Guid id, Tariff tariff)
         {
             _logger.LogInformation($"Subscribe update for {id} at {DateTime.UtcNow}");
 
@@ -81,7 +89,7 @@ namespace Subscribe_API.Services
             };
         }
 
-        public async Task Unscribe(Guid id)
+        public async Task UnscribeAsync(Guid id)
         {
             _logger.LogInformation($"Unscribe for {id} at {DateTime.UtcNow}");
 
@@ -101,6 +109,11 @@ namespace Subscribe_API.Services
             await db.SaveChangesAsync();
 
             _logger.LogInformation($"Unscribe succesful for {id} at {DateTime.UtcNow}");
+
+            await _publishEndpoint.Publish<Unscribed>(new
+            {
+                Id = id
+            });
         }
     }
 }

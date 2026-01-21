@@ -7,7 +7,7 @@ using SharedModels.Subscribes;
 
 namespace Notification_API.Consumers
 {
-    public class UnscribedConsumer : IConsumer<SubscribeOff>
+    public class UnscribedConsumer : IConsumer<Unscribed>
     {
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _service;
@@ -20,7 +20,7 @@ namespace Notification_API.Consumers
             _logger = logger;
         }
 
-        public async Task Consume(ConsumeContext<SubscribeOff> context)
+        public async Task Consume(ConsumeContext<Unscribed> context)
         {
             _logger.LogInformation($"Unscribe message send start at {DateTime.UtcNow}");
 
@@ -33,7 +33,7 @@ namespace Notification_API.Consumers
                 "Отказ от подписки на Cania",
                 "Вы отказались от подписки на сервис",
                 new SendGrid.Helpers.Mail.Model.HtmlContent($"""
-                    Вы отказались от подписки <i>{context.Message.Name}</i> на Cania.<br>
+                    Вы отказались от подписки на Cania.<br>
                     """));
         }
     }

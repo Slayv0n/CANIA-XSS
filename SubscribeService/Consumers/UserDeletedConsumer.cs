@@ -1,21 +1,20 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using PasswordDb;
-using PasswordDb.Models;
 using SharedModels.Exceptions;
 using SharedModels.General;
 using SharedModels.Passwords;
 using SharedModels.Users;
+using SubscribeDb;
 
-namespace Password_API.Consumers
+namespace Subscribe_API.Consumers
 {
     public class UserDeletedConsumer : IConsumer<UserDeleted>
     {
-        private readonly IDbContextFactory<PasswordContext> _dbContextFactory;
+        private readonly IDbContextFactory<SubscribeContext> _dbContextFactory;
         private readonly ILogger<UserDeletedConsumer> _logger;
 
         public UserDeletedConsumer(
-            IDbContextFactory<PasswordContext> dbContextFactory,
+            IDbContextFactory<SubscribeContext> dbContextFactory,
             ILogger<UserDeletedConsumer> logger)
         {
             _dbContextFactory = dbContextFactory;
@@ -26,19 +25,18 @@ namespace Password_API.Consumers
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var password = await db.Passwords.FirstOrDefaultAsync(p => p.Id == context.Message.Id);
+            var subscribe = await db.Subscribes.FirstOrDefaultAsync(s => s.Id == context.Message.Id);
 
-            if (password == null)
+            if (subscribe == null)
             {
-                _logger.LogWarning($"Password not found: {context.Message.Id}");
-                throw new NotFoundException("Password not found");
+                _logger.LogWarning($"Subscribe not found: {context.Message.Id}");
+                throw new NotFoundException("Subscribe not found");
             }
 
-            password.Version++;
-            password.LastUpdate = DateTime.UtcNow;
-            password.Status = Status.Deleted;
+            subscribe.Version++;
+            subscribe.Status = Status.Deleted;
 
-            _logger.LogInformation($"Password deleted: {password.Id}");
+            _logger.LogInformation($"Subscribe deleted: {subscribe.Id}");
             await db.SaveChangesAsync();
         }
     }

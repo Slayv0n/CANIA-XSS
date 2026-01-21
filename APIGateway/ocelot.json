@@ -95,6 +95,42 @@
           "Port": 5002
         }
       ]
+    },
+    { //Subscribe
+      "UpstreamPathTemplate": "/api/subscribes/subscribe/{id}",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/subscribes/subscribe/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/subscribes/update/{id}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/subscribes/update/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/subscribes/unscribe/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/subscribes/unscribe/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ]
     }
   ],
   "GlobalConfiguration": {

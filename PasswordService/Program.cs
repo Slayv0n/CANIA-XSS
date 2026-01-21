@@ -61,7 +61,6 @@ builder.Services.AddMassTransit(x =>
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
     });
-
 });
 
 var app = builder.Build();

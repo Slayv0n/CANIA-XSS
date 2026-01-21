@@ -7,7 +7,7 @@ using MassTransit.Initializers;
 
 namespace Notification_API.Consumers
 {
-    public class SubscribedConsumer : IConsumer<SubscribeOn>
+    public class SubscribedConsumer : IConsumer<Subscribed>
     {
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _service;
@@ -20,7 +20,7 @@ namespace Notification_API.Consumers
             _logger = logger;
         }
 
-        public async Task Consume(ConsumeContext<SubscribeOn> context)
+        public async Task Consume(ConsumeContext<Subscribed> context)
         {
             _logger.LogInformation($"Subscribe message send start at {DateTime.UtcNow}");
 
