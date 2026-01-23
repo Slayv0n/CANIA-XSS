@@ -1,4 +1,6 @@
-﻿namespace SharedModels.Users
+﻿using SharedModels.General;
+
+namespace SharedModels.Users
 {
     public class UserDeleted
     {

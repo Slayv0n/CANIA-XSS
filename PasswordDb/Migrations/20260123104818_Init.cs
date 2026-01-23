@@ -26,6 +26,19 @@ namespace PasswordDb.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProcessedEvents",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Type = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    RegistrationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProcessedEvents", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tokens",
                 columns: table => new
                 {
@@ -39,6 +52,12 @@ namespace PasswordDb.Migrations
                 {
                     table.PrimaryKey("PK_Tokens", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProcessedEvents_Id",
+                table: "ProcessedEvents",
+                column: "Id",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -46,6 +65,9 @@ namespace PasswordDb.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Passwords");
+
+            migrationBuilder.DropTable(
+                name: "ProcessedEvents");
 
             migrationBuilder.DropTable(
                 name: "Tokens");

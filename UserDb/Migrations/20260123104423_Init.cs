@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace SubscribeDb.Migrations
+namespace UserDb.Migrations
 {
     /// <inheritdoc />
     public partial class Init : Migration
@@ -13,56 +13,63 @@ namespace SubscribeDb.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Tariffs",
+                name: "Admins",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    Cost = table.Column<double>(type: "double precision", nullable: false),
-                    CreateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ExpiredTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Tariffs", x => x.Id);
+                    table.PrimaryKey("PK_Admins", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Subscribes",
+                name: "ProcessedEvents",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TariffId = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    RegistrationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProcessedEvents", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Subscribes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Subscribes_Tariffs_TariffId",
-                        column: x => x.TariffId,
-                        principalTable: "Tariffs",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                    table.PrimaryKey("PK_Users", x => x.Id);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Subscribes_TariffId",
-                table: "Subscribes",
-                column: "TariffId");
+                name: "IX_ProcessedEvents_Id",
+                table: "ProcessedEvents",
+                column: "Id",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Subscribes");
+                name: "Admins");
 
             migrationBuilder.DropTable(
-                name: "Tariffs");
+                name: "ProcessedEvents");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

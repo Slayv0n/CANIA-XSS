@@ -1,5 +1,4 @@
 ﻿using SharedModels.General;
-using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.Users
 {

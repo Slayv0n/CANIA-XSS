@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharedModels.General;
+using SharedModels.ProcessedEvents;
 using SubscribeDb.Models;
 
 namespace SubscribeDb
 {
-    public class SubscribeContext : DbContext
+    public class SubscribeContext : ProcessedEventDbContext<SubscribeContext>
     {
         public SubscribeContext(DbContextOptions<SubscribeContext> options) : base(options) { }
         public DbSet<Subscribe> Subscribes { get; set; }

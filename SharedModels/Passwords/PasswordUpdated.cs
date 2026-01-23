@@ -1,4 +1,6 @@
-﻿namespace SharedModels.Passwords
+﻿using SharedModels.General;
+
+namespace SharedModels.Passwords
 {
     public class PasswordUpdated
     {

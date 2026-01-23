@@ -69,6 +69,28 @@ namespace PasswordDb.Migrations
 
                     b.ToTable("Tokens");
                 });
+
+            modelBuilder.Entity("SharedModels.General.ProcessedEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RegistrationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Id")
+                        .IsUnique();
+
+                    b.ToTable("ProcessedEvents", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }

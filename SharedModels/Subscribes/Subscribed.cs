@@ -1,4 +1,6 @@
-﻿namespace SharedModels.Subscribes
+﻿using SharedModels.General;
+
+namespace SharedModels.Subscribes
 {
     public class Subscribed
     {

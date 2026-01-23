@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
 using SharedModels.General;
 using SharedModels.Passwords;
+using SharedModels.ProcessedEvents;
 using SharedModels.Users;
 using SubscribeDb;
 
@@ -24,6 +25,21 @@ namespace Subscribe_API.Consumers
         public async Task Consume(ConsumeContext<UserDeleted> context)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
+
+            var processedEvent = new ProcessedEvent()
+            {
+                Id = context.MessageId ?? Guid.Empty,
+                Type = this.GetType().Name.Replace("Consumer", ""),
+                RegistrationTime = DateTime.UtcNow,
+            };
+
+            var check = await ProcessedEventsCheker.CheckRegistrationAsync(db, processedEvent);
+
+            if (check)
+            {
+                _logger.LogWarning($"Event {context.MessageId} already started");
+                return;
+            }
 
             var subscribe = await db.Subscribes.FirstOrDefaultAsync(s => s.Id == context.Message.Id);
 
