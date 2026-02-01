@@ -1,4 +1,5 @@
 using Auth_API.Consumers;
+using Auth_API.Services;
 using AuthDb;
 using AuthDb.Models;
 using MassTransit;
@@ -11,7 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<AuthContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("AUTH_DB_CONNECTION")));
 
-builder.Services.AddScoped<IProcessedEventChecker, ProcessedEventChecker>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 builder.Services.AddMassTransit(x =>
 {

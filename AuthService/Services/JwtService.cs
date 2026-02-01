@@ -15,10 +15,10 @@ namespace Auth_API.Services
     public interface IJwtService
     {
         string GenerateAccessToken(Guid userId);
-        Task<string> GenerateRefreshToken(Guid userId);
-        Task<bool> VerifyRefreshToken(string token);
-        Task RevokeRefreshToken(string token);
-        Task RevokeAllRefreshToken(Guid userId);
+        Task<string> GenerateRefreshTokenAsync(Guid userId);
+        Task<bool> VerifyRefreshTokenAsync(string token);
+        Task RevokeRefreshTokenAsync(string token);
+        Task RevokeAllRefreshTokenAsync(Guid userId);
     }
     public class JwtService : IJwtService
     {
@@ -60,7 +60,7 @@ namespace Auth_API.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public async Task<string> GenerateRefreshToken(Guid userId)
+        public async Task<string> GenerateRefreshTokenAsync(Guid userId)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
@@ -81,7 +81,7 @@ namespace Auth_API.Services
             return refreshToken;
         }
 
-        public async Task RevokeAllRefreshToken(Guid userId)
+        public async Task RevokeAllRefreshTokenAsync(Guid userId)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
@@ -95,7 +95,7 @@ namespace Auth_API.Services
             await db.SaveChangesAsync();
         }
 
-        public async Task RevokeRefreshToken(string token)
+        public async Task RevokeRefreshTokenAsync(string token)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
@@ -114,7 +114,7 @@ namespace Auth_API.Services
             await db.SaveChangesAsync();
         }
 
-        public async Task<bool> VerifyRefreshToken(string token)
+        public async Task<bool> VerifyRefreshTokenAsync(string token)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
