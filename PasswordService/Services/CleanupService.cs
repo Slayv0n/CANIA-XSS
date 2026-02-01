@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PasswordDb;
 using SharedModels.General;
 
-namespace UserAPI.Service
+namespace Password_API.Service
 {
     public class CleanupService : ICleanupService
     {

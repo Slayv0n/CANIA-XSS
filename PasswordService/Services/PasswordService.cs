@@ -2,9 +2,10 @@
 using MassTransit.Initializers;
 using Microsoft.EntityFrameworkCore;
 using PasswordDb;
+using SharedModels.Events.Passwords;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using SharedModels.Passwords;
+using SharedModels.Hash;
 
 namespace Password_API.Services
 {
@@ -45,15 +46,15 @@ namespace Password_API.Services
                 throw new StatusException("Invalid status for update");
             }
 
-            var passwordHash = PasswordHasher.HashPassword(newPassword);
-            password.HashPassword = passwordHash;
+            password.PasswordHash = PasswordHasher.HashPassword(newPassword);
             password.LastUpdate = DateTime.UtcNow;
 
             await db.SaveChangesAsync();
 
             await _publishEndpoint.Publish<PasswordUpdated>(new
             {
-                Id = id
+                Id = id,
+                PasswordHash = password.PasswordHash
             });
         }
 
@@ -62,7 +63,7 @@ namespace Password_API.Services
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var passwordHash = await db.Passwords.FirstOrDefaultAsync(p => p.Id == id)
-                .Select(p => (p != null ? p.HashPassword : null));
+                .Select(p => (p != null ? p.PasswordHash : null));
 
             if (passwordHash == null)
             {

@@ -8,7 +8,7 @@ using Password_API.Services;
 using PasswordDb;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using UserAPI.Service;
+using Password_API.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 

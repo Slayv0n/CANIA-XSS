@@ -1,12 +1,13 @@
 ﻿using MassTransit;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PasswordDb;
 using PasswordDb.Models;
+using SharedModels.Events.Passwords;
+using SharedModels.Events.Users;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using SharedModels.Passwords;
 using SharedModels.ProcessedEvents;
-using SharedModels.Users;
 using System.Text.Json;
 
 namespace Password_API.Consumers
@@ -26,35 +27,26 @@ namespace Password_API.Consumers
 
         public async Task Consume(ConsumeContext<UserCreated> context)
         {
+            _logger.LogInformation($"{this.GetType()} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
-            var processedEvent = new ProcessedEvent()
-            {
-                Id = context.MessageId ?? Guid.Empty,
-                Type = this.GetType().Name.Replace("Consumer", ""),
-                RegistrationTime = DateTime.UtcNow,
-            };
-
-            var check = await ProcessedEventsCheker.CheckRegistrationAsync(db, processedEvent);
-
-            if (check)
-            {
-                _logger.LogWarning($"Event {context.MessageId} already started");
-                return;
-            }
 
             var password = new Password
             {
                 Id = context.Message.Id,
-                HashPassword = PasswordHasher.HashPassword(context.Message.Password),
+                PasswordHash = context.Message.PasswordHash,
                 Status = Status.Active
             };
 
-            _logger.LogInformation($"Пароль создан {password.Id}");
+            _logger.LogInformation($"Password created {password.Id} at {DateTime.UtcNow}");
             await db.Passwords.AddAsync(password);
             await db.SaveChangesAsync();
 
-            await context.Publish<PasswordCreated>(new {Id = password.Id});
+            await context.Publish<PasswordCreated>(new 
+            {
+                Id = password.Id,
+                PasswordHash = password.PasswordHash
+            });
         }
     }
 }

@@ -7,7 +7,7 @@ namespace PasswordDb.Models
     {
         public Guid Id { get; set; }
         [StringLength(512)]
-        public required string HashPassword { get; set; }
+        public required string PasswordHash { get; set; }
         public DateTime LastUpdate = DateTime.UtcNow;
         public Status Status { get; set; }
         public int Version { get; set; }

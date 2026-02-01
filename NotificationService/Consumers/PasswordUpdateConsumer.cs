@@ -3,8 +3,8 @@ using MassTransit.Initializers;
 using Microsoft.EntityFrameworkCore;
 using Notification_API.Service;
 using NotificationDb;
+using SharedModels.Events.Passwords;
 using SharedModels.General;
-using SharedModels.Passwords;
 using SharedModels.ProcessedEvents;
 
 namespace Notification_API.Consumers
@@ -14,14 +14,17 @@ namespace Notification_API.Consumers
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _service;
         private readonly ILogger<PasswordUpdateConsumer> _logger;
+        private readonly IProcessedEventChecker _processedEventChecker;
 
         public PasswordUpdateConsumer(IDbContextFactory<NotificationContext> dbContextFactory,
             INotificationServcie servcie,
-            ILogger<PasswordUpdateConsumer> logger)
+            ILogger<PasswordUpdateConsumer> logger,
+            IProcessedEventChecker processedEventChecker)
         {
             _dbContextFactory = dbContextFactory;
             _service = servcie;
             _logger = logger;
+            _processedEventChecker = processedEventChecker;
         }
 
         public async Task Consume(ConsumeContext<PasswordUpdated> context)
@@ -37,7 +40,7 @@ namespace Notification_API.Consumers
                 RegistrationTime = DateTime.UtcNow,
             };
 
-            var check = await ProcessedEventsCheker.CheckRegistrationAsync(db, processedEvent);
+            var check = await _processedEventChecker.CheckRegistrationAsync(processedEvent);
 
             if (check)
             {

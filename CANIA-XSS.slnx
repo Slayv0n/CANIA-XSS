@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="AccountingService/Accounting API.csproj" />
   <Project Path="APIGateway/API Gateway.csproj" />
+  <Project Path="AuthDb/AuthDb.csproj" Id="39dd309f-e37a-4474-b6ac-d90a718a5352" />
   <Project Path="AuthService/Auth API.csproj" Id="cae66c09-d65c-4874-8923-8229faf94fbc" />
   <Project Path="NotificationDb/NotificationDb.csproj" Id="1be1cd11-765e-4386-b574-e6cfdafbeb01" />
   <Project Path="NotificationService/Notification API.csproj" />

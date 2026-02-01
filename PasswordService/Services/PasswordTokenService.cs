@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PasswordDb;
 using PasswordDb.Models;
-using SharedModels.Passwords;
+using SharedModels.Events.Passwords;
 
 namespace Password_API.Services
 {

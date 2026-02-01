@@ -5,7 +5,7 @@ using UserDb.Models;
 
 namespace UserDb
 {
-    public class UserContext : ProcessedEventDbContext<UserContext>
+    public class UserContext : DbContext
     {
         public UserContext(DbContextOptions<UserContext> options) : base(options)  { }
         public DbSet<User> Users { get; set; }

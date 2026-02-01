@@ -1,6 +1,6 @@
 ﻿using SharedModels.General;
 
-namespace SharedModels.Users
+namespace SharedModels.Events.Users
 {
     public class UserDeleted
     {

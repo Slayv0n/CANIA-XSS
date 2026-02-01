@@ -1,13 +1,11 @@
 ﻿using SharedModels.General;
 
-namespace SharedModels.Users
+namespace SharedModels.Events.Users
 {
-    public class UserCreated
+    public class UserUpdated
     {
         public Guid Id { get; set; }
         public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
         public Status Status { get; set; }
-        public int Version { get; set; } = 0;
     }
 }

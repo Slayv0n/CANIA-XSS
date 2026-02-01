@@ -5,7 +5,7 @@ using SubscribeDb.Models;
 
 namespace SubscribeDb
 {
-    public class SubscribeContext : ProcessedEventDbContext<SubscribeContext>
+    public class SubscribeContext : DbContext
     {
         public SubscribeContext(DbContextOptions<SubscribeContext> options) : base(options) { }
         public DbSet<Subscribe> Subscribes { get; set; }

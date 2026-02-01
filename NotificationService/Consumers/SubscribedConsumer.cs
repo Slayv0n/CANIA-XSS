@@ -3,9 +3,9 @@ using MassTransit.Initializers;
 using Microsoft.EntityFrameworkCore;
 using Notification_API.Service;
 using NotificationDb;
+using SharedModels.Events.Subscribes;
 using SharedModels.General;
 using SharedModels.ProcessedEvents;
-using SharedModels.Subscribes;
 
 namespace Notification_API.Consumers
 {
@@ -14,12 +14,17 @@ namespace Notification_API.Consumers
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _service;
         private readonly ILogger<SubscribedConsumer> _logger;
+        private readonly IProcessedEventChecker _processedEventChecker;
 
-        public SubscribedConsumer(IDbContextFactory<NotificationContext> dbContextFactory, INotificationServcie service, ILogger<SubscribedConsumer> logger)
+        public SubscribedConsumer(IDbContextFactory<NotificationContext> dbContextFactory,
+            INotificationServcie service,
+            ILogger<SubscribedConsumer> logger,
+            IProcessedEventChecker processedEventChecker)
         {
             _dbContextFactory = dbContextFactory;
             _service = service;
             _logger = logger;
+            _processedEventChecker = processedEventChecker;
         }
 
         public async Task Consume(ConsumeContext<Subscribed> context)
@@ -35,7 +40,7 @@ namespace Notification_API.Consumers
                 RegistrationTime = DateTime.UtcNow,
             };
 
-            var check = await ProcessedEventsCheker.CheckRegistrationAsync(db, processedEvent);
+            var check = await _processedEventChecker.CheckRegistrationAsync(processedEvent);
 
             if (check)
             {

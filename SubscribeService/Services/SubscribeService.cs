@@ -1,8 +1,8 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using SharedModels.Events.Subscribes;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using SharedModels.Subscribes;
 using Subscribe_API.Models.Responses;
 using SubscribeDb;
 using SubscribeDb.Models;

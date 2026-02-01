@@ -1,8 +1,8 @@
 ﻿using SharedModels.General;
 
-namespace SharedModels.Passwords
+namespace SharedModels.Events.Subscribes
 {
-    public class PasswordCreated
+    public class Unscribed
     {
         public Guid Id { get; set; }
     }

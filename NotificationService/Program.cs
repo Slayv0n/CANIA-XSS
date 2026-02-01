@@ -3,13 +3,17 @@ using Microsoft.EntityFrameworkCore;
 using Notification_API.Consumers;
 using Notification_API.Service;
 using NotificationDb;
+using SharedModels.ProcessedEvents;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContextFactory<NotificationContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("NOTIFICATION_DB_CONNECTION")));
 
+builder.Services.AddScoped<IProcessedEventChecker, ProcessedEventChecker>();
+
 builder.Services.AddScoped<INotificationServcie, EmailService>();
+
 
 builder.Services.AddMassTransit(x =>
 {

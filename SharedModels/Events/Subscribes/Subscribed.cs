@@ -1,6 +1,6 @@
 ﻿using SharedModels.General;
 
-namespace SharedModels.Subscribes
+namespace SharedModels.Events.Subscribes
 {
     public class Subscribed
     {

@@ -1,13 +1,14 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
-using SharedModels.Users;
 using SharedModels.Exceptions;
 using UserAPI.Models.Requests;
 using UserAPI.Models.Responses;
 using UserDb;
 using UserDb.Models;
 using SharedModels.General;
+using SharedModels.Events.Users;
+using SharedModels.Hash;
 
 namespace UserAPI.Service
 {
@@ -46,13 +47,15 @@ namespace UserAPI.Service
 
             _logger.LogInformation($"User created: {user.Id}");
 
+            var passwordHash = PasswordHasher.HashPassword(request.Password);
+
             await _publishEndpoint.Publish<UserCreated>(new
             {
                 Id = user.Id,
                 Email = user.Email,
                 Status = user.Status,
                 Version = user.Version,
-                Password = request.Password
+                Password = passwordHash
             });
 
             var response = new UserResponse(user);

@@ -1,6 +1,6 @@
 ﻿using BCrypt.Net;
 
-namespace Password_API
+namespace SharedModels.Hash
 {
     public class PasswordHasher
     {

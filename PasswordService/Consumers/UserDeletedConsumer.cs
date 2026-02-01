@@ -2,11 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using PasswordDb;
 using PasswordDb.Models;
+using SharedModels.Events.Users;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using SharedModels.Passwords;
+using SharedModels.Events.Passwords;
 using SharedModels.ProcessedEvents;
-using SharedModels.Users;
 
 namespace Password_API.Consumers
 {
@@ -25,22 +25,11 @@ namespace Password_API.Consumers
 
         public async Task Consume(ConsumeContext<UserDeleted> context)
         {
+            _logger.LogInformation($"{this.GetType()} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var processedEvent = new ProcessedEvent()
-            {
-                Id = context.MessageId ?? Guid.Empty,
-                Type = this.GetType().Name.Replace("Consumer", ""),
-                RegistrationTime = DateTime.UtcNow,
-            };
 
-            var check = await ProcessedEventsCheker.CheckRegistrationAsync(db, processedEvent);
-
-            if (check)
-            {
-                _logger.LogWarning($"Event {context.MessageId} already started");
-                return;
-            }
 
             var password = await db.Passwords.FirstOrDefaultAsync(p => p.Id == context.Message.Id);
 

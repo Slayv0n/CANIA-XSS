@@ -1,16 +1,18 @@
+using Hangfire;
+using Hangfire.PostgreSql;
+using MassTransit;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
-using UserAPI.Service;
 using SharedModels.Exceptions;
-using UserAPI.Models.Requests;
-using UserDb;
-using MassTransit;
-using UserAPI.Consumers;
-using Hangfire;
-using Hangfire.PostgreSql;
 using SharedModels.General;
+using UserAPI.Consumers;
+using UserAPI.Models.Requests;
+using UserAPI.Service;
+using UserDb;
+using UserDb.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

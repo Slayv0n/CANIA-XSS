@@ -5,7 +5,7 @@ using SharedModels.ProcessedEvents;
 
 namespace PasswordDb
 {
-    public class PasswordContext : ProcessedEventDbContext<PasswordContext>
+    public class PasswordContext : DbContext
     {
         public PasswordContext(DbContextOptions<PasswordContext> o) : base(o) { }
         public DbSet<Password> Passwords { get; set; }

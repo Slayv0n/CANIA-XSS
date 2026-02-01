@@ -1,6 +1,6 @@
 ﻿using SharedModels.General;
 
-namespace SharedModels.Passwords
+namespace SharedModels.Events.Passwords
 {
     public class PasswordTokenCreated
     {
