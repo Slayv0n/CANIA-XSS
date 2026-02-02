@@ -16,26 +16,13 @@ namespace PasswordDb.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    HashPassword = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Passwords", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProcessedEvents",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Type = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    RegistrationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProcessedEvents", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -52,12 +39,6 @@ namespace PasswordDb.Migrations
                 {
                     table.PrimaryKey("PK_Tokens", x => x.Id);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProcessedEvents_Id",
-                table: "ProcessedEvents",
-                column: "Id",
-                unique: true);
         }
 
         /// <inheritdoc />
@@ -65,9 +46,6 @@ namespace PasswordDb.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Passwords");
-
-            migrationBuilder.DropTable(
-                name: "ProcessedEvents");
 
             migrationBuilder.DropTable(
                 name: "Tokens");

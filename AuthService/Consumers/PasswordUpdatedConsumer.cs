@@ -12,15 +12,12 @@ namespace Auth_API.Consumers
     {
         private readonly IDbContextFactory<AuthContext> _dbContextFactory;
         private readonly ILogger<PasswordUpdatedConsumer> _logger;
-        private readonly IProcessedEventChecker _processedEventChecker;
 
         public PasswordUpdatedConsumer(IDbContextFactory<AuthContext> dbContextFactory,
-            ILogger<PasswordUpdatedConsumer> logger,
-            IProcessedEventChecker processedEventChecker)
+            ILogger<PasswordUpdatedConsumer> logger)
         {
             _dbContextFactory = dbContextFactory;
             _logger = logger;
-            _processedEventChecker = processedEventChecker;
         }
 
         public async Task Consume(ConsumeContext<PasswordUpdated> context)

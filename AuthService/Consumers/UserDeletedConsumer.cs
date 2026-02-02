@@ -12,15 +12,12 @@ namespace Auth_API.Consumers
     {
         private readonly IDbContextFactory<AuthContext> _dbContextFactory;
         private readonly ILogger<UserDeletedConsumer> _logger;
-        private readonly IProcessedEventChecker _processedEventChecker;
 
         public UserDeletedConsumer(IDbContextFactory<AuthContext> dbContextFactory,
-            ILogger<UserDeletedConsumer> logger,
-            IProcessedEventChecker processedEventChecker)
+            ILogger<UserDeletedConsumer> logger)
         {
             _dbContextFactory = dbContextFactory;
             _logger = logger;
-            _processedEventChecker = processedEventChecker;
         }
 
         public async Task Consume(ConsumeContext<UserDeleted> context)
@@ -28,21 +25,6 @@ namespace Auth_API.Consumers
             _logger.LogInformation($"{this.GetType()} started at {DateTime.UtcNow}");
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
-            var processedEvent = new ProcessedEvent()
-            {
-                Id = context.MessageId ?? Guid.Empty,
-                Type = this.GetType().Name.Replace("Consumer", ""),
-                RegistrationTime = DateTime.UtcNow,
-            };
-
-            var check = await _processedEventChecker.CheckRegistrationAsync(processedEvent);
-
-            if (check)
-            {
-                _logger.LogWarning($"Event {context.MessageId} already started");
-                return;
-            }
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == context.Message.Id);
 

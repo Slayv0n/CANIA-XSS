@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SharedModels.General;
-using SharedModels.ProcessedEvents;
 using UserDb.Models;
 
 namespace UserDb

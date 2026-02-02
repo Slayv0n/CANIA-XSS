@@ -1,18 +1,20 @@
 using Auth_API.Consumers;
 using Auth_API.Models.Requests;
+using Auth_API.Models.Settings;
 using Auth_API.Services;
 using AuthDb;
-using AuthDb.Models;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
-using SharedModels.ProcessedEvents;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContextFactory<AuthContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("AUTH_DB_CONNECTION")));
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.AddSingleton<JwtSettings>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 

@@ -12,7 +12,7 @@ using PasswordDb;
 namespace PasswordDb.Migrations
 {
     [DbContext(typeof(PasswordContext))]
-    [Migration("20260131173621_Init")]
+    [Migration("20260202193708_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -71,28 +71,6 @@ namespace PasswordDb.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tokens");
-                });
-
-            modelBuilder.Entity("SharedModels.General.ProcessedEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("RegistrationTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Id")
-                        .IsUnique();
-
-                    b.ToTable("ProcessedEvents", (string)null);
                 });
 #pragma warning restore 612, 618
         }
