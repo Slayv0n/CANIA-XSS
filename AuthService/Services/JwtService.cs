@@ -1,6 +1,7 @@
 ﻿using Auth_API.Models.Settings;
 using AuthDb;
 using AuthDb.Models;
+using MassTransit.Initializers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SharedModels.Exceptions;
@@ -19,6 +20,7 @@ namespace Auth_API.Services
         Task<bool> VerifyRefreshTokenAsync(string token);
         Task RevokeRefreshTokenAsync(string token);
         Task RevokeAllRefreshTokenAsync(Guid userId);
+        Task<Guid> GetUserIdAsync(string token);
     }
     public class JwtService : IJwtService
     {
@@ -79,6 +81,25 @@ namespace Auth_API.Services
             await db.SaveChangesAsync();
 
             return refreshToken;
+        }
+
+        public async Task<Guid> GetUserIdAsync(string token)
+        {
+            using var db = await _dbContextFactory.CreateDbContextAsync();
+
+            var tokenHash = ComputeSha256Hash(token);
+
+            var userId = await db.RefreshTokens
+                .FirstOrDefaultAsync(r => r.TokenHash == tokenHash && r.ExpiresAt > DateTime.UtcNow)
+                .Select(r => r != null ? r.UserId : Guid.Empty);
+
+            if (userId == Guid.Empty)
+            {
+                _logger.LogWarning($"Token invalid {token}");
+                throw new AuthException($"Token invalid");
+            }
+
+            return userId;
         }
 
         public async Task RevokeAllRefreshTokenAsync(Guid userId)

@@ -1,10 +1,12 @@
 using Auth_API.Consumers;
+using Auth_API.Models.Requests;
 using Auth_API.Services;
 using AuthDb;
 using AuthDb.Models;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SharedModels.Exceptions;
 using SharedModels.ProcessedEvents;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,5 +51,80 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+
+app.MapPost("/auth/login", async (LoginRequest request, IAuthenticationService authenticationService) =>
+{
+    try
+    {
+        var response = await authenticationService.LoginAsync(request.Email, request.Password);
+        return Results.Ok(response);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
+    catch(Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+app.MapPost("/auth/refresh", async (TokenRequest request, IAuthenticationService authenticationService) =>
+{
+    try
+    {
+        var response = await authenticationService.RefreshAsync(request.Token);
+        return Results.Ok(response);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+app.MapPost("/auth/logout", async (TokenRequest request, IAuthenticationService authenticationService) =>
+{
+    try
+    {
+        await authenticationService.LogoutAsync(request.Token);
+        return Results.Ok();
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+app.MapPost("/auth/logout/all", async (TokenRequest request, HttpContext context, IAuthenticationService authenticationService) =>
+{
+    try
+    {
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        await authenticationService.LogoutAllAsync(userId, request.Token);
+        return Results.Ok();
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
 
 app.Run();

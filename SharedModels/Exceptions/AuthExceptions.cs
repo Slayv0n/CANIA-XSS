@@ -1,12 +1,7 @@
 ﻿namespace SharedModels.Exceptions
 {
-    public class LoginException : Exception
+    public class AuthException : Exception
     {
-        public LoginException(string message) : base(message) { }
-    }
-
-    public class TokenException : Exception
-    {
-        public TokenException(string message) : base(message) { }
+        public AuthException(string message) : base(message) { }
     }
 }

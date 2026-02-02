@@ -10,9 +10,9 @@ namespace Auth_API.Services
     public interface IAuthenticationService
     {
         Task<LoginResponse> LoginAsync(string email, string password);
-        Task<LoginResponse> RefreshAsync(Guid userId, string token);
+        Task<LoginResponse> RefreshAsync(string token);
         Task LogoutAsync(string token);
-        Task LogoutAllAsync(Guid userId);
+        Task LogoutAllAsync(Guid userId, string token);
     }
     public class AuthenticationService : IAuthenticationService
     {
@@ -38,13 +38,13 @@ namespace Auth_API.Services
             if (user == null)
             {
                 _logger.LogWarning($"User not found {email}");
-                throw new LoginException("Email or password incorrect");
+                throw new AuthException("Email or password incorrect");
             }
 
             if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
             {
                 _logger.LogWarning($"Password incorrect");
-                throw new LoginException("Email or password incorrect");
+                throw new AuthException("Email or password incorrect");
             }
 
             var accessToken = _jwtService.GenerateAccessToken(user.Id);
@@ -58,27 +58,43 @@ namespace Auth_API.Services
             };
         }
 
-        public async Task LogoutAllAsync(Guid userId)
+        public async Task LogoutAllAsync(Guid userId, string token)
         {
-            await _jwtService.RevokeAllRefreshTokenAsync(userId);
-        }
-
-        public async Task LogoutAsync(string token)
-        {
-            await _jwtService.RevokeRefreshTokenAsync(token);
-        }
-
-        public async Task<LoginResponse> RefreshAsync(Guid userId, string token)
-        {
-            using var db = await _dbContextFactory.CreateDbContextAsync();
-
             var verify = await _jwtService.VerifyRefreshTokenAsync(token);
 
             if (!verify)
             {
                 _logger.LogWarning($"Token incorrect {token}");
-                throw new TokenException("Token incorrect");
+                throw new AuthException("Token incorrect");
             }
+
+            await _jwtService.RevokeAllRefreshTokenAsync(userId);
+        }
+
+        public async Task LogoutAsync(string token)
+        {
+            var verify = await _jwtService.VerifyRefreshTokenAsync(token);
+
+            if (!verify)
+            {
+                _logger.LogWarning($"Token incorrect {token}");
+                throw new AuthException("Token incorrect");
+            }
+
+            await _jwtService.RevokeRefreshTokenAsync(token);
+        }
+
+        public async Task<LoginResponse> RefreshAsync(string token)
+        {
+            var verify = await _jwtService.VerifyRefreshTokenAsync(token);
+
+            if (!verify)
+            {
+                _logger.LogWarning($"Token incorrect {token}");
+                throw new AuthException("Token incorrect");
+            }
+
+            var userId = await _jwtService.GetUserIdAsync(token);
 
             var accessToken = _jwtService.GenerateAccessToken(userId);
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(userId);
