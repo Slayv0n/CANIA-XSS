@@ -142,7 +142,7 @@ namespace Auth_API.Services
             var tokenHash = ComputeSha256Hash(token);
 
             var refreshToken = await db.RefreshTokens
-                .FirstOrDefaultAsync(r => r.TokenHash == tokenHash && r.ExpiresAt < DateTime.UtcNow);
+                .FirstOrDefaultAsync(r => r.TokenHash == tokenHash && r.ExpiresAt > DateTime.UtcNow);
 
             return refreshToken != null;
         }

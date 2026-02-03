@@ -55,7 +55,7 @@ namespace UserAPI.Service
                 Email = user.Email,
                 Status = user.Status,
                 Version = user.Version,
-                Password = passwordHash
+                PasswordHash = passwordHash
             });
 
             var response = new UserResponse(user);

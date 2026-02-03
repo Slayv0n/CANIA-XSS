@@ -154,11 +154,7 @@
           "Host": "localhost",
           "Port": 5004
         }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      }
+      ]
     },
     {
       "UpstreamPathTemplate": "/api/auth/logout",
@@ -179,7 +175,7 @@
     {
       "UpstreamPathTemplate": "/api/auth/logout/all",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/api/auth/logout/all",
+      "DownstreamPathTemplate": "/auth/logout/all",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {

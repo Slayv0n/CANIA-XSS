@@ -1,7 +1,43 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var secretKey = Environment.GetEnvironmentVariable("JwtSettings_SecretKey");
+var issuer = Environment.GetEnvironmentVariable("JwtSettings_Issuer");
+var audience = Environment.GetEnvironmentVariable("JwtSettings_Audience");
+
+Console.WriteLine("=== JWT Configuration Debug ===");
+Console.WriteLine($"SecretKey: {secretKey ?? "NULL"}");
+Console.WriteLine($"Issuer: {issuer ?? "NULL"}");
+Console.WriteLine($"Audience: {audience ?? "NULL"}");
+Console.WriteLine("================================");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer("Bearer", options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtSettings_SecretKey") ?? "")),
+        ValidateIssuer = true,
+        ValidIssuer = Environment.GetEnvironmentVariable("JwtSettings_Issuer"),
+        ValidateAudience = true,
+        ValidAudience = Environment.GetEnvironmentVariable("JwtSettings_Audience"),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
 
 builder.Configuration
     .SetBasePath(builder.Environment.ContentRootPath)
@@ -15,6 +51,9 @@ if (builder.Environment.IsDevelopment())
 }
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 await app.UseOcelot();
 await app.RunAsync();

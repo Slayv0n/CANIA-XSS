@@ -6,6 +6,7 @@ using AuthDb;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SharedModels.Exceptions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,8 +14,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<AuthContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("AUTH_DB_CONNECTION")));
 
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
-builder.Services.AddSingleton<JwtSettings>();
+var jwtSettings = new JwtSettings()
+{
+    SecretKey = builder.Configuration.GetValue<string>("JwtSettings_SecretKey")
+        ?? throw new InvalidOperationException("JwtSettings_SecretKey is required"),
+    Issuer = builder.Configuration.GetValue<string>("JwtSettings_Issuer") ?? "Auth",
+    Audience = builder.Configuration.GetValue<string>("JwtSettings_Audience")?? "Services",
+    ExpirationAccessTokenMinutes = 
+        double.Parse(builder.Configuration.GetValue<string>("JwtSettings_ExpirationAccessTokenMinutes") ?? "15"),
+    ExpirationRefreshTokenDays =
+        double.Parse(builder.Configuration.GetValue<string>("JwtSettings_ExpirationRefreshTokenDays") ?? "7")
+};
+builder.Services.AddSingleton<JwtSettings>(jwtSettings);
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 
