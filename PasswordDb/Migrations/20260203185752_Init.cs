@@ -16,7 +16,7 @@ namespace PasswordDb.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    PasswordHash = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -31,7 +31,7 @@ namespace PasswordDb.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    Token = table.Column<string>(type: "text", nullable: false),
+                    Token = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: false),
                     CreateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ExpiredTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },

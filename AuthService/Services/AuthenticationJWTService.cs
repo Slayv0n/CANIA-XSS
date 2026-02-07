@@ -7,22 +7,22 @@ using SharedModels.Hash;
 
 namespace Auth_API.Services
 {
-    public interface IAuthenticationService
+    public interface IAuthenticationJWTService
     {
         Task<LoginResponse> LoginAsync(string email, string password);
         Task<LoginResponse> RefreshAsync(string token);
         Task LogoutAsync(string token);
         Task LogoutAllAsync(Guid userId, string token);
     }
-    public class AuthenticationService : IAuthenticationService
+    public class AuthenticationJWTService : IAuthenticationJWTService
     {
         private readonly IDbContextFactory<AuthContext> _dbContextFactory;
         private readonly IJwtService _jwtService;
-        private readonly ILogger<AuthenticationService> _logger;
+        private readonly ILogger<AuthenticationJWTService> _logger;
 
-        public AuthenticationService(IDbContextFactory<AuthContext> dbContextFactory, 
+        public AuthenticationJWTService(IDbContextFactory<AuthContext> dbContextFactory, 
             IJwtService jwtService,
-            ILogger<AuthenticationService> logger)
+            ILogger<AuthenticationJWTService> logger)
         {
             _dbContextFactory = dbContextFactory;
             _jwtService = jwtService;
@@ -41,7 +41,7 @@ namespace Auth_API.Services
                 throw new AuthException("Email or password incorrect");
             }
 
-            if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
+            if (!PasswordHasher.VerifyPassword(password, user.PasswordHash ?? ""))
             {
                 _logger.LogWarning($"Password incorrect");
                 throw new AuthException("Email or password incorrect");

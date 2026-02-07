@@ -26,6 +26,13 @@ namespace Auth_API.Consumers
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
+            var usaVerify = await db.UserSocialAccounts.AnyAsync(usa => usa.UserId == context.Message.Id);
+
+            if (usaVerify)
+            {
+                return;
+            }
+
             var user = new User()
             {
                 Id = context.Message.Id,

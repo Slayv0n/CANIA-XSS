@@ -10,10 +10,12 @@ namespace AuthDb.Models
         [EmailAddress]
         [StringLength(255, MinimumLength = 6, ErrorMessage = "Недопустимая длина Email")]
         public required string Email { get; set; }
-        public required string PasswordHash { get; set; } = "";
+        [StringLength(1024)]
+        public string? PasswordHash { get; set; }
         public Status Status { get; set; }
         public DateTime LastUpdated {  get; set; } = DateTime.UtcNow;
 
-        public List<RefreshToken> RefreshTokens { get; set; } =  new List<RefreshToken>();
+        public List<RefreshToken> RefreshTokens { get; set; } =  new();
+        public List<UserSocialAccount> UserSocialAccounts { get; set; } = new();
     }
 }

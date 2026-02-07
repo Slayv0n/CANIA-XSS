@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AuthDb.Migrations
 {
     [DbContext(typeof(AuthContext))]
-    [Migration("20260202195141_Init")]
+    [Migration("20260203185447_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -67,8 +67,8 @@ namespace AuthDb.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -76,6 +76,38 @@ namespace AuthDb.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AuthDb.Models.UserSocialAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("LastLoginAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ProviderUserId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserSocialAccounts");
                 });
 
             modelBuilder.Entity("AuthDb.Models.RefreshToken", b =>
@@ -89,9 +121,22 @@ namespace AuthDb.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AuthDb.Models.UserSocialAccount", b =>
+                {
+                    b.HasOne("AuthDb.Models.User", "User")
+                        .WithMany("UserSocialAccounts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AuthDb.Models.User", b =>
                 {
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("UserSocialAccounts");
                 });
 #pragma warning restore 612, 618
         }
