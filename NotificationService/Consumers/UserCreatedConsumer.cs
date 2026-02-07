@@ -14,17 +14,14 @@ namespace Notification_API.Consumers
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _service;
         private readonly ILogger<UserCreatedConsumer> _logger;
-        private readonly IProcessedEventChecker _processedEventChecker;
 
         public UserCreatedConsumer(IDbContextFactory<NotificationContext> dbContextFactory,
             INotificationServcie servcie,
-            ILogger<UserCreatedConsumer> logger,
-            IProcessedEventChecker processedEventChecker)
+            ILogger<UserCreatedConsumer> logger)
         {
             _dbContextFactory = dbContextFactory;
             _service = servcie;
             _logger = logger;
-            _processedEventChecker = processedEventChecker;
         }
 
         public async Task Consume(ConsumeContext<UserCreated> context)
@@ -32,21 +29,6 @@ namespace Notification_API.Consumers
             _logger.LogInformation($"Registration message send start at {DateTime.UtcNow}");
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
-            var processedEvent = new ProcessedEvent()
-            {
-                Id = context.MessageId ?? Guid.Empty,
-                Type = this.GetType().Name.Replace("Consumer", ""),
-                RegistrationTime = DateTime.UtcNow,
-            };
-
-            var check = await _processedEventChecker.CheckRegistrationAsync(processedEvent);
-
-            if (check)
-            {
-                _logger.LogWarning($"Event {context.MessageId} already started");
-                return;
-            }
 
             var user = new User()
             {

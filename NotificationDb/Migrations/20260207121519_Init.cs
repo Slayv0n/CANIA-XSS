@@ -12,19 +12,6 @@ namespace NotificationDb.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "ProcessedEvents",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Type = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    RegistrationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProcessedEvents", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -36,20 +23,11 @@ namespace NotificationDb.Migrations
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProcessedEvents_Id",
-                table: "ProcessedEvents",
-                column: "Id",
-                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "ProcessedEvents");
-
             migrationBuilder.DropTable(
                 name: "Users");
         }

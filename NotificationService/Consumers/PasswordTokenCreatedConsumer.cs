@@ -14,17 +14,14 @@ namespace Notification_API.Consumers
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _servcie;
         private readonly ILogger<PasswordTokenCreatedConsumer> _logger;
-        private readonly IProcessedEventChecker _processedEventChecker;
 
         public PasswordTokenCreatedConsumer(IDbContextFactory<NotificationContext> dbContextFactory,
             INotificationServcie servcie,
-            ILogger<PasswordTokenCreatedConsumer> logger,
-            IProcessedEventChecker processedEventChecker)
+            ILogger<PasswordTokenCreatedConsumer> logger)
         {
             _dbContextFactory = dbContextFactory;
             _servcie = servcie;
             _logger = logger;
-            _processedEventChecker = processedEventChecker;
         }
 
         public async Task Consume(ConsumeContext<PasswordTokenCreated> context)
@@ -32,21 +29,6 @@ namespace Notification_API.Consumers
             _logger.LogInformation($"Password token message send start at {DateTime.UtcNow}");
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
-            var processedEvent = new ProcessedEvent()
-            {
-                Id = context.MessageId ?? Guid.Empty,
-                Type = this.GetType().Name.Replace("Consumer", ""),
-                RegistrationTime = DateTime.UtcNow,
-            };
-
-            var check = await _processedEventChecker.CheckRegistrationAsync(processedEvent);
-
-            if (check)
-            {
-                _logger.LogWarning($"Event {context.MessageId} already started");
-                return;
-            }
 
             var address = context.Message.MessageAddress;
 

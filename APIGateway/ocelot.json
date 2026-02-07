@@ -145,6 +145,18 @@
       ]
     },
     {
+      "UpstreamPathTemplate": "/api/auth/google/login",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/auth/google/login",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5004
+        }
+      ]
+    },
+    {
       "UpstreamPathTemplate": "/api/auth/refresh",
       "UpstreamHttpMethod": [ "POST" ],
       "DownstreamPathTemplate": "/auth/refresh",

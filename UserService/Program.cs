@@ -43,11 +43,21 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<PasswordCreatedConsumer>();
 
+    x.AddConsumer<UserSocialAccountCreatedConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.ReceiveEndpoint("password-created-user-queue", e =>
+        cfg.ReceiveEndpoint("password-user-queue", e =>
         {
             e.ConfigureConsumer<PasswordCreatedConsumer>(context);
+
+            e.PrefetchCount = 10;
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
+        });
+
+        cfg.ReceiveEndpoint("user-social-account-user-queue", e =>
+        {
+            e.ConfigureConsumer<UserSocialAccountCreatedConsumer>(context);
 
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));

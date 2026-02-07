@@ -26,7 +26,6 @@ namespace Notification_API.Consumers
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == context.Message.Id);
 
             if (user == null)
