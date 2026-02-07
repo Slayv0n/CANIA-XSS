@@ -6,16 +6,6 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var secretKey = Environment.GetEnvironmentVariable("JwtSettings_SecretKey");
-var issuer = Environment.GetEnvironmentVariable("JwtSettings_Issuer");
-var audience = Environment.GetEnvironmentVariable("JwtSettings_Audience");
-
-Console.WriteLine("=== JWT Configuration Debug ===");
-Console.WriteLine($"SecretKey: {secretKey ?? "NULL"}");
-Console.WriteLine($"Issuer: {issuer ?? "NULL"}");
-Console.WriteLine($"Audience: {audience ?? "NULL"}");
-Console.WriteLine("================================");
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

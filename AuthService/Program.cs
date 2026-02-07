@@ -6,10 +6,15 @@ using AuthDb;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
+using System;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +28,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddCookie(options =>
 {
-    options.Cookie.Name = "google-auth";
+    options.Cookie.Name = "auth-cookie";
     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
     options.SlidingExpiration = true;
 
@@ -32,7 +37,7 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.IsEssential = true;
     options.Cookie.HttpOnly = false;
 })
-.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+.AddOpenIdConnect("Google", options =>
 {
     options.Authority = "https://accounts.google.com";
     options.ClientId = builder.Configuration.GetValue<string>("Google_ClientId")
@@ -54,8 +59,117 @@ builder.Services.AddAuthentication(options =>
     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
     options.CorrelationCookie.IsEssential = true;
     options.CorrelationCookie.HttpOnly = false;
-});
 
+    options.Events = new OpenIdConnectEvents
+    {
+        OnTokenValidated = context =>
+        {
+            var identity = (ClaimsIdentity?)context.Principal?.Identity;
+
+            identity?.AddClaim(new Claim("provider", "google"));
+
+            Console.WriteLine($"Token validated, provider: google");
+
+            return Task.CompletedTask;
+        }
+    };
+})
+.AddOAuth("GitHub", "Login with GitHub", options =>
+{
+    options.ClientId = builder.Configuration.GetValue<string>("GitHub_ClientId")
+        ?? throw new InvalidOperationException("GitHub_ClientId is required");
+    options.ClientSecret = builder.Configuration.GetValue<string>("GitHub_SecretKey")
+        ?? throw new InvalidOperationException("GitHub_SecretKey is required");
+
+    options.AuthorizationEndpoint = "https://github.com/login/oauth/authorize";
+    options.TokenEndpoint = "https://github.com/login/oauth/access_token";
+    options.UserInformationEndpoint = "https://api.github.com/user";
+
+    options.Scope.Add("user:email");
+    options.Scope.Add("read:user");
+
+    options.CallbackPath = "/signin-github";
+    options.SaveTokens = true;
+
+    options.CorrelationCookie.MaxAge = TimeSpan.FromMinutes(10);
+    options.CorrelationCookie.SameSite = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.CorrelationCookie.IsEssential = true;
+
+    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
+    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "login");
+
+    options.Events = new OAuthEvents
+    {
+        OnCreatingTicket = async context =>
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+            request.Headers.Add("User-Agent", "Cania");
+            request.Headers.Add("Accept", "application/vnd.github+json");
+
+            var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+            response.EnsureSuccessStatusCode();
+
+            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var userElement = payload.RootElement;
+
+            string? email = null;
+            if (userElement.TryGetProperty("email", out var emailElement) &&
+                !emailElement.ValueKind.Equals(JsonValueKind.Null))
+            {
+                email = emailElement.GetString();
+            }
+
+            if (string.IsNullOrEmpty(email) &&
+                userElement.TryGetProperty("public_email", out var publicEmailElement) &&
+                !publicEmailElement.ValueKind.Equals(JsonValueKind.Null))
+            {
+                email = publicEmailElement.GetString();
+            }
+
+            if (string.IsNullOrEmpty(email))
+            {
+                var emailRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/emails");
+                emailRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+                emailRequest.Headers.Add("User-Agent", "Cania");
+                emailRequest.Headers.Add("Accept", "application/vnd.github+json");
+
+                var emailResponse = await context.Backchannel.SendAsync(emailRequest, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+                if (emailResponse.IsSuccessStatusCode)
+                {
+                    using var emailPayload = JsonDocument.Parse(await emailResponse.Content.ReadAsStringAsync());
+
+                    var primaryEmailElement = emailPayload.RootElement.EnumerateArray()
+                        .FirstOrDefault(e =>
+                            e.TryGetProperty("primary", out var primaryProp) &&
+                            primaryProp.ValueKind == JsonValueKind.True);
+
+                    if (primaryEmailElement.ValueKind != JsonValueKind.Null &&
+                        primaryEmailElement.TryGetProperty("email", out var emailProp) &&
+                        !emailProp.ValueKind.Equals(JsonValueKind.Null))
+                    {
+                        email = emailProp.GetString();
+                    }
+                }
+            }
+
+            bool emailVerified = true;
+            if (string.IsNullOrEmpty(email))
+            {
+                var login = userElement.GetProperty("login").GetString();
+                email = $"{login}@github.com";
+                emailVerified = false;
+            }
+
+            context.Identity.AddClaim(new Claim(ClaimTypes.Email, email));
+            context.Identity.AddClaim(new Claim("email_verified", emailVerified.ToString().ToLower()));
+            context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userElement.GetProperty("id").GetInt64().ToString()));
+            context.Identity.AddClaim(new Claim(ClaimTypes.Name, userElement.GetProperty("login").GetString()));
+            context.Identity.AddClaim(new Claim("provider", "github"));
+        }
+    };
+});
 
 builder.Services.AddAuthorization();
 
@@ -197,17 +311,15 @@ app.MapPost("/auth/logout/all", async (TokenRequest request, HttpContext context
     }
 });
 
-app.MapGet("/auth/google/login", async (HttpContext context) =>
-{
-    var properties = new AuthenticationProperties
-    {
-        RedirectUri = "/auth/google/callback"
-    };
+//Social auth
 
-    return Results.Challenge(properties, new[] { OpenIdConnectDefaults.AuthenticationScheme });
-});
+app.MapGet("/auth/login/google", () =>
+    Results.Challenge(new AuthenticationProperties { RedirectUri = "/auth/callback" }, new[] { "Google" }));
 
-app.MapGet("/auth/google/callback", async (
+app.MapGet("/auth/login/github", () =>
+    Results.Challenge(new AuthenticationProperties { RedirectUri = "/auth/callback" }, new[] { "GitHub" }));
+
+app.MapGet("/auth/callback", async (
     HttpContext context,
     ISocialAuthenticationService service) =>
 {

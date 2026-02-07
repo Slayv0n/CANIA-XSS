@@ -35,10 +35,11 @@ namespace Auth_API.Services
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var googleId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var provider = claimsPrincipal.FindFirstValue("provider");
+            var providerId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
             var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
                 
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
+            if (string.IsNullOrEmpty(provider) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerId))
             {
                 throw new InvalidOperationException("Email is required");
             }
@@ -46,42 +47,43 @@ namespace Auth_API.Services
             var socialAccount = await db.UserSocialAccounts
                 .Include(usa => usa.User)
                 .FirstOrDefaultAsync(usa =>
-                    usa.Provider == "google" && usa.ProviderUserId == googleId);
+                    usa.Provider == provider && usa.ProviderUserId == providerId);
 
-            User user;
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
 
             if (socialAccount == null)
             {
-                user = new User
+                if (user == null)
                 {
-                    Id = Guid.NewGuid(),
-                    Email = email.ToLower().Trim(),
-                    PasswordHash = null,
-                    Status = Status.Active,
-                    LastUpdated = DateTime.UtcNow,
-                };
+                    user = new User
+                    {
+                        Email = email.ToLower().Trim(),
+                        PasswordHash = null,
+                        Status = Status.Active,
+                        LastUpdated = DateTime.UtcNow,
+                    };
 
-                await db.Users.AddAsync(user);
-                await db.SaveChangesAsync();
+                    await db.Users.AddAsync(user);
+                    await db.SaveChangesAsync();
+
+                    await _publishEndpoint.Publish<UserSocialAccountCreated>(new
+                    {
+                        Id = user.Id,
+                        Email = user.Email,
+                        Status = Status.Active,
+                    });
+                }
 
                 socialAccount = new UserSocialAccount
                 {
-                    Id = Guid.NewGuid(),
                     UserId = user.Id,
-                    Provider = "google",
-                    ProviderUserId = googleId,
+                    Provider = provider,
+                    ProviderUserId = providerId,
                     LastLoginAt = DateTime.UtcNow
                 };
 
                 await db.UserSocialAccounts.AddAsync(socialAccount);
                 await db.SaveChangesAsync();
-
-                await _publishEndpoint.Publish<UserSocialAccountCreated>(new
-                {
-                    Id = user.Id,
-                    Email = user.Email,
-                    Status = Status.Active,
-                });
             }
             else
             {

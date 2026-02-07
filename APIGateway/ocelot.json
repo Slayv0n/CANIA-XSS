@@ -145,9 +145,45 @@
       ]
     },
     {
-      "UpstreamPathTemplate": "/api/auth/google/login",
+      "UpstreamPathTemplate": "/api/auth/login/google",
       "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/auth/google/login",
+      "DownstreamPathTemplate": "/auth/login/google",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5004
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/auth/login/github",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/auth/login/github",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5004
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/signin-github",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/signin-github",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5004
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/auth/callback",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/auth/callback",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
