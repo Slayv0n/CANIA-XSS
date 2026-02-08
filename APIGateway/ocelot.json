@@ -147,6 +147,7 @@
     {
       "UpstreamPathTemplate": "/api/auth/login/google",
       "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamScheme": "https",
       "DownstreamPathTemplate": "/auth/login/google",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -159,6 +160,7 @@
     {
       "UpstreamPathTemplate": "/api/auth/login/github",
       "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamScheme": "https",
       "DownstreamPathTemplate": "/auth/login/github",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -171,6 +173,7 @@
     {
       "UpstreamPathTemplate": "/api/signin-github",
       "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamScheme": "https",
       "DownstreamPathTemplate": "/signin-github",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -183,6 +186,7 @@
     {
       "UpstreamPathTemplate": "/api/auth/callback",
       "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamScheme": "https",
       "DownstreamPathTemplate": "/auth/callback",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

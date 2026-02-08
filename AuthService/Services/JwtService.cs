@@ -74,7 +74,6 @@ namespace Auth_API.Services
                 TokenHash = ComputeSha256Hash(refreshToken),
                 ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.ExpirationRefreshTokenDays),
                 Status = Status.Active
-
             };
 
             await db.RefreshTokens.AddAsync(refreshTokenRecord);

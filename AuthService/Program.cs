@@ -8,18 +8,20 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
-using System;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine(builder.Configuration.GetValue<string>("Google_ClientId"));
-Console.WriteLine(builder.Configuration.GetValue<string>("Google_SecretKey"));
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -135,6 +137,8 @@ builder.Services.AddAuthentication(options =>
                 emailRequest.Headers.Add("User-Agent", "Cania");
                 emailRequest.Headers.Add("Accept", "application/vnd.github+json");
 
+                context.HttpContext.Request.Host = new HostString("localhost:5004");
+
                 var emailResponse = await context.Backchannel.SendAsync(emailRequest, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
                 if (emailResponse.IsSuccessStatusCode)
                 {
@@ -167,7 +171,12 @@ builder.Services.AddAuthentication(options =>
             context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userElement.GetProperty("id").GetInt64().ToString()));
             context.Identity.AddClaim(new Claim(ClaimTypes.Name, userElement.GetProperty("login").GetString()));
             context.Identity.AddClaim(new Claim("provider", "github"));
-        }
+        },
+
+        //OnRedirectToAuthorizationEndpoint = async context =>
+        //{
+        //    context.RedirectUri = "https://localhost:7018/api/auth/callback";
+        //}
     };
 });
 
@@ -228,6 +237,8 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 app.UseRouting();
 
