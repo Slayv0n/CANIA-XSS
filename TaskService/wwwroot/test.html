@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>SSE Test</title>
+</head>
+<body>
+
+
+    <script>
+        const postData = {
+            Host: "localhost",
+            TypeOfAttacks: [],
+            Depth: 0
+        }
+
+        fetch("/task/create", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(postData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                const taskId = data.id;
+                const eventSource = new EventSource(`/task/${taskId}`);
+                eventSource.addEventListener('task', event => {
+                    console.log(event.data);
+            });
+         });
+    </script>
+</body>
+</html>

@@ -10,6 +10,7 @@
   <Project Path="SharedModels/SharedModels.csproj" />
   <Project Path="SubscribeDb/SubscribeDb.csproj" Id="8406a250-e443-4245-b147-186695bb32c5" />
   <Project Path="SubscribeService/Subscribe API.csproj" />
+  <Project Path="TaskDb/TaskDb.csproj" Id="15818afa-2978-4cdf-b6c2-2c75ec1a5ac4" />
   <Project Path="TaskService/Task API.csproj" />
   <Project Path="UserDb/UserDb.csproj" />
   <Project Path="UserService/User API.csproj" />

@@ -5,6 +5,5 @@
         Deleted = -1,
         NotActive = 0,
         Active = 1,
-        Updated = 2
     }
 }

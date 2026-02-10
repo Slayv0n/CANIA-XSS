@@ -166,17 +166,12 @@ builder.Services.AddAuthentication(options =>
                 emailVerified = false;
             }
 
-            context.Identity.AddClaim(new Claim(ClaimTypes.Email, email));
+            context.Identity!.AddClaim(new Claim(ClaimTypes.Email, email));
             context.Identity.AddClaim(new Claim("email_verified", emailVerified.ToString().ToLower()));
             context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userElement.GetProperty("id").GetInt64().ToString()));
-            context.Identity.AddClaim(new Claim(ClaimTypes.Name, userElement.GetProperty("login").GetString()));
+            context.Identity.AddClaim(new Claim(ClaimTypes.Name, userElement.GetProperty("login").GetString() ?? ""));
             context.Identity.AddClaim(new Claim("provider", "github"));
         },
-
-        //OnRedirectToAuthorizationEndpoint = async context =>
-        //{
-        //    context.RedirectUri = "https://localhost:7018/api/auth/callback";
-        //}
     };
 });
 
