@@ -7,6 +7,7 @@ using Subscribe_API.Models.Requests;
 using Subscribe_API.Services;
 using SubscribeDb;
 using SubscribeDb.Models;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,12 +35,23 @@ builder.Services.AddScoped<ISubscribeService, SubscribeService>();
 
 var app = builder.Build();
 
-app.MapPost("/subscribes/subscribe/{id:guid}", async (ISubscribeService service, Guid id, Tariff tariff) =>
+app.MapPost("/subscribes/subscribe", async (ISubscribeService service, HttpContext context, Tariff tariff) =>
 {
     try
     {
-        var subscribe = await service.SubscribeAsync(id, tariff);
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        var subscribe = await service.SubscribeAsync(userId, tariff);
         return Results.Ok(subscribe);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
     }
     catch (Exception ex)
     {
@@ -47,33 +59,55 @@ app.MapPost("/subscribes/subscribe/{id:guid}", async (ISubscribeService service,
     }
 });
 
-app.MapPut("/subscribes/update/{id:guid}", async (ISubscribeService service, Guid id, Tariff tariff) =>
+app.MapPut("/subscribes/update", async (ISubscribeService service, HttpContext context, Tariff tariff) =>
 {
     try
     {
-        var subscribe = await service.UpdateAsync(id, tariff);
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        var subscribe = await service.UpdateAsync(userId, tariff);
         return Results.Ok(subscribe);
     }
     catch (NotFoundException ex)
     {
         return Results.NotFound(ex.Message);
     }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
     catch (Exception ex)
     {
         return Results.BadRequest(ex.Message);
     }
 });
 
-app.MapDelete("/subscribes/unscribe/{id:guid}", async (ISubscribeService service, Guid id) =>
+app.MapDelete("/subscribes/unscribe", async (ISubscribeService service, HttpContext context) =>
 {
     try
     {
-        await service.UnscribeAsync(id);
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        await service.UnscribeAsync(userId);
         return Results.Ok();
     }
     catch (NotFoundException ex)
     {
         return Results.NotFound(ex.Message);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
     }
     catch (Exception ex)
     {

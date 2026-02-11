@@ -4,11 +4,12 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Password_API.Consumers;
 using Password_API.Models.Requests;
+using Password_API.Service;
 using Password_API.Services;
 using PasswordDb;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using Password_API.Service;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,11 +79,18 @@ RecurringJob.AddOrUpdate<ICleanupService>(
 
 app.MapHangfireDashboard();
 
-app.MapPut("/passwords/update/{id::guid}",async (IPasswordService service, Guid id, UpdateRequest request) =>
+app.MapPut("/passwords/update",async (IPasswordService service, HttpContext context, UpdateRequest request) =>
 {
     try
     {
-        await service.UpdateAsync(id, request.Password);
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        await service.UpdateAsync(userId, request.Password);
         return Results.Ok();
     }
     catch(NotFoundException ex)

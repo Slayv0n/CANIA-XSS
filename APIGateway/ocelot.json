@@ -13,16 +13,23 @@
       ]
     },
     {
-      "UpstreamPathTemplate": "/api/users/{id}",
+      "UpstreamPathTemplate": "/api/users/account",
       "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/users/{id}",
+      "DownstreamPathTemplate": "/users/account",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 5001
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
     },
     {
       "UpstreamPathTemplate": "/api/users/all",
@@ -34,43 +41,68 @@
           "Host": "localhost",
           "Port": 5001
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     },
     {
-      "UpstreamPathTemplate": "/api/users/update/{id}",
+      "UpstreamPathTemplate": "/api/users/update",
       "UpstreamHttpMethod": [ "PUT" ],
-      "DownstreamPathTemplate": "/users/update/{id}",
+      "DownstreamPathTemplate": "/users/update",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 5001
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
     },
     {
-      "UpstreamPathTemplate": "/api/users/delete/{id}",
+      "UpstreamPathTemplate": "/api/users/delete",
       "UpstreamHttpMethod": [ "DELETE" ],
-      "DownstreamPathTemplate": "/users/delete/{id}",
+      "DownstreamPathTemplate": "/users/delete",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 5001
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
     },
     { //Passwords
-      "UpstreamPathTemplate": "/api/passwords/update/{id}",
+      "UpstreamPathTemplate": "/api/passwords/update",
       "UpstreamHttpMethod": [ "PUT" ],
-      "DownstreamPathTemplate": "/passwords/update/{id}",
+      "DownstreamPathTemplate": "/passwords/update",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 5002
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
     },
     {
       "UpstreamPathTemplate": "/api/passwords/reset/",
@@ -97,40 +129,61 @@
       ]
     },
     { //Subscribe
-      "UpstreamPathTemplate": "/api/subscribes/subscribe/{id}",
+      "UpstreamPathTemplate": "/api/subscribes/subscribe",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/subscribes/subscribe/{id}",
+      "DownstreamPathTemplate": "/subscribes/subscribe",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 5003
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
     },
     {
-      "UpstreamPathTemplate": "/api/subscribes/update/{id}",
+      "UpstreamPathTemplate": "/api/subscribes/update",
       "UpstreamHttpMethod": [ "PUT" ],
-      "DownstreamPathTemplate": "/subscribes/update/{id}",
+      "DownstreamPathTemplate": "/subscribes/update",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 5003
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
     },
     {
-      "UpstreamPathTemplate": "/api/subscribes/unscribe/{id}",
+      "UpstreamPathTemplate": "/api/subscribes/unscribe",
       "UpstreamHttpMethod": [ "DELETE" ],
-      "DownstreamPathTemplate": "/subscribes/unscribe/{id}",
+      "DownstreamPathTemplate": "/subscribes/unscribe",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 5003
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
     },
     { //Authentication
       "UpstreamPathTemplate": "/api/auth/login",
@@ -241,6 +294,70 @@
       },
       "AddHeadersToRequest": {
         "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
+    },
+    { //Task
+      "UpstreamPathTemplate": "/api/task/create",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/task/create",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5005
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/task/{taskId}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/task/{taskId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5005
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/task/connection/{taskId}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/task/connection/{taskId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5005
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/task/cancel/{taskId}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/task/cancel/{taskId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5005
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
       }
     }
   ],

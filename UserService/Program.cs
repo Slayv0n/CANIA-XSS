@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using SharedModels.Exceptions;
 using SharedModels.General;
+using System;
 using UserAPI.Consumers;
 using UserAPI.Models.Requests;
 using UserAPI.Service;
@@ -94,16 +95,27 @@ app.MapPost("/users/create", async (IUserService userService, CreateRequest requ
     }   
 });
 
-app.MapGet("/users/{id::guid}", async (IUserService userService, Guid id, string status = "") =>
+app.MapGet("/users", async (IUserService userService, HttpContext context, string status = "") =>
 {
     try
     {
-        var user = await userService.GetUserAsync(id, status);
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        var user = await userService.GetUserAsync(userId, status);
         return Results.Ok(user);
     }
     catch (NotFoundException ex)
     {
         return Results.NotFound(ex.Message);
+    }
+    catch(AuthException)
+    {
+        return Results.Unauthorized();
     }
     catch (Exception ex)
     {
@@ -123,32 +135,54 @@ app.MapGet("/users/all", async (IUserService userService, string status = "") =>
         return Results.BadRequest(ex.Message);
     }
 });
-app.MapPut("/users/update/{id::guid}", async (IUserService userService, Guid id, UpdateRequest request) =>
+app.MapPut("/users/update", async (IUserService userService, HttpContext context, UpdateRequest request) =>
 {
     try
     {
-        var user = await userService.UpdateUserAsync(id, request.Email);
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        var user = await userService.UpdateUserAsync(userId, request.Email);
         return Results.Ok(user);
     }
     catch (NotFoundException ex)
     {
         return Results.NotFound(ex.Message);
     }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
     catch (Exception ex)
     {
         return Results.BadRequest(ex.Message);
     }
 });
-app.MapDelete("/users/delete/{id::guid}", async (IUserService userService, Guid id) =>
+app.MapDelete("/users/delete", async (IUserService userService, HttpContext context) =>
 {
     try
     {
-        await userService.DeleteUserAsync(id);
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        await userService.DeleteUserAsync(userId);
         return Results.Ok();
     }
     catch (NotFoundException ex)
     {
         return Results.NotFound(ex.Message);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
     }
     catch (Exception ex)
     {
