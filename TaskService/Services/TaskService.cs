@@ -130,7 +130,7 @@ namespace Task_API.Services
                 if (task.Status == StatusTask.Completed)
                     yield break;
 
-                await Task.Delay(1000, cancellationToken);
+                await Task.Delay(1000);
             }
         }
     }

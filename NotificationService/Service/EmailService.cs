@@ -55,7 +55,7 @@ namespace Notification_API.Service
                 message.Body = bb.ToMessageBody();
 
                 using var smtp = new SmtpClient();
-                await smtp.ConnectAsync(smtpHost, smtpPort);
+                await smtp.ConnectAsync(smtpHost, 1025);
 
                 if (!string.IsNullOrEmpty(smtpUsername) && !string.IsNullOrEmpty(smtpPassword))
                 {

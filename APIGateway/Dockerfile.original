@@ -6,24 +6,22 @@ USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
-ENV JwtSettings_SecretKey="developmentKey"
-ENV JwtSettings_Issuer="developmentIss"
-ENV JwtSettings_Audience="developmentAud"
+
 
 # Этот этап используется для сборки проекта службы
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["APIGateway/APIGateway.csproj", "APIGateway/"]
-RUN dotnet restore "./APIGateway/APIGateway.csproj"
+COPY ["APIGateway.csproj", "APIGateway/"]
+RUN dotnet restore "APIGateway/APIGateway.csproj"
 COPY . .
 WORKDIR "/src/APIGateway"
-RUN dotnet build "./APIGateway.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "APIGateway.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./APIGateway.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "APIGateway/APIGateway.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
 FROM base AS final

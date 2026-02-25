@@ -17,8 +17,10 @@ using UserDb.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var db = builder.Configuration.GetValue<string>("User_Db_Connection");
+
 builder.Services.AddDbContextFactory<UserContext>(
-    options => options.UseNpgsql(Environment.GetEnvironmentVariable("USER_DB_CONNECTION")));
+    options => options.UseNpgsql(builder.Configuration.GetValue<string>("User_Db_Connection")));
 
 builder.Services.AddHangfire(config =>
 {
@@ -26,7 +28,7 @@ builder.Services.AddHangfire(config =>
         .UseRecommendedSerializerSettings()
         .UsePostgreSqlStorage(options =>
         {
-            options.UseNpgsqlConnection(Environment.GetEnvironmentVariable("USER_DB_CONNECTION"));
+            options.UseNpgsqlConnection(builder.Configuration.GetValue<string>("User_Db_Connection"));
         });
 });
 

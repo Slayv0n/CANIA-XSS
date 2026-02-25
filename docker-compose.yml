@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: APIGateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8080
+    depends_on:
+      - user-api
+
+  user-api:
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+    expose:
+      - "8082"
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8082
+
+  user-db:
+    image: postgres:latest
+    container_name: user_db
+    restart: always
+    environment:
+      POSTGRES_USER: CaniaUserAdmin
+      POSTGRES_PASSWORD: developmentPassword
+      POSTGRES_DB: UserDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+
+volumes:
+  db_data: 
