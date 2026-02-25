@@ -44,6 +44,8 @@ namespace Auth_API.Consumers
 
             await db.Users.AddAsync(user);
             await db.SaveChangesAsync();
+
+            _logger.LogInformation($"{this.GetType()} ended at {DateTime.UtcNow}");
         }
     }
 }

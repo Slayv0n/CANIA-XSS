@@ -3,8 +3,6 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Events.Passwords;
 using SharedModels.Exceptions;
-using SharedModels.General;
-using SharedModels.ProcessedEvents;
 
 namespace Auth_API.Consumers
 {
@@ -38,6 +36,8 @@ namespace Auth_API.Consumers
             user.LastUpdated = DateTime.UtcNow;
 
             await db.SaveChangesAsync();
+
+            _logger.LogInformation($"{this.GetType()} ended at {DateTime.UtcNow}");
         }
     }
 }

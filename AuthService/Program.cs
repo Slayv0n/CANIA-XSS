@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
 using System.Net.Http.Headers;
@@ -31,7 +30,8 @@ builder.Services.AddAuthentication(options =>
 .AddCookie(options =>
 {
     options.Cookie.Name = "auth-cookie";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(Convert.ToDouble(
+        builder.Configuration.GetValue<string>("JwtSettings_ExpirationAccessTokenMinutes") ?? "15"));
     options.SlidingExpiration = true;
 
     options.Cookie.SameSite = SameSiteMode.None;
@@ -93,7 +93,8 @@ builder.Services.AddAuthentication(options =>
     options.CallbackPath = "/signin-github";
     options.SaveTokens = true;
 
-    options.CorrelationCookie.MaxAge = TimeSpan.FromMinutes(10);
+    options.CorrelationCookie.MaxAge = TimeSpan.FromMinutes(Convert.ToDouble(
+        builder.Configuration.GetValue<string>("JwtSettings_ExpirationAccessTokenMinutes") ?? "15"));
     options.CorrelationCookie.SameSite = SameSiteMode.None;
     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
     options.CorrelationCookie.IsEssential = true;
@@ -137,7 +138,7 @@ builder.Services.AddAuthentication(options =>
                 emailRequest.Headers.Add("User-Agent", "Cania");
                 emailRequest.Headers.Add("Accept", "application/vnd.github+json");
 
-                context.HttpContext.Request.Host = new HostString("localhost:5004");
+                context.HttpContext.Request.Host = new HostString(builder.Configuration.GetValue<string>("AUTH_HOST"));
 
                 var emailResponse = await context.Backchannel.SendAsync(emailRequest, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
                 if (emailResponse.IsSuccessStatusCode)
@@ -343,7 +344,7 @@ app.MapGet("/auth/callback", async (
 
     var claimsPrincipal = authenticateResult.Principal;
 
-    var response = await service.Login(claimsPrincipal);
+    var response = await service.LoginAsync(claimsPrincipal);
 
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 

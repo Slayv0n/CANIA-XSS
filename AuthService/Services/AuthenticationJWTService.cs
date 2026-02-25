@@ -4,6 +4,7 @@ using AuthDb.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
 using SharedModels.Hash;
+using System.Reflection;
 
 namespace Auth_API.Services
 {
@@ -31,6 +32,8 @@ namespace Auth_API.Services
 
         public async Task<LoginResponse> LoginAsync(string email, string password)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -50,6 +53,8 @@ namespace Auth_API.Services
             var accessToken = _jwtService.GenerateAccessToken(user.Id);
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user.Id);
 
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
+
             return new LoginResponse()
             {
                 UserId = user.Id,
@@ -60,6 +65,8 @@ namespace Auth_API.Services
 
         public async Task LogoutAllAsync(Guid userId, string token)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             var verify = await _jwtService.VerifyRefreshTokenAsync(token);
 
             if (!verify)
@@ -69,10 +76,14 @@ namespace Auth_API.Services
             }
 
             await _jwtService.RevokeAllRefreshTokenAsync(userId);
+
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
         }
 
         public async Task LogoutAsync(string token)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             var verify = await _jwtService.VerifyRefreshTokenAsync(token);
 
             if (!verify)
@@ -82,10 +93,14 @@ namespace Auth_API.Services
             }
 
             await _jwtService.RevokeRefreshTokenAsync(token);
+
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
         }
 
         public async Task<LoginResponse> RefreshAsync(string token)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             var verify = await _jwtService.VerifyRefreshTokenAsync(token);
 
             if (!verify)
@@ -100,6 +115,8 @@ namespace Auth_API.Services
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(userId);
 
             await _jwtService.RevokeRefreshTokenAsync(token);
+
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
 
             return new LoginResponse()
             {

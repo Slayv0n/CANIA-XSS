@@ -5,13 +5,14 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Events.Users;
 using SharedModels.General;
+using System.Reflection;
 using System.Security.Claims;
 
 namespace Auth_API.Services
 {
     public interface ISocialAuthenticationService
     {
-        public Task<LoginResponse> Login(ClaimsPrincipal claimsPrincipal);
+        public Task<LoginResponse> LoginAsync(ClaimsPrincipal claimsPrincipal);
     }
     public class SocialAuthenticationService : ISocialAuthenticationService
     {
@@ -31,8 +32,10 @@ namespace Auth_API.Services
             _logger = logger;
         }
 
-        public async Task<LoginResponse> Login(ClaimsPrincipal claimsPrincipal)
+        public async Task<LoginResponse> LoginAsync(ClaimsPrincipal claimsPrincipal)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var provider = claimsPrincipal.FindFirstValue("provider");
@@ -94,6 +97,8 @@ namespace Auth_API.Services
 
             var accessToken = _jwtService.GenerateAccessToken(user.Id);
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user.Id);
+
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
 
             return new LoginResponse()
             {

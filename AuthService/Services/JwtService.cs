@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using SharedModels.Exceptions;
 using SharedModels.General;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -39,6 +40,8 @@ namespace Auth_API.Services
 
         public string GenerateAccessToken(Guid userId)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_jwtSettings.SecretKey);
 
@@ -59,11 +62,16 @@ namespace Auth_API.Services
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
+
             return tokenHandler.WriteToken(token);
         }
 
         public async Task<string> GenerateRefreshTokenAsync(Guid userId)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
@@ -79,11 +87,15 @@ namespace Auth_API.Services
             await db.RefreshTokens.AddAsync(refreshTokenRecord);
             await db.SaveChangesAsync();
 
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
+
             return refreshToken;
         }
 
         public async Task<Guid> GetUserIdAsync(string token)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var tokenHash = ComputeSha256Hash(token);
@@ -98,11 +110,15 @@ namespace Auth_API.Services
                 throw new AuthException($"Token invalid");
             }
 
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
+
             return userId;
         }
 
         public async Task RevokeAllRefreshTokenAsync(Guid userId)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var tokens = await db.RefreshTokens.Where(r => r.UserId == userId).ToListAsync<RefreshToken>();
@@ -112,11 +128,15 @@ namespace Auth_API.Services
                 token.Status = Status.Deleted;
             }
 
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
+
             await db.SaveChangesAsync();
         }
 
         public async Task RevokeRefreshTokenAsync(string token)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var tokenHash = ComputeSha256Hash(token);
@@ -131,17 +151,23 @@ namespace Auth_API.Services
 
             refreshToken.Status = Status.Deleted;
 
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
+
             await db.SaveChangesAsync();
         }
 
         public async Task<bool> VerifyRefreshTokenAsync(string token)
         {
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} started at {DateTime.UtcNow}");
+
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var tokenHash = ComputeSha256Hash(token);
 
             var refreshToken = await db.RefreshTokens
                 .FirstOrDefaultAsync(r => r.TokenHash == tokenHash && r.ExpiresAt > DateTime.UtcNow);
+
+            _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
 
             return refreshToken != null;
         }

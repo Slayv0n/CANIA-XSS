@@ -39,6 +39,8 @@ namespace Auth_API.Consumers
             user.LastUpdated = DateTime.UtcNow;
 
             await db.SaveChangesAsync();
+
+            _logger.LogInformation($"{this.GetType()} ended at {DateTime.UtcNow}");
         }
     }
 }
