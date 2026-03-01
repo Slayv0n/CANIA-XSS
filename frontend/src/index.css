@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #C31C1A;
+  --color-main-text: #FFFBFB;
+  --color-desc-text: #9ca3af;
+  --color-main-bg: #121010;
+  --color-card-bg: rgba(255, 255, 255, 0.01);
+  --color-card-border: rgba(255, 255, 255, 0.1);
+  
+  /* Шрифты */
+  --font-title: "REM", sans-serif;
+  --font-body: "Raleway", sans-serif;
+  --font-mono: "Roboto Mono", monospace;
+}
+
+:root.light {
+  --color-main-bg: #FFFFFF;
+  --color-main-text: #121010;
+  --color-desc-text: #4b5563;
+  --color-card-bg: #FFFFFF;
+  --color-card-border: rgba(0, 0, 0, 0.1);
+  --color-brand-red: #A31614;
+}
+
+/* ГЛАВНОЕ ПРАВИЛО: */
+/* Применяем плавный переход ко всем элементам, которые умеют менять цвет */
+:root, body, header, nav, section, div, button, svg, path, span, p, h1, h2, h3, h4, input, select {
+  transition-property: background-color, border-color, color, fill, stroke, opacity;
+  transition-duration: 300ms !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Убираем фон в светлой теме плавно */
+.light .absolute.pointer-events-none.z-0 {
+  opacity: 0;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-main-bg);
+    color: var(--color-main-text);
+    font-family: var(--font-body);
+  }
+}
