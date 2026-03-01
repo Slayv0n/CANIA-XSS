@@ -52,7 +52,7 @@ export default function Safety({ onTryClick }) {
         <div className="w-full flex justify-end mt-20">
           <button 
             onClick={onTryClick}
-            className=" text-white px-10 py-4 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-red-800 transition-all cursor-pointer group"
+            className=" bg-brand-red text-white px-10 py-4 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-red-800 transition-all cursor-pointer group"
           >
             Попробовать 
             <span className="group-hover:translate-x-1 transition-transform">↗</span>

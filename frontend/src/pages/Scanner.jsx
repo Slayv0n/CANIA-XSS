@@ -1,14 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer'; // Добавили футер
-import {Download} from '../assets/icons';
+import {Download, Report1, Report2, Report3, ReportReady} from '../assets/icons';
+
 export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth }) {
   const navigate = useNavigate();
-  
-  // Состояния для формы
   const [url, setUrl] = useState('');
-  const [isScanning, setIsScanning] = useState(false); // Для показа спиннера
+  
+  // Новые состояния
+  const [scanStatus, setScanStatus] = useState('idle'); // 'idle' | 'scanning' | 'ready'
+  const [textIndex, setTextIndex] = useState(0);
+
+  // Наш массив текстов
+  const scanTexts =[
+    "проверяем код...",
+    "ищем уязвимости...",
+    "проверка может занять несколько минут..."
+  ];
+
+  // Хук "Бесконечного цикла" для смены текста
+  useEffect(() => {
+    // Запускаем таймер только если статус 'scanning'
+    if (scanStatus !== 'scanning') return;
+
+    // setInterval запускает функцию каждые 3000 мс (3 сек)
+    const interval = setInterval(() => {
+      setTextIndex((prevIndex) => (prevIndex + 1) % scanTexts.length); // % не дает индексу выйти за пределы массива
+    }, 3000);
+
+    // Очистка таймера при остановке
+    return () => clearInterval(interval);
+  }, [scanStatus]);
+
+  // Функция старта (вешаем на кнопку "Проверить")
+  const startScan = () => {
+   if (!url) {
+    alert("Сначала введите URL сайта для проверки!");
+    return;
+  }
+    setScanStatus('scanning');
+    setTextIndex(0); // Начинаем с первого текста
+  };
+
+  // Функция финиша (вешаем на сам кружок)
+  const finishScan = () => {
+    if (scanStatus === 'scanning') {
+      setScanStatus('ready');
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -43,7 +83,7 @@ export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth }) {
                 className="flex-1 bg-white/3 border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors"
             />
             <button 
-                onClick={() => setIsScanning(true)} // Включаем "сканер"
+                onClick={startScan}
                 className="bg-brand-red text-white px-10 py-4 font-bold uppercase rounded flex items-center justify-center gap-2 hover:bg-red-700 transition-all cursor-pointer"
             >
                 Проверить <span>→</span>
@@ -69,11 +109,34 @@ export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth }) {
             </div>
         </section>
 
-        {/* Спиннер (показывается только при сканировании) */}
-        {isScanning && (
-            <div className="flex flex-col items-center justify-center py-10 animate-in fade-in">
-                <div className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-desc-text font-mono text-sm">проверяем код...</p>
+        {/* Секция загрузки/финиша */}
+        {scanStatus !== 'idle' && (
+            <div className="flex flex-col items-center justify-center py-12 min-h-62.5">
+                
+                {scanStatus === 'ready' ? (
+                    // ФИНАЛ: Показываем только твой SVG, так как текст уже внутри него
+                    <div className="animate-in zoom-in duration-300">
+                        <ReportReady />
+                    </div>
+                ) : (
+                    // В ПРОЦЕССЕ: Показываем кружок и меняющийся текст
+                    <>
+                        {/* Кружок загрузки (кликабельный для тестов) */}
+                        <div className="mb-8 cursor-pointer" onClick={finishScan}>
+                            <svg className="w-20 h-20 text-brand-red animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <circle cx="12" cy="12" r="10" strokeDasharray="45 20" />
+                            </svg>
+                        </div>
+
+                        {/* Анимированный текст */}
+                        <div className="h-16 flex items-start justify-center overflow-hidden w-full text-center relative pointer-events-none">
+                            <p key={textIndex} className="absolute animate-slide-text font-mono text-sm md:text-base text-desc-text">
+                                {scanTexts[textIndex]}
+                            </p>
+                        </div>
+                    </>
+                )}
+
             </div>
         )}
 

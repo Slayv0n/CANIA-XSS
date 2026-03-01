@@ -80,7 +80,9 @@ function App() {
               <FAQ />
           </div>
         </main>
-        <Footer />
+        <Footer 
+        onLoginClick={() => setIsLoginModalOpen(true)}
+        />
                 
       </>
     );
@@ -127,7 +129,8 @@ function App() {
             element={isAuth ? <Scanner onLogout={logout} currentTheme={theme} onThemeToggle={toggleTheme} isAuth={isAuth} /> : <Navigate to="/" replace />} 
           />
 
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
+          
 
         </Routes>
       </div>

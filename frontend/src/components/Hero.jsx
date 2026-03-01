@@ -21,7 +21,7 @@ export default function Hero({ onTryClick }) {
 
       <button 
         onClick={onTryClick}
-        className="bg-brand-red text-white px-16 py-5 rounded-sm font-bold uppercase flex items-center gap-3 hover:bg-red-700 transition-all cursor-pointer group"
+        className="bg-brand-red text-white px-16 py-5 rounded-sm font-bold uppercase flex items-center gap-3 hover:bg-red-800 transition-all cursor-pointer group"
       >
         Попробовать 
         <span className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">↗</span>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // 1. Импортируем хуки
 import { LogoFooter, LogoFull } from "../assets/icons";
 
-export default function Footer() {
+export default function Footer({ isAuth, onLoginClick }) {
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -57,7 +57,21 @@ export default function Footer() {
                     <div className="flex flex-col gap-4">
                         <h4 className="font-bold uppercase text-main-text mb-2">Навигация</h4>
                         <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium">
-                            <a href="#" className="hover:text-brand-red transition-colors">Функционал</a>
+                            <a 
+                                href="#" 
+                                className="hover:text-brand-red transition-colors" 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    
+                                    if (isAuth) {
+                                    navigate('/scanner'); 
+                                    } else {
+                                    onLoginClick();
+                                    }
+                                }} 
+                                >
+                                Функционал
+                            </a>
                             <a href="#" className="hover:text-brand-red transition-colors">Тарифы</a>
                             <a href="#" className="hover:text-brand-red transition-colors">EN</a>
                             <a href="#" className="hover:text-brand-red transition-colors">Оставить отзыв</a>
