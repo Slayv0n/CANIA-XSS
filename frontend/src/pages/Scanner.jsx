@@ -2,7 +2,7 @@ import React, { useState , useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer'; // Добавили футер
-import {Download, Report1, Report2, Report3, ReportReady} from '../assets/icons';
+import {Download, ReportReady} from '../assets/icons';
 
 export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth }) {
   const navigate = useNavigate();
