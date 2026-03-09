@@ -35,7 +35,7 @@ export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAu
         onClick={() => navigate('/')} 
         className="flex items-center cursor-pointer text-main-text hover:opacity-80 transition-opacity"
       >
-        <LogoFull className="w-32 md:w-40 h-auto" />
+        <LogoFull className="w-28 md:w-36 h-auto" />
       </div>
 
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-desc-text">
@@ -45,18 +45,18 @@ export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAu
               if(isAuth) navigate('/scanner'); 
               else onLoginClick();
           }} 
-          className="hover:text-brand-red  cursor-pointer"
-        >
+          className='p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm'
+          >
           Функционал
         </button>
-        <a href="#" className="hover:text-brand-red ">Тарифы</a>
+        <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">Тарифы</a>
         
         <button onClick={onThemeToggle} className="hover:text-brand-red cursor-pointer p-1 text-main-text">
           {currentTheme === 'dark' ? '☀️' : '🌙'}
         </button>
 
         <div className="h-4 w-px bg-card-border"></div> 
-        <a href="#" className="hover:text-brand-red ">EN</a>
+        <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">EN</a>
       </nav>
 
       <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 text-main-text">
@@ -67,7 +67,7 @@ export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAu
       {!isAuth ? (
         <button 
             onClick={onLoginClick} 
-            className="bg-brand-red pl-4 pr-5 py-2 rounded-sm text-sm font-bold text-white hover:bg-red-700 cursor-pointer flex items-center gap-2 "
+            className="bg-brand-red pl-6.5 pr-8 py-3 rounded-2xl text-sm font-bold text-white hover:bg-red-800 cursor-pointer flex items-center gap-2 "
         >
             <UserLoginIcon />
             Вход

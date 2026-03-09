@@ -8,3 +8,9 @@ export * from './GoogleIcon.jsx';
 export * from './GithubIcon.jsx';
 export * from './CloseIcon';
 export * from './GlowSpot.jsx';
+
+export * from './File.jsx';
+export * from './Shield.jsx';
+export * from './Search.jsx';
+export * from './Ai.jsx';
+export * from './Forward.jsx';

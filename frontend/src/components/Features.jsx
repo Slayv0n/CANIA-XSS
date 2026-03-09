@@ -1,5 +1,5 @@
 import React from 'react';
-
+import {Forward} from '../assets/icons/index.js'
 export default function Features({ onTryClick }) {
   const features = [
     {
@@ -68,9 +68,9 @@ export default function Features({ onTryClick }) {
         <div className="w-full flex justify-end">
             <button 
               onClick={onTryClick}
-              className="bg-brand-red text-white px-10 py-4 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-red-800 transition-colors cursor-pointer"
+              className="bg-transparent border-brand-red border-2 text-white px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-red-800 transition-colors cursor-pointer"
             >
-              Попробовать <span className="text-lg">↗</span>
+              <span className="flex gap-2 place-items-center text-lg">Попробовать бесплатно <Forward className='h-6'/> </span>
             </button>
         </div>
 
