@@ -1,20 +1,26 @@
 import React from 'react';
 
+import { Forward } from '../assets/icons';
 export default function Safety({ onTryClick }) {
   const safetyItems = [
     {
-      title: "ВВОДИМ ССЫЛКУ, ВЫБИРАЕМ ТИП И ГЛУБИНУ АТАКИ",
-      text: "Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices diam eget suspendisse.",
+      title: "Безопасность для вас",
+      text: `Все сканирования выполняются в изолированной среде. Мы не сохраняем ваши данные, не передаём их третьим лицам и не используем для обучения моделей.
+      После завершения аудита все временные файлы удаляются автоматически.`,
       spanClass: "md:col-start-1 md:col-span-2" 
     },
     {
-      title: "ВВОДИМ ССЫЛКУ, ВЫБИРАЕМ ТИП И ГЛУБИНУ АТАКИ",
-      text: "Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices diam eget suspendisse.",
+      title: "Безопасность для цели",
+      text: `Наши тестовые запросы не наносят вреда системе. 
+      Они имитируют реальные атаки, но не эксплуатируют уязвимости — только обнаруживают их. 
+      Вы можете остановить сканирование в любой момент.`,
       spanClass: "md:col-start-2 md:col-span-2"
     },
     {
-      title: "ВВОДИМ ССЫЛКУ, ВЫБИРАЕМ ТИП И ГЛУБИНУ АТАКИ",
-      text: "Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices diam eget suspendisse.",
+      title: "Прозрачность и контроль",
+      text: `Перед запуском вы выбираете типы атак, глубину сканирования и целевые параметры. 
+      В отчёте — подробное описание каждой найденной уязвимости с 
+      рекомендациями по исправлению. Никакой магии — только прозрачные результаты.`,
       spanClass: "md:col-start-1 md:col-span-2"
     }
   ];
@@ -24,7 +30,7 @@ export default function Safety({ onTryClick }) {
       <div className="max-w-7xl mx-auto">
         
         <h2 className="text-4xl md:text-6xl font-bold uppercase mb-24 text-center text-main-text">
-          Это безопасно?
+          КАК МЫ ГАРАНТИРУЕМ БЕЗОПАСНОСТЬ?
         </h2>
 
         <div className="flex flex-col">
@@ -54,8 +60,7 @@ export default function Safety({ onTryClick }) {
             onClick={onTryClick}
             className=" bg-brand-red text-white px-10 py-4 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-red-800 transition-all cursor-pointer group"
           >
-            Попробовать 
-            <span className="group-hover:translate-x-1 transition-transform">↗</span>
+            Запустить аудит <Forward />
           </button>
         </div>
 

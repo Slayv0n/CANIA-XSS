@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
 
-export function Profile({ onLogout, currentTheme, onThemeToggle, isAuth }) {
+export function Profile({ onLogout, currentTheme, onThemeToggle, isAuth, onPricesClick }) {
   const navigate = useNavigate();
 
   // Фейковый массив отчетов для верстки
@@ -20,6 +20,7 @@ export function Profile({ onLogout, currentTheme, onThemeToggle, isAuth }) {
         isAuth={isAuth} 
         onProfileClick={() => {}} 
         onFeatureClick={() => navigate('/scanner')} // НОВЫЙ ПРОПС!
+        onPricesClick={onPricesClick}        
       />
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:py-20 relative z-10">
@@ -78,7 +79,7 @@ export function Profile({ onLogout, currentTheme, onThemeToggle, isAuth }) {
         </div>
       </main>
 
-      <Footer />
+      <Footer onPricesClick={onPricesClick}/>
     </div>
   );
 }

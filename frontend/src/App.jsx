@@ -7,6 +7,7 @@ import Hero from './components/Hero';
 import Features from './components/Features';
 import HowItWorks from './components/HowItWorks';
 import Safety from './components/Safety';
+import Prices from './components/Prices.jsx';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import LoginCard from './components/LoginCard';
@@ -23,6 +24,30 @@ function App() {
   
   // СОСТОЯНИЕ МОДАЛКИ (Новое!)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isPricesModalOpen, setIsPricesModalOpen] = useState(false); // НОВОЕ!
+
+  // Единая функция для обработки клика по "Тарифам"
+  const handlePricesClick = (e) => {
+    e?.preventDefault(); // Отменяем скачок по ссылке
+    
+    if (location.pathname === '/') {
+      // Если мы на Главной - скроллим к блоку
+      const pricingSection = document.getElementById('pricing-section');
+      const scrollContainer = document.getElementById('scroll-container');
+      
+      if (pricingSection && scrollContainer) {
+        scrollContainer.scrollTo({
+          // Высчитываем позицию элемента относительно контейнера
+          top: pricingSection.offsetTop, 
+          behavior: 'smooth'
+        });
+      }
+    } else {
+      // Если мы на других страницах - открываем модалку
+      setIsPricesModalOpen(true);
+    }
+  };
+
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
@@ -68,6 +93,7 @@ function App() {
           onThemeToggle={toggleTheme}
           isAuth={isAuth}
           onFeatureClick={() => navigate('/scanner')}
+          onPricesClick={handlePricesClick}
         />
         <main className="relative w-full overflow-hidden">
           <BackgroundDecor />
@@ -76,12 +102,14 @@ function App() {
               <Hero onTryClick={handleTryIt} />
               <Features onTryClick={handleTryIt} />
               <HowItWorks />
-              <Safety onTryClick={handleTryIt} />
+              <Safety onTryClick={handleTryIt}/>
+              <Prices isModal={false}/>
               <FAQ />
           </div>
         </main>
         <Footer 
-        onLoginClick={() => setIsLoginModalOpen(true)}
+          onPricesClick={handlePricesClick}
+          onLoginClick={() => setIsLoginModalOpen(true)}
         />
                 
       </>
@@ -121,12 +149,12 @@ function App() {
 
           <Route 
             path="/profile" 
-            element={isAuth ? <Profile onLogout={logout} currentTheme={theme} onThemeToggle={toggleTheme} isAuth={isAuth} /> : <Navigate to="/" replace />} 
+            element={isAuth ? <Profile onLogout={logout} currentTheme={theme} onThemeToggle={toggleTheme} onPricesClick={handlePricesClick} isAuth={isAuth} /> : <Navigate to="/" replace />} 
           />
 
           <Route 
             path="/scanner" 
-            element={isAuth ? <Scanner onLogout={logout} currentTheme={theme} onThemeToggle={toggleTheme} isAuth={isAuth} /> : <Navigate to="/" replace />} 
+            element={isAuth ? <Scanner onLogout={logout} currentTheme={theme} onThemeToggle={toggleTheme} onPricesClick={handlePricesClick} isAuth={isAuth} /> : <Navigate to="/" replace />} 
           />
 
           <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
@@ -141,6 +169,14 @@ function App() {
             onLoginSuccess={login} 
           />
         )}
+
+      {isPricesModalOpen && (
+          <Prices 
+            isModal={true} 
+            onClose={() => setIsPricesModalOpen(false)} 
+          />
+      )}
+      
     </div>
   );
 }

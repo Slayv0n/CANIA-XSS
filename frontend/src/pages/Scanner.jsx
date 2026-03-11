@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer'; // Добавили футер
 import {Download, ReportReady} from '../assets/icons';
 
-export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth }) {
+export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth, onPricesClick }) {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   
@@ -57,7 +57,8 @@ export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth }) {
         onLoginClick={() => {}} 
         currentTheme={currentTheme} 
         onThemeToggle={onThemeToggle} 
-        isAuth={isAuth} 
+        isAuth={isAuth}
+        onPricesClick={onPricesClick} 
       />
 
       {/* 2. Основная рабочая область */}
@@ -200,7 +201,7 @@ export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth }) {
       </main>
 
       {/* 3. Наш стандартный Футер */}
-      <Footer />
+      <Footer onPricesClick={onPricesClick}/>
     </div>
   );
 }

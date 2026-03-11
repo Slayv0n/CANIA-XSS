@@ -2,9 +2,10 @@
 
 @theme {
   --color-brand-red: #C31C1A;
+  --color-light-red: #8D0210;
   --color-brand-gray: rgba(127, 127, 127,0.60);
   --color-main-text: #FFFBFB;
-  --color-desc-text: #9ca3af;
+  --color-desc-text: #D3D3D3;
   --color-main-bg: #121010;
   --color-card-bg: rgba(255, 255, 255, 0.01);
   --color-card-border: rgba(255, 255, 255, 0.1);
@@ -46,6 +47,14 @@
   }
   button {
     transition-duration: 750ms;
+  }
+}
+
+@layer components {
+  .card-expand {
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-top 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                padding-top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 

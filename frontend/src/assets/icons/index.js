@@ -14,3 +14,6 @@ export * from './Shield.jsx';
 export * from './Search.jsx';
 export * from './Ai.jsx';
 export * from './Forward.jsx';
+
+export * from './FirstVector.jsx'
+export * from './SecondVector.jsx'

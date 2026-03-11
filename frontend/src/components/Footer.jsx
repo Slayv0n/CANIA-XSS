@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // 1. Импортируем хуки
 import { LogoFooter, LogoFull } from "../assets/icons";
 
-export default function Footer({ isAuth, onLoginClick }) {
+export default function Footer({ isAuth, onLoginClick, onPricesClick }) {
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -72,7 +72,13 @@ export default function Footer({ isAuth, onLoginClick }) {
                                 >
                                 Функционал
                             </a>
-                            <a href="#" className="hover:text-brand-red transition-colors">Тарифы</a>
+                            <a 
+                                href="#" 
+                                onClick={onPricesClick}
+                                className="hover:text-brand-red transition-colors"
+                            >
+                                Тарифы
+                            </a>
                             <a href="#" className="hover:text-brand-red transition-colors">EN</a>
                             <a href="#" className="hover:text-brand-red transition-colors">Оставить отзыв</a>
                         </nav>

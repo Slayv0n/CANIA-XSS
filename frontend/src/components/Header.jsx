@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogoFull, UserLoginIcon, UserProfileIcon } from '../assets/icons';
 
 // 1. УБИРАЕМ onProfileClick из аргументов (он больше не нужен)
-export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAuth, onFeatureClick }) {
+export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAuth, onFeatureClick, onPricesClick }) {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [colorChangeTime, setColorChangeTime] = React.useState(null);
   const navigate = useNavigate(); // Хук навигации
@@ -49,7 +49,12 @@ export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAu
           >
           Функционал
         </button>
-        <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">Тарифы</a>
+        <button 
+          onClick={onPricesClick} 
+          className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm"
+        >
+          Тарифы
+        </button>
         
         <button onClick={onThemeToggle} className="hover:text-brand-red cursor-pointer p-1 text-main-text">
           {currentTheme === 'dark' ? '☀️' : '🌙'}

@@ -1,22 +1,38 @@
 import React from 'react';
-import {Forward} from '../assets/icons/index.js'
+import {Forward, Ai, File, Search, Shield} from '../assets/icons/index.js'
 export default function Features({ onTryClick }) {
   const features = [
     {
-      title: "ЧТО ЭТО ТАКОЕ? (Left)",
-      text: "Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices diam eget suspendisse. A duis nam sit id.",
+      title: "Универсальный сканер уязвимостей",
+      text: `CANIA — это автоматизированный инструмент для аудита безопасности веб-приложений.
+      Он заменяет часы ручного тестирования минутами работы умного алгоритма.`,
+      icon: <Search className="h-8 w-8 mb-4" />,
+      iconsClasses: "flex flex-row-reverse",
+      containerClasses: "flex flex-col h-full justify-between",
     },
     {
-      title: "ЧТО ЭТО ТАКОЕ? (Mid Top)",
-      text: "Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices diam eget suspendisse."
+      title: "Широкий спектр угроз",
+      text: `Мы не ограничиваемся только XSS. Система ищет SQL-инъекции, CSRF, IDOR, проблемы конфигурации
+      и другие уязвимости из списка OWASP Top 10.`,
+      icon: <Shield className="h-8 w-8 text-brand-red mb-4" />,
+      iconsClasses: "flex flex-row-reverse justify-between",
+      containerClasses: "flex flex-col-reverse h-full justify-between",
     },
     {
-      title: "ЧТО ЭТО ТАКОЕ? (Right Top)",
-      text: "Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices diam eget suspendisse."
+      title: "Powered by AI",
+      text: `Использует машинное обучение для эмуляции реальных атак хакеров.
+      Алгоритм адаптируется под структуру вашего сайта, находя скрытые дыры, которые пропускают обычные сканеры.`,
+      icon: <Ai className="h-8 w-8 text-brand-red mb-4" />,
+      iconsClasses: "flex flex-row-reverse justify-between",
+      containerClasses: "flex flex-col h-full justify-between",
     },
     {
-      title: "ЧТО ЭТО ТАКОЕ? (Bottom Wide)",
-      text: "Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices diam eget suspendisse. A duis nam sit id. Nullam sollicitudin commodo purus.",
+      title: "Понятный отчет",
+      text: `На выходе вы получаете структурированный PDF/JSON отчет с уровнем риска,
+      примерами эксплуатации и готовыми рекомендациями по исправлению кода для разработчиков`,
+      icon: <File className="h-8 w-8 text-brand-red mb-4" />,
+      iconsClasses: "flex flex-row-reverse justify-between",
+      containerClasses: "flex flex-col-reverse h-full justify-between",
     }
   ];
 
@@ -27,10 +43,6 @@ export default function Features({ onTryClick }) {
         <h2 className="text-4xl md:text-5xl font-bold uppercase mb-6 text-center text-main-text">
           Что это такое?
         </h2>
-        
-        <p className="text-desc-text text-center max-w-2xl mb-16 leading-relaxed">
-          Lorem ipsum dolor sit amet consectetur. Commodo lorem ultrices id ultrices.
-        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-16 auto-rows-[1fr]">
           {features.map((item, index) => {
@@ -44,22 +56,24 @@ export default function Features({ onTryClick }) {
             }
 
             return (
-              <div 
+              <div
                 key={index}
                 className={`
-                  border border-card-border rounded-3xl p-8 flex flex-col justify-between 
-                  hover:border-brand-red transition-colors duration-300 min-h-75
+                  border rounded-3xl p-8 flex flex-col justify-between
+                  border-light-red min-h-60
                   ${gridClasses}
                 `}
               >
-                <div>
-                  <h3 className="text-xl font-bold uppercase mb-4 text-main-text">{item.title}</h3>
+                <div className={item.containerClasses}>
+                  <div className={item.iconsClasses}>
+                    {item.icon}
+                    <h3 className="text-xl font-bold uppercase mb-4 text-main-text">{item.title}</h3>
+                  </div>
                   <p className="text-desc-text leading-relaxed text-sm">
                     {item.text}
                   </p>
                 </div>
-                
-                <h3 className="text-lg font-bold uppercase mt-6 opacity-50 text-main-text">{item.title}</h3>
+
               </div>
             );
           })}
