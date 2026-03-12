@@ -38,7 +38,7 @@ export default function Safety({ onTryClick }) {
             <div key={index} className="grid grid-cols-1 md:grid-cols-3 w-full">
               <div className={`
                 grid grid-cols-1 md:grid-cols-2 gap-8 
-                py-16 border-b border-card-border
+                py-16 border-b border-light-red
                 ${item.spanClass}
               `}>
                 
@@ -56,9 +56,9 @@ export default function Safety({ onTryClick }) {
         </div>
 
         <div className="w-full flex justify-end mt-20">
-          <button 
+          <button
             onClick={onTryClick}
-            className=" bg-brand-red text-white px-10 py-4 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-red-800 transition-all cursor-pointer group"
+            className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-all duration-750 cursor-pointer group"
           >
             Запустить аудит <Forward />
           </button>

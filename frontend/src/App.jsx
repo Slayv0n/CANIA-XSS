@@ -89,8 +89,10 @@ function App() {
       <>
         <Header 
           onLoginClick={() => setIsLoginModalOpen(true)}
+
           currentTheme={theme}
           onThemeToggle={toggleTheme}
+
           isAuth={isAuth}
           onFeatureClick={() => navigate('/scanner')}
           onPricesClick={handlePricesClick}
@@ -110,6 +112,9 @@ function App() {
         <Footer 
           onPricesClick={handlePricesClick}
           onLoginClick={() => setIsLoginModalOpen(true)}
+
+          currentTheme={theme}
+          onThemeToggle={toggleTheme}
         />
                 
       </>

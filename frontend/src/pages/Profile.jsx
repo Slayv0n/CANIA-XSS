@@ -79,7 +79,11 @@ export function Profile({ onLogout, currentTheme, onThemeToggle, isAuth, onPrice
         </div>
       </main>
 
-      <Footer onPricesClick={onPricesClick}/>
+      <Footer 
+        onPricesClick={onPricesClick}
+        currentTheme={currentTheme}
+        onThemeToggle={onThemeToggle}
+      />
     </div>
   );
 }

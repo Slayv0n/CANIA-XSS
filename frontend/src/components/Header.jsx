@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogoFull, UserLoginIcon, UserProfileIcon } from '../assets/icons';
 
 // 1. УБИРАЕМ onProfileClick из аргументов (он больше не нужен)
-export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAuth, onFeatureClick, onPricesClick }) {
+export default function Header({ onLoginClick,  isAuth, onFeatureClick, onPricesClick }) {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [colorChangeTime, setColorChangeTime] = React.useState(null);
   const navigate = useNavigate(); // Хук навигации
@@ -28,9 +28,7 @@ export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAu
 
   return (
     <header className="h-20 border-b border-card-border flex items-center justify-between px-10 relative z-50 header-root">
-      {/* (Я добавил bg-main-bg/80 backdrop-blur-md, чтобы хедер красиво просвечивал, как в современных ОС) */}
-
-      {/* Логотип -> Домой */}
+      
       <div 
         onClick={() => navigate('/')} 
         className="flex items-center cursor-pointer text-main-text hover:opacity-80 transition-opacity"
@@ -54,10 +52,6 @@ export default function Header({ onLoginClick, currentTheme, onThemeToggle, isAu
           className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm"
         >
           Тарифы
-        </button>
-        
-        <button onClick={onThemeToggle} className="hover:text-brand-red cursor-pointer p-1 text-main-text">
-          {currentTheme === 'dark' ? '☀️' : '🌙'}
         </button>
 
         <div className="h-4 w-px bg-card-border"></div> 

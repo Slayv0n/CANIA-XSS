@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // 1. Импортируем хуки
+import { useNavigate, useLocation } from "react-router-dom";
+import Feedback from "./Feedback";
 import { LogoFooter, LogoFull } from "../assets/icons";
 
-export default function Footer({ isAuth, onLoginClick, onPricesClick }) {
+export default function Footer({ isAuth, onLoginClick, onPricesClick, onThemeToggle, currentTheme }) {
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     // Стейт для анимации "пружинки" при клике
     const[isBouncing, setIsBouncing] = useState(false);
+    
+    // Стейт для открытия модального окна отзывов
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
     const handleLogoClick = () => {
         setIsBouncing(true);
@@ -54,12 +58,12 @@ export default function Footer({ isAuth, onLoginClick, onPricesClick }) {
                     </div>
 
                     {/* Колонка 2: Навигация (оставляем как было) */}
-                    <div className="flex flex-col gap-4">
-                        <h4 className="font-bold uppercase text-main-text mb-2">Навигация</h4>
-                        <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium">
+                    <div className="flex flex-col place-items-end gap-4">
+                        <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1">
+                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
                             <a 
                                 href="#" 
-                                className="hover:text-brand-red transition-colors" 
+                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm" 
                                 onClick={(e) => {
                                     e.preventDefault();
                                     
@@ -75,33 +79,51 @@ export default function Footer({ isAuth, onLoginClick, onPricesClick }) {
                             <a 
                                 href="#" 
                                 onClick={onPricesClick}
-                                className="hover:text-brand-red transition-colors"
+                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm"
                             >
                                 Тарифы
                             </a>
-                            <a href="#" className="hover:text-brand-red transition-colors">EN</a>
-                            <a href="#" className="hover:text-brand-red transition-colors">Оставить отзыв</a>
+                            <button onClick={onThemeToggle} className="p-1 hover:bg-brand-gray transition-colors rounded-sm flex uppercase">
+                                {currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+                            </button>
+                            <a href="#" className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase">Версия на английском</a>
+                            <a
+                                href="#"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setIsFeedbackOpen(true);
+                                }}
+                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase"
+                            >
+                                Оставить отзыв
+                            </a>
+                            
                         </nav>
                     </div>
 
                     {/* Колонка 3: Контакты (оставляем как было) */}
                     <div className="flex flex-col gap-4">
-                        <h4 className="font-bold uppercase text-main-text mb-2">Связаться:</h4>
+                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
                         <div className="flex flex-col gap-3 text-desc-text text-sm font-medium">
-                            <a href="tel:+79911230322" className="hover:text-brand-red transition-colors">+7 (991) 123-03-22</a>
-                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:text-brand-red transition-colors">CANIAPENTEST@GMAIL.COM</a>
+                            <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors p-1 rounded-sm">+7 (991) 123-03-22</a>
+                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
                         </div>
                     </div>
                 </div>
 
                 {/* Копирайт */}
-                <div className="border-t border-card-border pt-8">
+                <div className="border-t border-light-red pt-8">
                     <span className="text-brand-red text-xs font-mono uppercase tracking-wider">
                         © 2026 CANIA-XSS-UI. Все права защищены
                     </span>
                 </div>
-                
             </div>
+
+            {/* Модальное окно отзывов */}
+            <Feedback
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
+            />
         </footer>
     );
 }

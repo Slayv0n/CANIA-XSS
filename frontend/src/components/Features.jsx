@@ -80,9 +80,9 @@ export default function Features({ onTryClick }) {
         </div>
 
         <div className="w-full flex justify-end">
-            <button 
+            <button
               onClick={onTryClick}
-              className="bg-transparent border-brand-red border-2 text-white px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-red-800 transition-colors cursor-pointer"
+              className="bg-transparent border-brand-red border-2 text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
             >
               <span className="flex gap-2 place-items-center text-lg">Попробовать бесплатно <Forward className='h-6'/> </span>
             </button>

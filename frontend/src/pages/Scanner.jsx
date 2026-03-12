@@ -201,7 +201,11 @@ export function Scanner({ onLogout, currentTheme, onThemeToggle, isAuth, onPrice
       </main>
 
       {/* 3. Наш стандартный Футер */}
-      <Footer onPricesClick={onPricesClick}/>
+      <Footer 
+        onPricesClick={onPricesClick}
+        currentTheme={currentTheme}
+        onThemeToggle={onThemeToggle}
+        />
     </div>
   );
 }

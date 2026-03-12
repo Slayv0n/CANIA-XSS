@@ -9,8 +9,9 @@
   --color-main-bg: #121010;
   --color-card-bg: rgba(255, 255, 255, 0.01);
   --color-card-border: rgba(255, 255, 255, 0.1);
-  --color-input-bg: #1F1F1F; 
-  
+  --color-input-bg: #1F1F1F;
+  --color-glow-spot: #52050C;
+
   /* Шрифты */
   --font-title: "REM", sans-serif;
   --font-body: "Raleway", sans-serif;
@@ -24,11 +25,14 @@
   --color-card-bg: #FFFFFF;
   --color-card-border: rgba(0, 0, 0, 0.1);
   --color-brand-red: #A31614;
+  --color-glow-spot: #FF6B7A;
+
+  --color-input-bg: #E6E6E6;
 }
 
 /* ГЛАВНОЕ ПРАВИЛО: */
 /* Применяем плавный переход ко всем элементам, которые умеют менять цвет */
-:root, body, header, nav, section, div, svg, path, span, p, h1, h2, h3, h4, input, select {
+:root, body, header, nav, section, div, svg, path, span, p, h1, h2, h3, h4, input, select, button {
   transition-property: background-color, border-color, color, fill, stroke, opacity;
   transition-duration: 750ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -65,4 +69,13 @@
 
 .animate-slide-text {
   animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
 }

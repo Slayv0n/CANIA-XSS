@@ -19,9 +19,9 @@ export default function Hero({ onTryClick }) {
         поиска, верификации и документирования широкого спектра веб-уязвимостей — от XSS и SQL-инъекций до CSRF и IDOR.
       </p>
 
-      <button 
+      <button
         onClick={onTryClick}
-        className="bg-brand-red text-white px-16 py-5 rounded-4xl font-bold uppercase flex items-center gap-3 hover:bg-red-800 cursor-pointer"
+        className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-all duration-750 cursor-pointer group"
       >
         Попробовать <Forward />
       </button>

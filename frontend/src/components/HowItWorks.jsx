@@ -48,7 +48,7 @@ export default function HowItWorks() {
                   {step.text}
                 </p>
 
-                <div className="w-full h-px bg-card-border"></div>
+                <div className="w-full h-px bg-light-red"></div>
 
               </div>
             ))}

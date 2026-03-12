@@ -40,7 +40,7 @@ export default function Pricing({ isModal, onClose }) {
 
   if (isModal) {
     return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto" onClick={onClose}>
+      <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto " onClick={onClose}>
         <div className="relative w-full max-w-7xl my-auto" onClick={(e) => e.stopPropagation()}>
            {/* Кнопка закрытия модалки */}
            <button onClick={onClose} className="absolute -top-12 right-0 text-white hover:text-brand-red text-4xl">&times;</button>
@@ -59,16 +59,16 @@ export default function Pricing({ isModal, onClose }) {
 
               {plan.isPopular && (
                 <GlowSpot
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 transition-opacity! duration-500 pointer-events-none z-0 mix-blend-screen"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 transition-opacity! duration-500 pointer-events-none z-0 light:opacity-60 light:group-hover:opacity-100"
                 />
               )}
 
-              {/* 
+              {/*
                   МАГИЯ ЗДЕСЬ:
                   1. !transition-all (с восклицательным знаком)
                   2. pb-14 (вместо pb-10, чтобы щиты не липли к низу)
               */}
-              <div className="bg-[#0A0808] w-full border border-gray-600 group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 transition-all! duration-500 ease-out h-full min-h-145 origin-bottom group-hover:scale-[1.04] group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)]">
+              <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 transition-all! duration-500 ease-out h-full min-h-145 origin-bottom group-hover:scale-[1.04] group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)]">
 
                 {plan.isPopular && (
                   <div className="absolute top-0 right-0 bg-brand-red text-white text-xs font-bold uppercase px-6 py-2 rounded-tr-4xl rounded-bl-2xl">
@@ -94,7 +94,7 @@ export default function Pricing({ isModal, onClose }) {
 
                   {plan.pricePerMonth && (
                     <div className="flex items-center gap-2 text-desc-text text-sm font-mono mt-4">
-                       <span className="text-gray-400">{plan.pricePerMonth}</span>
+                       <span className="text-desc-text">{plan.pricePerMonth}</span>
                        <span>{plan.period}</span>
                     </div>
                   )}
@@ -104,18 +104,18 @@ export default function Pricing({ isModal, onClose }) {
                     className={`w-full py-4 rounded-full font-bold uppercase tracking-wider transition-all! duration-300 mb-10 ${
                         plan.isPopular
                         ? 'bg-brand-red text-white hover:bg-red-700 shadow-[0_0_20px_rgba(195,28,26,0.4)]'
-                        : 'bg-transparent border border-gray-600 text-white hover:border-brand-red hover:bg-brand-red/10'
+                        : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'
                     }`}
                 >
                     Выбрать
                 </button>
 
                 {/* ИСПРАВЛЕНИЕ ЛИНИИ: Теперь она серая, но краснеет при наведении */}
-                <div className="w-full border-t border-white/10 group-hover:border-brand-red/50 mb-8 transition-colors! duration-300"></div>
+                <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors! duration-300"></div>
 
                 <ul className="flex flex-col gap-4 mt-auto">
                   {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
+                    <li key={idx} className="flex items-start gap-3 text-sm text-desc-text">
                       <svg className="w-5 h-5 text-brand-red shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                       </svg>
@@ -135,7 +135,7 @@ export default function Pricing({ isModal, onClose }) {
   }
 
   return (
-    <section id="pricing-section" className="py-24 px-6 relative z-10 transition-colors duration-300">
+    <section id="pricing-section" className="py-24 px-6 relative z-10 transition-colors duration-300 border-y border-light-red">
       <div className="max-w-7xl mx-auto">
         
         <h2 className="text-4xl md:text-5xl font-bold uppercase mb-16 text-center text-main-text">
@@ -150,16 +150,16 @@ export default function Pricing({ isModal, onClose }) {
 
               {plan.isPopular && (
                 <GlowSpot
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 transition-opacity! duration-500 pointer-events-none z-0 mix-blend-screen"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-70 group-hover:opacity-100 transition-opacity! duration-500 pointer-events-none z-99999 mix-blend-screen"
                 />
               )}
 
-              {/* 
+              {/*
                   МАГИЯ ЗДЕСЬ:
                   1. !transition-all (с восклицательным знаком)
                   2. pb-14 (вместо pb-10, чтобы щиты не липли к низу)
               */}
-              <div className="bg-[#0A0808] w-full border border-gray-600 group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 transition-all! duration-500 ease-out h-full min-h-145 origin-bottom group-hover:scale-[1.04] group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)]">
+              <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 transition-all! duration-500 ease-out h-full min-h-145 origin-bottom group-hover:scale-[1.04] group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)]">
 
                 {plan.isPopular && (
                   <div className="absolute top-0 right-0 bg-brand-red text-white text-xs font-bold uppercase px-6 py-2 rounded-tr-4xl rounded-bl-2xl">
@@ -185,7 +185,7 @@ export default function Pricing({ isModal, onClose }) {
 
                   {plan.pricePerMonth && (
                     <div className="flex items-center gap-2 text-desc-text text-sm font-mono mt-4">
-                       <span className="text-gray-400">{plan.pricePerMonth}</span>
+                       <span className="text-desc-text">{plan.pricePerMonth}</span>
                        <span>{plan.period}</span>
                     </div>
                   )}
@@ -195,18 +195,18 @@ export default function Pricing({ isModal, onClose }) {
                     className={`w-full py-4 rounded-full font-bold uppercase tracking-wider transition-all! duration-300 mb-10 ${
                         plan.isPopular
                         ? 'bg-brand-red text-white hover:bg-red-700 shadow-[0_0_20px_rgba(195,28,26,0.4)]'
-                        : 'bg-transparent border border-gray-600 text-white hover:border-brand-red hover:bg-brand-red/10'
+                        : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'
                     }`}
                 >
                     Выбрать
                 </button>
 
                 {/* ИСПРАВЛЕНИЕ ЛИНИИ: Теперь она серая, но краснеет при наведении */}
-                <div className="w-full border-t border-white/10 group-hover:border-brand-red/50 mb-8 transition-colors! duration-300"></div>
+                <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors! duration-300"></div>
 
                 <ul className="flex flex-col gap-4 mt-auto">
                   {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
+                    <li key={idx} className="flex items-start gap-3 text-sm text-desc-text">
                       <svg className="w-5 h-5 text-brand-red shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                       </svg>

@@ -1,30 +1,36 @@
 import React from 'react';
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = React.useState(null);  
-  
+  const [openIndexes, setOpenIndexes] = React.useState([]);
+
   const faqItems =[
     { question: "КАК ЭТО РАБОТАЕТ?", answer: "Lorem ipsum dolor sit amet consectetur..." },
     { question: "ЭТО БЕЗОПАСНО?", answer: "Commodo lorem ultrices id ultrices diam eget..." },
     { question: "СКОЛЬКО СТОИТ?", answer: "A duis nam sit id. Nullam sollicitudin." }
   ];
 
+  const toggleIndex = (index) => {
+    setOpenIndexes((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
   return (
-    <section className="py-24 px-6 border-t border-card-border transition-colors duration-300">
+    <section className="py-24 px-6 transition-colors border-b border-b-light-red duration-300">
         <div className="max-w-4xl mx-auto">
-        
+
         <h2 className="text-4xl font-bold uppercase mb-12 text-center text-main-text">FAQ</h2>
 
         <div className="flex flex-col">
             {faqItems.map((item, index) => {
               // Для удобства вынесем проверку в переменную
-              const isOpen = openIndex === index;
+              const isOpen = openIndexes.includes(index);
 
               return (
-                <div key={index} className="border-b border-card-border">
-                    
-                    <button 
-                        onClick={() => setOpenIndex(isOpen ? null : index)}
+                <div key={index} className={`border-b border-light-red ${index === 0 ? 'border-t border-t-light-red' : ''}`}>
+
+                    <button
+                        onClick={() => toggleIndex(index)}
                         className="w-full py-8 flex justify-between items-center text-left text-main-text hover:text-brand-red transition-colors group cursor-pointer"
                     >
                         <span className="text-xl font-bold uppercase">{item.question}</span>
