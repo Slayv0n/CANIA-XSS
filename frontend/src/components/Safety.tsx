@@ -1,7 +1,11 @@
 import React from 'react';
-
 import { Forward } from '../assets/icons';
-export default function Safety({ onTryClick }) {
+
+interface SafetyProps {
+  onTryClick: () => void;
+}
+
+export default function Safety({ onTryClick }: SafetyProps) {
   const safetyItems = [
     {
       title: "Безопасность для вас",
@@ -28,33 +32,23 @@ export default function Safety({ onTryClick }) {
   return (
     <section className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
-        
         <h2 className="text-4xl md:text-6xl font-bold uppercase mb-24 text-center text-main-text">
           КАК МЫ ГАРАНТИРУЕМ БЕЗОПАСНОСТЬ?
         </h2>
-
         <div className="flex flex-col">
           {safetyItems.map((item, index) => (
             <div key={index} className="grid grid-cols-1 md:grid-cols-3 w-full">
-              <div className={`
-                grid grid-cols-1 md:grid-cols-2 gap-8 
-                py-16 border-b border-light-red
-                ${item.spanClass}
-              `}>
-                
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 py-16 border-b border-light-red ${item.spanClass}`}>
                 <h3 className="text-xl md:text-2xl font-bold uppercase leading-tight text-main-text">
                   {item.title}
                 </h3>
-
                 <p className="text-xs md:text-sm text-desc-text leading-relaxed self-end">
                   {item.text}
                 </p>
-
               </div>
             </div>
           ))}
         </div>
-
         <div className="w-full flex justify-end mt-20">
           <button
             onClick={onTryClick}
@@ -63,7 +57,6 @@ export default function Safety({ onTryClick }) {
             Запустить аудит <Forward />
           </button>
         </div>
-
       </div>
     </section>
   );

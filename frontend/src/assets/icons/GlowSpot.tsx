@@ -1,5 +1,9 @@
-export const GlowSpot = ({ className }) => (
-  <div className={`absolute pointer-events-none ${className}`}>
+import React from 'react';
+
+interface GlowSpotProps {
+  className?: string;
+}
+export const GlowSpot = ({ className }: GlowSpotProps) => (  <div className={`absolute pointer-events-none ${className}`}>
     <svg width="100%" height="100%" viewBox="0 0 1522 1058" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
       <g filter="url(#filter_glow)" className="opacity-70 light:opacity-100">
         <ellipse cx="761" cy="529" rx="361" ry="129" fill="var(--color-glow-spot)"/>

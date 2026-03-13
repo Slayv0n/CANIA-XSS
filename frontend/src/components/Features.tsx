@@ -1,7 +1,20 @@
 import React from 'react';
-import {Forward, Ai, File, Search, Shield} from '../assets/icons/index.js'
-export default function Features({ onTryClick }) {
-  const features = [
+import { Forward, Ai, File, Search, Shield } from '../assets/icons';
+
+interface FeaturesProps {
+  onTryClick: () => void;
+}
+
+interface FeatureItem {
+  title: string;
+  text: string;
+  icon: React.ReactNode;
+  iconsClasses: string;
+  containerClasses: string;
+}
+
+export default function Features({ onTryClick }: FeaturesProps) {
+  const features: FeatureItem[] = [
     {
       title: "Универсальный сканер уязвимостей",
       text: `CANIA — это автоматизированный инструмент для аудита безопасности веб-приложений.
@@ -39,46 +52,28 @@ export default function Features({ onTryClick }) {
   return (
     <section className="bg-transparent py-20 px-6">
       <div className="max-w-7xl mx-auto flex flex-col items-center">
-        
         <h2 className="text-4xl md:text-5xl font-bold uppercase mb-6 text-center text-main-text">
           Что это такое?
         </h2>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-16 auto-rows-[1fr]">
           {features.map((item, index) => {
-            
             let gridClasses = "md:col-span-1"; 
-
-            if (index === 0) {
-              gridClasses = "md:row-span-2";
-            } else if (index === 3) {
-              gridClasses = "md:col-span-2";
-            }
+            if (index === 0) gridClasses = "md:row-span-2";
+            else if (index === 3) gridClasses = "md:col-span-2";
 
             return (
-              <div
-                key={index}
-                className={`
-                  border rounded-3xl p-8 flex flex-col justify-between
-                  border-light-red min-h-60
-                  ${gridClasses}
-                `}
-              >
+              <div key={index} className={`border rounded-3xl p-8 flex flex-col justify-between border-light-red min-h-60 ${gridClasses}`}>
                 <div className={item.containerClasses}>
                   <div className={item.iconsClasses}>
                     {item.icon}
                     <h3 className="text-xl font-bold uppercase mb-4 text-main-text">{item.title}</h3>
                   </div>
-                  <p className="text-desc-text leading-relaxed text-sm">
-                    {item.text}
-                  </p>
+                  <p className="text-desc-text leading-relaxed text-sm">{item.text}</p>
                 </div>
-
               </div>
             );
           })}
         </div>
-
         <div className="w-full flex justify-end">
             <button
               onClick={onTryClick}
@@ -87,7 +82,6 @@ export default function Features({ onTryClick }) {
               <span className="flex gap-2 place-items-center text-lg">Попробовать бесплатно <Forward className='h-6'/> </span>
             </button>
         </div>
-
       </div>
     </section>
   );

@@ -1,6 +1,11 @@
 import React from 'react';
-import {Forward} from '../assets/icons'
-export default function Hero({ onTryClick }) {
+import { Forward } from '../assets/icons';
+
+interface HeroProps {
+  onTryClick: () => void;
+}
+
+export default function Hero({ onTryClick }: HeroProps) {
   return (
     <main className="flex flex-col items-center mt-32 px-4 text-center relative z-10">
       <span className="text-brand-red text-xs font-bold tracking-[0.4em] mb-6 uppercase opacity-80">

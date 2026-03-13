@@ -1,34 +1,30 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Feedback from "./Feedback";
-import { LogoFooter, LogoFull } from "../assets/icons";
+import { useAuth, useUI, useTheme } from "../context/AppContext";
+import { LogoFooter } from "../assets/icons";
 
-export default function Footer({ isAuth, onLoginClick, onPricesClick, onThemeToggle, currentTheme }) {
+export default function Footer() {
     const navigate = useNavigate();
     const location = useLocation();
-
-    // Стейт для анимации "пружинки" при клике
-    const[isBouncing, setIsBouncing] = useState(false);
     
-    // Стейт для открытия модального окна отзывов
-    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const { isAuth } = useAuth();
+    const { theme, toggleTheme } = useTheme();
+    const { setLoginModal, handlePricesClick, setFeedbackModal } = useUI();
+
+    const [isBouncing, setIsBouncing] = useState(false);
 
     const handleLogoClick = () => {
         setIsBouncing(true);
         setTimeout(() => setIsBouncing(false), 200);
 
         if (location.pathname === '/') {
-            // Если уже дома — плавно едем наверх
             const scrollContainer = document.getElementById('scroll-container');
             if (scrollContainer) {
                 scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
             }
         } else {
-            // ИЗМЕНЕНИЕ ЗДЕСЬ: Сбрасываем скролл прямо перед переходом
             const scrollContainer = document.getElementById('scroll-container');
             if (scrollContainer) scrollContainer.scrollTop = 0;
-            
-            // Едем домой
             navigate('/');
         }
     };
@@ -36,13 +32,9 @@ export default function Footer({ isAuth, onLoginClick, onPricesClick, onThemeTog
     return (
         <footer className="border-t border-card-border py-20 px-6 relative z-10">
             <div className="max-w-7xl mx-auto">
-                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     
-                    {/* Колонка 1: Лого и описание */}
                     <div className="flex flex-col gap-6 items-start">
-                        
-                        {/* МАГИЯ ТУТ: Добавили onClick и динамический класс для bounce-эффекта */}
                         <div 
                             onClick={handleLogoClick}
                             className={`text-main-text hover:opacity-80 cursor-pointer transition-transform duration-200 ease-out ${
@@ -51,57 +43,42 @@ export default function Footer({ isAuth, onLoginClick, onPricesClick, onThemeTog
                         >
                             <LogoFooter className="w-52.75 h-auto" />
                         </div>
-
                         <p className="text-desc-text text-sm leading-relaxed max-w-sm">
                             Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati et esse aperiam mollitia fuga.
                         </p>
                     </div>
 
-                    {/* Колонка 2: Навигация (оставляем как было) */}
                     <div className="flex flex-col place-items-end gap-4">
                         <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
-                            <a 
-                                href="#" 
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm" 
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    
-                                    if (isAuth) {
-                                    navigate('/scanner'); 
-                                    } else {
-                                    onLoginClick();
-                                    }
+                            <button 
+                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase" 
+                                onClick={() => {
+                                    if (isAuth) navigate('/scanner'); 
+                                    else setLoginModal(true);
                                 }} 
-                                >
+                            >
                                 Функционал
-                            </a>
-                            <a 
-                                href="#" 
-                                onClick={onPricesClick}
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm"
+                            </button>
+                            <button 
+                                onClick={handlePricesClick}
+                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Тарифы
-                            </a>
-                            <button onClick={onThemeToggle} className="p-1 hover:bg-brand-gray transition-colors rounded-sm flex uppercase">
-                                {currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+                            </button>
+                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors rounded-sm flex uppercase cursor-pointer">
+                                {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                             </button>
                             <a href="#" className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase">Версия на английском</a>
-                            <a
-                                href="#"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    setIsFeedbackOpen(true);
-                                }}
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase"
+                            <button
+                                onClick={() => setFeedbackModal(true)}
+                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Оставить отзыв
-                            </a>
-                            
+                            </button>
                         </nav>
                     </div>
 
-                    {/* Колонка 3: Контакты (оставляем как было) */}
                     <div className="flex flex-col gap-4">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
                         <div className="flex flex-col gap-3 text-desc-text text-sm font-medium">
@@ -111,19 +88,12 @@ export default function Footer({ isAuth, onLoginClick, onPricesClick, onThemeTog
                     </div>
                 </div>
 
-                {/* Копирайт */}
                 <div className="border-t border-light-red pt-8">
                     <span className="text-brand-red text-xs font-mono uppercase tracking-wider">
                         © 2026 CANIA-XSS-UI. Все права защищены
                     </span>
                 </div>
             </div>
-
-            {/* Модальное окно отзывов */}
-            <Feedback
-                isOpen={isFeedbackOpen}
-                onClose={() => setIsFeedbackOpen(false)}
-            />
         </footer>
     );
 }
