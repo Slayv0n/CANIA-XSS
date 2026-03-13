@@ -35,7 +35,9 @@ export default function Feedback({ isOpen, onClose }: FeedbackProps) {
                     className="w-full bg-input-bg border border-input-border rounded-md px-4 py-3 text-main-text outline-none focus:border-brand-red"
                 />
                 <div className="flex justify-end mt-4">
-                    <button onClick={handleSubmit} disabled={!feedbackText.trim()} className="bg-brand-red hover:bg-brand-red/80 disabled:bg-gray-600 px-6 py-2 rounded-3xl text-white cursor-pointer">
+                    <button onClick={handleSubmit} disabled={!feedbackText.trim()} 
+                    className="bg-brand-red hover:bg-brand-red/80 disabled:bg-gray-600 px-6 py-2 rounded-3xl text-white cursor-pointer"
+                    aria-label="Отправить отзыв">
                         Отправить
                     </button>
                 </div>

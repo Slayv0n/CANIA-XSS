@@ -32,10 +32,36 @@
 
 /* ГЛАВНОЕ ПРАВИЛО: */
 /* Применяем плавный переход ко всем элементам, которые умеют менять цвет */
-:root, body, header, nav, section, div, svg, path, span, p, h1, h2, h3, h4, input, select, button {
-  transition-property: background-color, border-color, color, fill, stroke, opacity;
-  transition-duration: 750ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+:root {
+  --theme-transition: 
+  background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+  border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+  color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+  fill 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+  stroke 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+  opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body, 
+header, 
+footer, 
+main,
+section, 
+div, 
+span,
+p,
+h1, h2, h3, h4,
+button, 
+input, 
+select, 
+textarea,
+svg,
+path {
+  transition: var(--theme-transition);
+}
+
+.animate-fade-in, .glow-spot {
+  will-change: opacity, transform;
 }
 
 /* Убираем фон в светлой теме плавно */

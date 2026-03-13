@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { GlowSpot } from '../assets/icons';
 
 export default function BackgroundDecor() {

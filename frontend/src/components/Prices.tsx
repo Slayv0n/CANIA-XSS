@@ -1,4 +1,3 @@
-import React from 'react';
 import { useUI } from '../context/AppContext';
 import { GlowSpot } from '../assets/icons'; 
 

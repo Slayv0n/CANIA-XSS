@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUI } from '../context/AppContext';
 import { LogoFull, UserLoginIcon, UserProfileIcon } from '../assets/icons';
@@ -43,6 +42,7 @@ export default function Header() {
         <button 
             onClick={() => setLoginModal(true)} 
             className="bg-brand-red pl-6.5 pr-8 py-3 rounded-2xl text-sm font-bold text-white hover:bg-red-800 cursor-pointer flex items-center gap-2 "
+            aria-label="Войти в аккаунт"
         >
             <UserLoginIcon />
             Вход
@@ -51,6 +51,7 @@ export default function Header() {
         <button 
             onClick={() => navigate('/profile')}
             className="bg-brand-red pl-4 pr-5 py-2 rounded-sm text-sm font-bold text-white hover:bg-red-700 cursor-pointer flex items-center gap-2 "
+            aria-label="Войти в профиль"
         >
             <UserProfileIcon />
             Профиль

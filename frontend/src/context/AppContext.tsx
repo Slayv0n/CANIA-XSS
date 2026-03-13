@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-// --- ТИПЫ ---
 type Theme = 'dark' | 'light';
 
 interface AuthContextType {
@@ -24,20 +24,15 @@ interface UIContextType {
   handlePricesClick: (e?: React.MouseEvent) => void;
 }
 
-// --- СОЗДАНИЕ КОНТЕКСТОВ ---
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
-// --- ПРОВАЙДЕР (Обертка) ---
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  // Logic: Auth
-  const [isAuth, setIsAuth] = useState<boolean>(() => localStorage.getItem('isAuth') === 'true');
+  const navigate = useNavigate(); // Добавляем навигацию сюда
   
-  // Logic: Theme
+  const [isAuth, setIsAuth] = useState<boolean>(() => localStorage.getItem('isAuth') === 'true');
   const [theme, setTheme] = useState<Theme>('dark');
-
-  // Logic: Modals
   const [isLoginModalOpen, setLoginModal] = useState(false);
   const [isPricesModalOpen, setPricesModal] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModal] = useState(false);
@@ -46,11 +41,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsAuth(true);
     localStorage.setItem('isAuth', 'true');
     setLoginModal(false);
+    // МАГИЯ ТУТ: После логина всегда идем в профиль
+    navigate('/profile');
   };
 
   const logout = () => {
     setIsAuth(false);
     localStorage.removeItem('isAuth');
+    navigate('/');
   };
 
   const toggleTheme = () => {
@@ -88,7 +86,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// --- ХУКИ ДЛЯ ИСПОЛЬЗОВАНИЯ ---
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within AppProvider");

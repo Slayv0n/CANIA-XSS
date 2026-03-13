@@ -1,4 +1,3 @@
-import React from 'react';
 import {FirstVector, SecondVector} from '../assets/icons/index.js';
 
 export default function HowItWorks() {
