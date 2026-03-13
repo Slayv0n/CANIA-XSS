@@ -1,30 +1,30 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogoFull, UserLoginIcon, UserProfileIcon } from '../assets/icons';
 
 // 1. УБИРАЕМ onProfileClick из аргументов (он больше не нужен)
 export default function Header({ onLoginClick,  isAuth, onFeatureClick, onPricesClick }) {
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const [colorChangeTime, setColorChangeTime] = React.useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [colorChangeTime, setColorChangeTime] = useState(null);
   const navigate = useNavigate(); // Хук навигации
 
   // Отслеживаем изменение цвета фона хедера
-  React.useEffect(() => {
-    const header = document.querySelector('header');
-    if (!header) return;
+  // useEffect(() => {
+  //   const header = document.querySelector('header');
+  //   if (!header) return;
 
-    const observer = new MutationObserver(() => {
-      const currentBg = getComputedStyle(header).backgroundColor;
-      // Если цвет изменился, показываем индикатор
-      if (currentBg !== 'rgba(0, 0, 0, 0)') {
-        setColorChangeTime(performance.now());
-        setTimeout(() => setColorChangeTime(null), 500);
-      }
-    });
+  //   const observer = new MutationObserver(() => {
+  //     const currentBg = getComputedStyle(header).backgroundColor;
+  //     // Если цвет изменился, показываем индикатор
+  //     if (currentBg !== 'rgba(0, 0, 0, 0)') {
+  //       setColorChangeTime(performance.now());
+  //       setTimeout(() => setColorChangeTime(null), 500);
+  //     }
+  //   });
 
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
+  //   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  //   return () => observer.disconnect();
+  // }, []);
 
   return (
     <header className="h-20 border-b border-card-border flex items-center justify-between px-10 relative z-50 header-root">

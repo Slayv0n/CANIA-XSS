@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useLayoutEffect, useEffect } from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 
 import BackgroundDecor from './components/BackgroundDecor';
@@ -69,7 +69,7 @@ function App() {
   };
 
   // НОВАЯ МАГИЯ: Авто-скролл наверх при смене страницы
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     const container = document.getElementById('scroll-container');
     if (container) {
       // Жестко и моментально выкручиваем скролл в ноль
@@ -121,10 +121,10 @@ function App() {
     );
   };
 
-  const [mainColorChangeTime, setMainColorChangeTime] = React.useState(null);
+  const [mainColorChangeTime, setMainColorChangeTime] = useState(null);
 
   // Отслеживаем изменение цвета основного контейнера
-  React.useEffect(() => {
+  useEffect(() => {
     const mainDiv = document.querySelector('[id="scroll-container"]');
     if (!mainDiv) return;
 
