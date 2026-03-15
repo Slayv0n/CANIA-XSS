@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light';
 
 interface AuthContextType {
   isAuth: boolean;

@@ -69,7 +69,9 @@ export default function Footer() {
                             <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors rounded-sm flex uppercase cursor-pointer">
                                 {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                             </button>
-                            <a href="#" className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase">Версия на английском</a>
+                            <button className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase">
+                                Версия на английском
+                            </button>
                             <button
                                 onClick={() => setFeedbackModal(true)}
                                 className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase"

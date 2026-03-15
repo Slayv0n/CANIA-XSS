@@ -15,3 +15,10 @@ export * from './Ai';
 export * from './Forward';
 export * from './FirstVector';
 export * from './SecondVector';
+
+export * from './Dark'
+export * from './Exit'
+export * from './FeedbackIcon'
+export * from './Light'
+export * from './Mail'
+export * from './Password'
