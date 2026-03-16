@@ -2,12 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth, useUI, useTheme } from '../context/AppContext';
 import { LogoFull, UserLoginIcon, UserProfileIcon, Dark, Light, Password, Mail, FeedbackIcon, Exit } from '../assets/icons';
 import { useState, useRef, useEffect } from 'react';
-
 export default function Header() {
   const navigate = useNavigate();
-  const { isAuth } = useAuth();
+  const { isAuth, logout } = useAuth();
   const { setLoginModal, handlePricesClick } = useUI();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -85,11 +84,17 @@ export default function Header() {
             }`}
           >
             {/* надо будет что то с invisible сделать, плавного перехода нет */}
-            <h3 className='pt-4'>
+            <h3 
+              onClick={() => {
+                navigate('/profile');
+                setIsProfileMenuOpen(false);
+              }} 
+              className='pt-4 cursor-pointer hover:text-brand-red transition-colors'
+            >
               почта@example.com
             </h3>
 
-            <button className='flex place-items-center gap-2 cursor-pointer'>
+            <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer'>
               {theme === 'light' ? (
                 <>
                   <Dark /> Светлая тема
@@ -113,7 +118,14 @@ export default function Header() {
               <FeedbackIcon /> Отправить отзыв
             </button>
 
-            <button className='pb-4 flex place-items-center gap-2 cursor-pointer'>
+            <button 
+              onClick={() => {
+                logout();
+                navigate('/');
+                setIsProfileMenuOpen(false);
+              }} 
+              className='pb-4 flex place-items-center gap-2 cursor-pointer'
+            >
               <Exit /> Выход
             </button>
           </div>

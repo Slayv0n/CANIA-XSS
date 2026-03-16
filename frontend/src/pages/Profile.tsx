@@ -2,11 +2,9 @@ import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AppContext';
 
 export function Profile() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
 
   const reports = [1, 2, 3, 4, 5, 6, 7];
 
@@ -52,12 +50,6 @@ export function Profile() {
                         <p className="mt-4">*когда тарифы появятся</p>
                     </div>
 
-                    <button 
-                        onClick={logout}
-                        className="mt-20 text-brand-red font-bold uppercase hover:underline cursor-pointer"
-                    >
-                        Выйти из аккаунта
-                    </button>
                 </div>
             </div>
         </div>
