@@ -112,43 +112,48 @@ export function Scanner() {
             </div>
         )}
 
-        <section className='flex justify-between items-center'>
-            <h2 className='text-2xl'>Отчет по сайту ***</h2>
-            <button className='flex items-center bg-brand-red py-6 px-16 rounded gap-2 cursor-pointer'>
-                Скачать <Download />
-            </button>
-        </section>
+        {scanStatus === 'ready' && (
+        <div>
+            <section className='flex justify-between items-center'>
+                <h2 className='text-2xl'>Отчет по сайту ***</h2>
+                <button className='flex items-center bg-brand-red py-6 px-16 rounded gap-2 cursor-pointer'>
+                    Скачать <Download />
+                </button>
+            </section>
 
-        <div className="mt-8 border border-card-border rounded-xl overflow-hidden bg-black/40 relative">
-            <div className="flex justify-between items-center bg-white/5 px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text">
-                <div className="flex-1 italic">*название файла*</div>
-                <div className="flex items-center gap-4 bg-black/20 px-4 py-1 rounded-full border border-card-border">
-                    <button className="hover:text-white cursor-pointer">+</button>
-                    <span className="text-main-text">100%</span>
-                    <button className="hover:text-white cursor-pointer">—</button>
+            <div className="mt-8 border border-card-border rounded-xl overflow-hidden bg-black/40 relative">
+                <div className="flex justify-between items-center bg-white/5 px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text">
+                    <div className="flex-1 italic">*название файла*</div>
+                    <div className="flex items-center gap-4 bg-black/20 px-4 py-1 rounded-full border border-card-border">
+                        <button className="hover:text-white cursor-pointer">+</button>
+                        <span className="text-main-text">100%</span>
+                        <button className="hover:text-white cursor-pointer">—</button>
+                    </div>
+                    <div className="flex-1 flex justify-end">
+                        <button className="hover:text-white cursor-pointer">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <div className="flex-1 flex justify-end">
-                    <button className="hover:text-white cursor-pointer">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div className="h-125 md:h-175 p-8 overflow-y-auto custom-scrollbar">
-                <div className="space-y-4 opacity-20">
-                    <div className="h-4 bg-white/10 w-3/4 rounded"></div>
-                    <div className="h-4 bg-white/10 w-full rounded"></div>
-                    <div className="h-4 bg-white/10 w-5/6 rounded"></div>
-                    <div className="h-4 bg-white/10 w-1/2 rounded"></div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <p className="text-white/5 font-bold text-4xl md:text-6xl uppercase rotate-[-10deg] select-none">
-                        CANIA REPORT PREVIEW
-                    </p>
+                <div className="h-125 md:h-175 p-8 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-4 opacity-20">
+                        <div className="h-4 bg-white/10 w-3/4 rounded"></div>
+                        <div className="h-4 bg-white/10 w-full rounded"></div>
+                        <div className="h-4 bg-white/10 w-5/6 rounded"></div>
+                        <div className="h-4 bg-white/10 w-1/2 rounded"></div>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <p className="text-white/5 font-bold text-4xl md:text-6xl uppercase rotate-[-10deg] select-none">
+                            CANIA REPORT PREVIEW
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
+        )}
+
       </main>
 
       <Footer />

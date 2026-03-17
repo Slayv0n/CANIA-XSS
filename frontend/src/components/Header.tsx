@@ -28,7 +28,7 @@ export default function Header() {
   }, [isProfileMenuOpen]);
 
   return (
-    <header className="h-20 border-b border-card-border flex items-center justify-between px-10 relative z-50 header-root">
+    <header className="h-20 border-b border-light-red flex items-center justify-between px-10 relative z-50 header-root">
       
       <div 
         onClick={() => navigate('/')} 

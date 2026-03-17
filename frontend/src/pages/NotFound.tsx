@@ -1,4 +1,5 @@
-import React from 'react';
+import Footer from "../components/Footer";
+import Header from "../components/Header";
 
 interface NotFoundProps {
   onGoHome: () => void;
@@ -6,6 +7,8 @@ interface NotFoundProps {
 
 export default function NotFound({ onGoHome }: NotFoundProps) {
   return (
+    <>
+    <Header />
     <main className="flex-1 flex flex-col items-center justify-center text-center px-4 min-h-[60vh] relative z-10">
       <h2 className="text-3xl md:text-4xl font-bold uppercase text-main-text mb-2 font-title">
         Упс!
@@ -25,5 +28,7 @@ export default function NotFound({ onGoHome }: NotFoundProps) {
         </button>
       </p>
     </main>
+    <Footer />
+    </>
   );
 }

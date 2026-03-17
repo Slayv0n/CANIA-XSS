@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth, useUI, useTheme } from "../context/AppContext";
-import { LogoFooter } from "../assets/icons";
+import { GlowSpot, LogoFooter } from "../assets/icons";
 
 export default function Footer() {
     const navigate = useNavigate();
@@ -30,7 +30,8 @@ export default function Footer() {
     };
 
     return (
-        <footer className="border-t border-card-border py-20 px-6 relative z-10">
+        <footer className="border-t border-light-red py-20 px-6 relative z-10 overflow-hidden">
+            <GlowSpot className="absolute inset-0 w-full h-full" />
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     
@@ -88,6 +89,7 @@ export default function Footer() {
                             <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
                         </div>
                     </div>
+
                 </div>
 
                 <div className="border-t border-light-red pt-8">
