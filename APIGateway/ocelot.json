@@ -7,8 +7,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -19,8 +19,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -38,8 +38,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -54,8 +54,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -73,8 +73,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -92,8 +92,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -111,8 +111,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -123,8 +123,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -135,8 +135,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5003
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -154,8 +154,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5003
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -173,8 +173,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5003
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -192,8 +192,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -205,8 +205,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -218,8 +218,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -231,8 +231,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -244,8 +244,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -256,8 +256,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ]
     },
@@ -268,8 +268,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -284,8 +284,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -303,8 +303,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5005
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -319,8 +319,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5005
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -335,8 +335,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5005
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {
@@ -351,8 +351,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5005
+          "Host": "user-api",
+          "Port": 8082
         }
       ],
       "AuthenticationOptions": {

@@ -17,11 +17,11 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtSettings_SecretKey") ?? "")),
+            Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtSettings_SecretKey") ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!")),
         ValidateIssuer = true,
-        ValidIssuer = Environment.GetEnvironmentVariable("JwtSettings_Issuer"),
+        ValidIssuer = builder.Configuration.GetValue<string>("JwtSettings_Issuer"),
         ValidateAudience = true,
-        ValidAudience = Environment.GetEnvironmentVariable("JwtSettings_Audience"),
+        ValidAudience = builder.Configuration.GetValue<string>("JwtSettings_Audience"),
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };

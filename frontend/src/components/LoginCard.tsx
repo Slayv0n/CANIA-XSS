@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AppContext';
 import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot } from '../assets/icons';
+import { api, RegisterRequest, LoginRequest } from '../api';
 
 interface LoginCardProps {
     onClose: () => void;
@@ -10,14 +11,16 @@ type AuthMode = 'login' | 'register' | 'forgot_email' | 'forgot_timer' | 'new_pa
 
 export default function LoginCard({ onClose }: LoginCardProps) {
     const { login } = useAuth();
-    const [authMode, setAuthMode] = useState<AuthMode>('login'); 
-    
+    const [authMode, setAuthMode] = useState<AuthMode>('login');
+
     // Состояния полей
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
     const [agreePolicy, setAgreePolicy] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     // Таймер
     const [timer, setTimer] = useState(60);
@@ -40,18 +43,35 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     const isRegisterValid = email.length > 0 && password.length > 0 && repeatPassword.length > 0 && agreePolicy;
     const isNewPasswordValid = password.length > 0 && repeatPassword.length > 0 && password === repeatPassword;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (authMode === 'login' && isLoginValid) login();
-        if (authMode === 'register' && isRegisterValid) login();
-        
-        if (authMode === 'forgot_email' && email) {
-            setAuthMode('forgot_timer');
-            setTimer(60);
-        }
-        if (authMode === 'new_password' && isNewPasswordValid) {
-            login();
+        setError('');
+        setLoading(true);
+
+        try {
+            if (authMode === 'register' && isRegisterValid) {
+                await api.register({ email, password } as RegisterRequest);
+                login();
+            }
+            // Реальный логин через API
+            if (authMode === 'login' && isLoginValid) {
+                const response = await api.login({ email, password } as LoginRequest);
+                // Сохраняем токен и данные пользователя
+                localStorage.setItem('token', response.token);
+                localStorage.setItem('user', JSON.stringify(response));
+                login();
+            }
+            if (authMode === 'forgot_email' && email) {
+                setAuthMode('forgot_timer');
+                setTimer(60);
+            }
+            if (authMode === 'new_password' && isNewPasswordValid) {
+                login();
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Ошибка');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -71,7 +91,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">
                                 {authMode === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ'}
                             </h1>
-                            
+
+                            {error && (
+                                <div className="bg-red-500/10 border border-red-500 text-red-400 p-3 rounded-xl text-sm mb-4">
+                                    {error}
+                                </div>
+                            )}
+
                             <div className="flex flex-col gap-5">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-gray-400 text-sm pl-1">Почта</label>
@@ -114,8 +140,26 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                     </div>
                                 )}
 
-                                <button type="submit" disabled={authMode === 'login' ? !isLoginValid : !isRegisterValid} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${(authMode === 'login' ? isLoginValid : isRegisterValid) ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                    {authMode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ'}
+                                <button 
+                                    type="submit" 
+                                    disabled={loading || (authMode === 'login' ? !isLoginValid : !isRegisterValid)} 
+                                    className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${
+                                        (authMode === 'login' ? isLoginValid : isRegisterValid) 
+                                            ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' 
+                                            : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'
+                                    }`}
+                                >
+                                    {loading ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                                            </svg>
+                                            Загрузка...
+                                        </span>
+                                    ) : (
+                                        authMode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ'
+                                    )}
                                 </button>
                             </div>
 

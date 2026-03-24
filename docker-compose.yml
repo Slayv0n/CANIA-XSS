@@ -11,6 +11,8 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
     depends_on:
       - user-api
+    networks:
+      - cania-network
 
   user-api:
     build:
@@ -20,19 +22,36 @@ services:
       - "8082"
     environment:
       - ASPNETCORE_HTTP_PORTS=8082
+      - User_Db_Connection=Host=user-db;Port=5432;Database=UserDb;Username=CaniaUserAdmin;Password=developmentPassword;
+      - RabbitMQ_Host=rabbitmq
+    depends_on:
+      - user-db
+      - rabbitmq
+    networks:
+      - cania-network
 
   user-db:
-    image: postgres:latest
+    image: postgres:15
     container_name: user_db
     restart: always
     environment:
       POSTGRES_USER: CaniaUserAdmin
       POSTGRES_PASSWORD: developmentPassword
       POSTGRES_DB: UserDb
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql
+    expose:
+      - "5432"
+    networks:
+      - cania-network
 
-volumes:
-  db_data: 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - cania-network
+
+networks:
+  cania-network:
+    driver: bridge 

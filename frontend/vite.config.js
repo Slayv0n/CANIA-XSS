@@ -13,4 +13,15 @@ export default defineConfig({
       },
     }),
   tailwindcss()],
+  server: {
+    proxy: {
+      // Любой запрос, который начинается с /api, Vite перехватит
+      // и отправит на твой APIGateway
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false, // Отключаем проверку SSL (https), так как мы на localhost
+      }
+    }
+  }
 })

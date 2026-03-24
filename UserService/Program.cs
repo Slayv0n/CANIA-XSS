@@ -18,6 +18,7 @@ using UserDb.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 var db = builder.Configuration.GetValue<string>("User_Db_Connection");
+Console.WriteLine($"Connection String: {db ?? "NULL"}");
 
 builder.Services.AddDbContextFactory<UserContext>(
     options => options.UseNpgsql(builder.Configuration.GetValue<string>("User_Db_Connection")));
@@ -50,6 +51,12 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
+        cfg.Host(builder.Configuration.GetValue<string>("RabbitMQ_Host") ?? "localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
         cfg.ReceiveEndpoint("password-user-queue", e =>
         {
             e.ConfigureConsumer<PasswordCreatedConsumer>(context);
@@ -83,6 +90,30 @@ RecurringJob.AddOrUpdate<ICleanupService>(
     });
 
 app.MapHangfireDashboard();
+
+// Эндпоинт логина
+app.MapPost("/auth/login", async (UserDb.UserContext db, LoginRequest request) =>
+{
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+    
+    if (user == null)
+    {
+        return Results.Unauthorized();
+    }
+    
+    // Простая проверка пароля (для теста)
+    // В продакшене нужно использовать PasswordHash
+    if (request.Password == "test")
+    {
+        return Results.Ok(new { 
+            id = user.Id, 
+            email = user.Email,
+            token = "fake-jwt-token-" + Guid.NewGuid() 
+        });
+    }
+    
+    return Results.Unauthorized();
+});
 
 app.MapPost("/users/create", async (IUserService userService, CreateRequest request) =>
 {
@@ -128,7 +159,7 @@ app.MapGet("/users/all", async (IUserService userService, string status = "") =>
 {
     try
     {
-        //���� ����� 0, �� ����������� �� ������
+        //тут был коментарий
         var users = await userService.GetAllUsersAsync();
         return Results.Ok(users);
     }
@@ -193,3 +224,10 @@ app.MapDelete("/users/delete", async (IUserService userService, HttpContext cont
 });
 
 app.Run();
+
+// Класс для запроса логина
+public class LoginRequest
+{
+    public string Email { get; set; } = "";
+    public string Password { get; set; } = "";
+}
