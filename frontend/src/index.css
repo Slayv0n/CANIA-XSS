@@ -18,9 +18,12 @@
   --font-mono: "Roboto Mono", monospace;
 }
 
+:root {
+  color-scheme: dark;
+}
+
 :root.light {
   color-scheme: light;
-
   --color-main-bg: #FFFFFF;
   --color-main-text: #121010;
   --color-desc-text: #4b5563;
@@ -28,50 +31,14 @@
   --color-card-border: rgba(0, 0, 0, 0.1);
   --color-brand-red: #A31614;
   --color-glow-spot: #FF6B7A;
-
   --color-input-bg: #E6E6E6;
-}
-
-/* ГЛАВНОЕ ПРАВИЛО: */
-/* Применяем плавный переход ко всем элементам, которые умеют менять цвет */
-:root {
-  color-scheme: dark;
-  --theme-transition:
-  background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-  border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-  color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-  fill 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-  opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-body,
-header,
-footer,
-main,
-section,
-div,
-span,
-p,
-h1, h2, h3, h4,
-button,
-input,
-textarea,
-svg,
-path {
-  transition: var(--theme-transition);
-}
-
-/* Select без transition для background чтобы не мигал */
-select {
-  transition: border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .animate-fade-in, .glow-spot {
   will-change: opacity, transform;
 }
 
-/* Убираем фон в светлой теме плавно */
+/* Убираем фон в светлой теме плавно (если надо) или просто скрываем */
 .light .absolute.pointer-events-none.z-0 {
   opacity: 0;
 }
@@ -82,17 +49,11 @@ select {
     color: var(--color-main-text);
     font-family: var(--font-body);
   }
-  button {
-    transition-duration: 750ms;
-  }
-  /* Стили для select и option */
+  
   select {
     background-color: var(--color-card-bg);
   }
-  /* option {
-    background-color: var(--color-main-bg); 
-    color: var(--color-main-text);
-  } */
+  
   option {
     background-color: #121010; 
     color: #FFFBFB;
@@ -101,9 +62,7 @@ select {
 
 @layer components {
   .card-expand {
-    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                margin-top 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                padding-top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: height 0.3s ease, margin-top 0.3s ease, padding-top 0.3s ease;
   }
 }
 
@@ -113,7 +72,7 @@ select {
 }
 
 .animate-slide-text {
-  animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideInRight 0.5s ease-out forwards;
 }
 
 @keyframes fadeIn {

@@ -79,8 +79,10 @@ export default function Header() {
           </button>
           
           <div
-            className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-300 ${
-              isProfileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+            className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-300 origin-top ${
+              isProfileMenuOpen 
+                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100' 
+                : 'opacity-0 pointer-events-none -translate-y-4 scale-95'
             }`}
           >
             {/* надо будет что то с invisible сделать, плавного перехода нет */}

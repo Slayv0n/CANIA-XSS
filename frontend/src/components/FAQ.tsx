@@ -22,7 +22,7 @@ export default function FAQ() {
   };
 
   return (
-    <section className="py-24 px-6 transition-colors border-b border-b-light-red duration-300">
+    <section className="py-24 px-6 transition-colors border-b border-b-light-red">
         <div className="max-w-4xl mx-auto">
         <h2 className="text-4xl font-bold uppercase mb-12 text-center text-main-text">FAQ</h2>
         <div className="flex flex-col">

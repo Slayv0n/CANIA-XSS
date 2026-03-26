@@ -1,4 +1,4 @@
-import {FirstVector, SecondVector} from '../assets/icons/index.js';
+import {FirstVector, SecondVector} from '../assets/icons/index';
 
 export default function HowItWorks() {
   const steps = [

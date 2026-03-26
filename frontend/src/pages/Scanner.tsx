@@ -15,6 +15,9 @@ export function Scanner() {
   const [selectedAttack, setSelectedAttack] = useState('');
   const [selectedDepth, setSelectedDepth] = useState('');
 
+  const [error, setError] = useState<string | null>(null);
+
+
   const scanTexts = [
     "проверяем код...",
     "ищем уязвимости...",
@@ -36,16 +39,19 @@ export function Scanner() {
 
   //надо будет нормально условия отработать
   const startScan = () => {
+    // Сбрасываем старую ошибку перед новой проверкой
+    setError(null);
+
     if (!url) {
-        alert("Сначала введите URL сайта для проверки!");
+        setError("Сначала введите URL сайта для проверки!");
         return;
     }
-    if(!selectedAttack || !selectedDepth) {
-        alert("Пожалуйста, выберите тип атаки и глубину проверки!");
+    if (!selectedAttack || !selectedDepth) {
+        setError("Пожалуйста, выберите тип атаки и глубину проверки!");
         return;
     }
-    if(!url.valueOf().includes('.')) {
-        alert("Пожалуйста, введите корректный URL сайта!(точку!)");
+    if (!url.includes('.')) {
+        setError("Пожалуйста, введите корректный URL сайта (например, example.com)!");
         return;
     }
 
@@ -72,6 +78,15 @@ export function Scanner() {
                 Мы не несем ответственность за использование инструмента в противоправных целях
             </p>
         </section>
+
+        {error && (
+          <div className="mb-6 bg-brand-red/10 border border-brand-red text-red-500 px-4 py-3 rounded-xl flex items-center gap-3 animate-fade-in">
+            <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-sm font-medium">{error}</span>
+          </div>
+        )}
 
         <section className="flex flex-col md:flex-row gap-4 mb-8">
             <input
