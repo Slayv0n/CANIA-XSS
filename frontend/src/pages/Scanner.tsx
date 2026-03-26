@@ -1,7 +1,8 @@
-import React, { useState , useEffect} from 'react';
+import { useState , useEffect} from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Download, ReportReady } from '../assets/icons';
+import CustomSelect from '../components/CustomSelect';
 
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
@@ -9,12 +10,19 @@ export function Scanner() {
   const [url, setUrl] = useState('');
   const [scanStatus, setScanStatus] = useState<ScanStatus>('idle');
   const [textIndex, setTextIndex] = useState(0);
+  
+  // Состояния для выбранных значений
+  const [selectedAttack, setSelectedAttack] = useState('');
+  const [selectedDepth, setSelectedDepth] = useState('');
 
   const scanTexts = [
     "проверяем код...",
     "ищем уязвимости...",
     "проверка может занять несколько минут..."
   ];
+
+  const attackTypes = ['XSS', 'SQL Injections', 'CSRF', 'IDOR', 'Security Misconfiguration', 'Все типы'];
+  const depthLevels = ['Низкая', 'Средняя', 'Высокая'];
 
   useEffect(() => {
     if (scanStatus !== 'scanning') return;
@@ -26,11 +34,21 @@ export function Scanner() {
     return () => clearInterval(interval);
   }, [scanStatus]);
 
+  //надо будет нормально условия отработать
   const startScan = () => {
     if (!url) {
-      alert("Сначала введите URL сайта для проверки!");
-      return;
+        alert("Сначала введите URL сайта для проверки!");
+        return;
     }
+    if(!selectedAttack || !selectedDepth) {
+        alert("Пожалуйста, выберите тип атаки и глубину проверки!");
+        return;
+    }
+    if(!url.valueOf().includes('.')) {
+        alert("Пожалуйста, введите корректный URL сайта!(точку!)");
+        return;
+    }
+
     setScanStatus('scanning');
     setTextIndex(0);
   };
@@ -45,7 +63,7 @@ export function Scanner() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-20 relative z-10">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-6 mb-40 md:p-20 relative z-10">
         <section className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold uppercase text-main-text mb-4">
                 Проверьте ваш сайт на уязвимости
@@ -56,12 +74,12 @@ export function Scanner() {
         </section>
 
         <section className="flex flex-col md:flex-row gap-4 mb-8">
-            <input 
-                type="text" 
+            <input
+                type="text"
                 placeholder="EXAMPLE.COM"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 bg-white/3 border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors"
+                className="flex-1 bg-card-bg border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors"
             />
             <button 
                 onClick={startScan}
@@ -72,21 +90,21 @@ export function Scanner() {
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-            <div className="flex flex-col gap-2">
-                <select className="bg-white/3 border border-card-border p-4 rounded-sm text-desc-text outline-none appearance-none cursor-pointer hover:border-white/20">
-                    <option>Тип атаки</option>
-                    <option>XSS Reflected</option>
-                    <option>XSS DOM</option>
-                </select>
-            </div>
-            <div className="flex flex-col gap-2">
-                <select className="bg-white/3 border border-card-border p-4 rounded-sm text-desc-text outline-none appearance-none cursor-pointer hover:border-white/20">
-                    <option>Глубина атаки</option>
-                    <option>Низкая</option>
-                    <option>Средняя</option>
-                    <option>Высокая</option>
-                </select>
-            </div>
+            {/* Селект для типа атаки */}
+            <CustomSelect 
+                value={selectedAttack}
+                onChange={setSelectedAttack}
+                options={attackTypes}
+                placeholder="Тип атаки"
+            />
+
+            {/* Селект для глубины */}
+            <CustomSelect 
+                value={selectedDepth}
+                onChange={setSelectedDepth}
+                options={depthLevels}
+                placeholder="Глубина атаки"
+            />
         </section>
 
         {scanStatus !== 'idle' && (

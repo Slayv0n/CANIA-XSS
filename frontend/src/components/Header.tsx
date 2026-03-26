@@ -95,13 +95,13 @@ export default function Header() {
             </h3>
 
             <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer'>
-              {theme === 'light' ? (
+              {theme === 'dark' ? (
                 <>
-                  <Dark /> Светлая тема
+                  <Light /> Светлая тема
                 </>
               ) : (
                 <>
-                  <Light /> Тёмная тема
+                  <Dark /> Тёмная тема
                 </>
               )}
             </button>

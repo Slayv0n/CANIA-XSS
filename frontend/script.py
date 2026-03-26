@@ -74,12 +74,12 @@ def merge_important_files(directory, output_file, max_depth=2):
                     print(f"Пропущен файл (ошибка чтения): {relative_name}")
 
 if __name__ == "__main__":
-    target_directory = r"D:\VScode_projects\CANIA-XSS"
+    target_directory = r"D:\VScode_projects\CANIA-XSS\frontend"  # Укажи путь к папке с кодом
     result_filename = "backend1.txt"
     
     # Установи max_depth: 
     # 2 или 3 обычно хватает для большинства проектов. 
     # Больше — пойдет в дебри библиотек.
-    print(f"Собираю код (глубина поиска: 2)...")
-    merge_important_files(target_directory, result_filename, max_depth=2)
+    print(f"Собираю код (глубина поиска: 5)...")
+    merge_important_files(target_directory, result_filename, max_depth=5)
     print(f"Готово! Результат: {result_filename}")

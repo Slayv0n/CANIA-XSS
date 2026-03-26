@@ -19,6 +19,8 @@
 }
 
 :root.light {
+  color-scheme: light;
+
   --color-main-bg: #FFFFFF;
   --color-main-text: #121010;
   --color-desc-text: #4b5563;
@@ -33,6 +35,7 @@
 /* ГЛАВНОЕ ПРАВИЛО: */
 /* Применяем плавный переход ко всем элементам, которые умеют менять цвет */
 :root {
+  color-scheme: dark;
   --theme-transition:
   background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
   border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
@@ -41,22 +44,27 @@
   opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body, 
-header, 
-footer, 
+body,
+header,
+footer,
 main,
-section, 
-div, 
+section,
+div,
 span,
 p,
 h1, h2, h3, h4,
-button, 
-input, 
-select, 
+button,
+input,
 textarea,
 svg,
 path {
   transition: var(--theme-transition);
+}
+
+/* Select без transition для background чтобы не мигал */
+select {
+  transition: border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .animate-fade-in, .glow-spot {
@@ -76,6 +84,18 @@ path {
   }
   button {
     transition-duration: 750ms;
+  }
+  /* Стили для select и option */
+  select {
+    background-color: var(--color-card-bg);
+  }
+  /* option {
+    background-color: var(--color-main-bg); 
+    color: var(--color-main-text);
+  } */
+  option {
+    background-color: #121010; 
+    color: #FFFBFB;
   }
 }
 
@@ -103,4 +123,9 @@ path {
 
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
+}
+
+.light option {
+  background-color: #FFFFFF;
+  color: #121010;
 }
