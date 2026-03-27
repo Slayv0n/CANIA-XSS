@@ -5,7 +5,8 @@ export type Theme = 'dark' | 'light';
 
 interface AuthContextType {
   isAuth: boolean;
-  login: () => void;
+  userEmail: string | null; // <--- ДОБАВИЛИ
+  login: (email: string) => void; // <--- ТЕПЕРЬ ПЕРЕДАЕМ EMAIL
   logout: () => void;
 }
 
@@ -32,24 +33,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate(); // Добавляем навигацию сюда
   
   const [isAuth, setIsAuth] = useState<boolean>(() => localStorage.getItem('isAuth') === 'true');
+  const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('userEmail')); // <--- ДОБАВИЛИ
   const [theme, setTheme] = useState<Theme>('dark');
   const [isLoginModalOpen, setLoginModal] = useState(false);
   const [isPricesModalOpen, setPricesModal] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModal] = useState(false);
 
-  const login = () => {
+  const login = (email: string) => {
     setIsAuth(true);
+    setUserEmail(email);
     localStorage.setItem('isAuth', 'true');
+    localStorage.setItem('userEmail', email);
     setLoginModal(false);
-    // МАГИЯ ТУТ: После логина всегда идем в профиль
     navigate('/profile');
   };
 
   const logout = () => {
     setIsAuth(false);
+    setUserEmail(null);
     localStorage.removeItem('isAuth');
+    localStorage.removeItem('userEmail');
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('refreshToken'); // если сохранял
     navigate('/');
   };
 
@@ -88,7 +93,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <AuthContext.Provider value={{ isAuth, login, logout }}>
+      <AuthContext.Provider value={{ isAuth, userEmail, login, logout }}>
         <UIContext.Provider value={{ 
           isLoginModalOpen, setLoginModal, 
           isPricesModalOpen, setPricesModal,

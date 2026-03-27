@@ -1,368 +1,92 @@
 {
   "Routes": [
-    { //Users
-      "UpstreamPathTemplate": "/api/users/create",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/users/create",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
-    },
+    // 1. АУТЕНТИФИКАЦИЯ (AuthService - Порт 8081)
     {
-      "UpstreamPathTemplate": "/api/users/account",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/users/account",
+      "UpstreamPathTemplate": "/api/auth/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/auth/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
-      "AddHeadersToRequest": {
-        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/users/all",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/users/all",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/users/update",
-      "UpstreamHttpMethod": [ "PUT" ],
-      "DownstreamPathTemplate": "/users/update",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
-      "AddHeadersToRequest": {
-        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/users/delete",
-      "UpstreamHttpMethod": [ "DELETE" ],
-      "DownstreamPathTemplate": "/users/delete",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
-      "AddHeadersToRequest": {
-        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
-    },
-    { //Passwords
-      "UpstreamPathTemplate": "/api/passwords/update",
-      "UpstreamHttpMethod": [ "PUT" ],
-      "DownstreamPathTemplate": "/passwords/update",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
-      "AddHeadersToRequest": {
-        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/passwords/reset/",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/passwords/reset",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
-    },
-    {
-      "UpstreamPathTemplate": "/api/passwords/reset/{token}/{email}",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/passwords/reset/{token}/{email}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
-    },
-    { //Subscribe
-      "UpstreamPathTemplate": "/api/subscribes/subscribe",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/subscribes/subscribe",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
-      "AddHeadersToRequest": {
-        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/subscribes/update",
-      "UpstreamHttpMethod": [ "PUT" ],
-      "DownstreamPathTemplate": "/subscribes/update",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
-      "AddHeadersToRequest": {
-        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/subscribes/unscribe",
-      "UpstreamHttpMethod": [ "DELETE" ],
-      "DownstreamPathTemplate": "/subscribes/unscribe",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
-      "AddHeadersToRequest": {
-        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
-    },
-    { //Authentication
-      "UpstreamPathTemplate": "/api/auth/login",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/auth/login",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
-    },
-    {
-      "UpstreamPathTemplate": "/api/auth/login/google",
-      "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamScheme": "https",
-      "DownstreamPathTemplate": "/auth/login/google",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
-    },
-    {
-      "UpstreamPathTemplate": "/api/auth/login/github",
-      "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamScheme": "https",
-      "DownstreamPathTemplate": "/auth/login/github",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
+      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
     },
     {
       "UpstreamPathTemplate": "/api/signin-github",
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamScheme": "https",
       "DownstreamPathTemplate": "/signin-github",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
+      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
     },
+
+    // 2. ПОЛЬЗОВАТЕЛИ: Регистрация (UserService - 8082, без авторизации)
     {
-      "UpstreamPathTemplate": "/api/auth/callback",
-      "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamScheme": "https",
-      "DownstreamPathTemplate": "/auth/callback",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
-    },
-    {
-      "UpstreamPathTemplate": "/api/auth/refresh",
+      "UpstreamPathTemplate": "/api/users/create",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/auth/refresh",
+      "DownstreamPathTemplate": "/users/create",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ]
+      "DownstreamHostAndPorts": [{ "Host": "user-api", "Port": 8082 }]
     },
+
+    // 3. ПОЛЬЗОВАТЕЛИ: Аккаунт и управление (UserService - 8082, НУЖЕН ТОКЕН)
     {
-      "UpstreamPathTemplate": "/api/auth/logout",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/auth/logout",
+      "UpstreamPathTemplate": "/api/users/{url}",
+      "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/users/{url}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/auth/logout/all",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/auth/logout/all",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
+      "DownstreamHostAndPorts": [{ "Host": "user-api", "Port": 8082 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "AddHeadersToRequest": {
         "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
       }
     },
-    { //Task
-      "UpstreamPathTemplate": "/api/task/create",
+
+    // 4. ПАРОЛИ: Сброс (PasswordService - 8084, без авторизации)
+    {
+      "UpstreamPathTemplate": "/api/passwords/reset/{everything}",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/task/create",
+      "DownstreamPathTemplate": "/passwords/reset/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
+      "DownstreamHostAndPorts": [{ "Host": "password-api", "Port": 8084 }]
+    },
+
+    // 5. ПАРОЛИ: Обновление (PasswordService - 8084, НУЖЕН ТОКЕН)
+    {
+      "UpstreamPathTemplate": "/api/passwords/update",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/passwords/update",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "password-api", "Port": 8084 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
       }
     },
+
+    // 6. ПОДПИСКИ (SubscribeService - 8085, НУЖЕН ТОКЕН)
     {
-      "UpstreamPathTemplate": "/api/task/{taskId}",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/task/{taskId}",
+      "UpstreamPathTemplate": "/api/subscribes/{everything}",
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/subscribes/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
+      "DownstreamHostAndPorts": [{ "Host": "subscribe-api", "Port": 8085 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
       }
     },
+
+    // 7. ЗАДАЧИ СКАНИРОВАНИЯ (TaskService - 8086, НУЖЕН ТОКЕН)
     {
-      "UpstreamPathTemplate": "/api/task/connection/{taskId}",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/task/connection/{taskId}",
+      "UpstreamPathTemplate": "/api/task/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "DELETE" ],
+      "DownstreamPathTemplate": "/task/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      }
-    },
-    {
-      "UpstreamPathTemplate": "/api/task/cancel/{taskId}",
-      "UpstreamHttpMethod": [ "DELETE" ],
-      "DownstreamPathTemplate": "/task/cancel/{taskId}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-api",
-          "Port": 8082
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
+      "DownstreamHostAndPorts": [{ "Host": "task-api", "Port": 8086 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
       }
     }
   ],
-
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5000"
+    "BaseUrl": "http://localhost:8080"
   }
 }

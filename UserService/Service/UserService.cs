@@ -40,7 +40,14 @@ namespace UserAPI.Service
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var user = new User() { Email = request.Email};
+            // 1. ПРОВЕРКА НА ДУБЛИКАТ
+            var exists = await db.Users.AnyAsync(u => u.Email == request.Email);
+            if (exists)
+            {
+                throw new Exception("Пользователь с такой почтой уже существует");
+            }
+
+            var user = new User() { Email = request.Email };
 
             await db.Users.AddAsync(user);
             await db.SaveChangesAsync();

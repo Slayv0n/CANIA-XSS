@@ -50,23 +50,33 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
         try {
             if (authMode === 'register' && isRegisterValid) {
+                // 1. Создаем аккаунт
                 await api.register({ email, password } as RegisterRequest);
-                login();
+                
+                // 2. Ждем 1-2 секунды, чтобы RabbitMQ успел прокинуть юзера в AuthDb
+                // (Это костыль для распределенных систем, пока нет сложной логики)
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // 3. Сразу вызываем ЛОГИН, чтобы получить реальный токен
+                const response = await api.login({ email, password } as LoginRequest);
+                localStorage.setItem('token', response.accessToken);
+                
+                // 4. Только теперь пускаем в систему
+                login(email);
             }
             // Реальный логин через API
             if (authMode === 'login' && isLoginValid) {
                 const response = await api.login({ email, password } as LoginRequest);
-                // Сохраняем токен и данные пользователя
-                localStorage.setItem('token', response.token);
-                localStorage.setItem('user', JSON.stringify(response));
-                login();
+                localStorage.setItem('token', response.accessToken);
+                // Вызываем login и передаем email, который юзер ввел в форму
+                login(email); 
             }
             if (authMode === 'forgot_email' && email) {
                 setAuthMode('forgot_timer');
                 setTimer(60);
             }
             if (authMode === 'new_password' && isNewPasswordValid) {
-                login();
+                login(email);
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ошибка');

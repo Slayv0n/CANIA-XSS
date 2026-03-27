@@ -183,15 +183,13 @@ builder.Services.AddDbContextFactory<AuthContext>(
 
 var jwtSettings = new JwtSettings()
 {
-    SecretKey = builder.Configuration.GetValue<string>("JwtSettings_SecretKey")
-        ?? throw new InvalidOperationException("JwtSettings_SecretKey is required"),
-    Issuer = builder.Configuration.GetValue<string>("JwtSettings_Issuer") ?? "Auth",
-    Audience = builder.Configuration.GetValue<string>("JwtSettings_Audience")?? "Services",
-    ExpirationAccessTokenMinutes = 
-        double.Parse(builder.Configuration.GetValue<string>("JwtSettings_ExpirationAccessTokenMinutes") ?? "15"),
-    ExpirationRefreshTokenDays =
-        double.Parse(builder.Configuration.GetValue<string>("JwtSettings_ExpirationRefreshTokenDays") ?? "7")
+    SecretKey = builder.Configuration["JWT_SECRET"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!",
+    Issuer = builder.Configuration["JWT_ISSUER"] ?? "Cania",
+    Audience = builder.Configuration["JWT_AUDIENCE"] ?? "Cania",
+    ExpirationAccessTokenMinutes = 60,
+    ExpirationRefreshTokenDays = 7
 };
+
 builder.Services.AddSingleton<JwtSettings>(jwtSettings);
 
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -233,7 +231,23 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-
+for (int i = 0; i < 10; i++) // 10 попыток
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AuthContext>>();
+        using var context = contextFactory.CreateDbContext();
+        context.Database.EnsureCreated();
+        Console.WriteLine("Database connected and created successfully!");
+        break; // Если успешно — выходим из цикла
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
+        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+    }
+}
 app.UseForwardedHeaders();
 
 app.UseRouting();

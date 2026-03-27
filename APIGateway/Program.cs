@@ -11,19 +11,20 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+
 .AddJwtBearer("Bearer", options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtSettings_SecretKey") ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!")),
+            Encoding.UTF8.GetBytes(builder.Configuration["JWT_SECRET"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!")),
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration.GetValue<string>("JwtSettings_Issuer"),
+        ValidIssuer = builder.Configuration["JWT_ISSUER"] ?? "Cania",
         ValidateAudience = true,
-        ValidAudience = builder.Configuration.GetValue<string>("JwtSettings_Audience"),
+        ValidAudience = builder.Configuration["JWT_AUDIENCE"] ?? "Cania",
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.FromMinutes(5)
     };
 });
 

@@ -36,20 +36,37 @@ builder.Services.AddMassTransit(x =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TaskContext>>();
+    using var context = contextFactory.CreateDbContext();
+    context.Database.EnsureCreated();
+}
+
 app.UseStaticFiles();
 
-app.MapPost("/task/create", async (CreateRequest request, ITaskService taskService) => 
+app.MapPost("/task/create", async (CreateRequest request, HttpContext context, ITaskService taskService) => 
 {
     try
     {
-        var task = await taskService.CreateAsync(Guid.NewGuid(), request.Host, request.TypeOfAttacks, request.Depth);
+        // 1. Достаем твой ID из заголовка, который заботливо подложил Gateway
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            return Results.Unauthorized();
+        }
+
+        // 2. Создаем задачу именно для твоего userId
+        var task = await taskService.CreateAsync(userId, request.Host, request.TypeOfAttacks, request.Depth);
         return Results.Ok(task);
     }
-    catch
+    catch (Exception ex)
     {
-        return Results.BadRequest();
+        return Results.BadRequest(ex.Message);
     }
 });
+
 app.MapGet("/task/{taskId:Guid}", async (Guid taskId, ITaskService taskService) =>
 {
     try
@@ -108,5 +125,28 @@ app.MapDelete("/task/cancel/{taskId:Guid}", async (Guid taskId, ITaskService tas
     }
 });
 
+
+app.MapGet("/task/all", async (HttpContext context, IDbContextFactory<TaskDb.TaskContext> dbFactory) =>
+{
+    try
+    {
+        // 1. Узнаем, кто запрашивает
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+        if (!verify) return Results.Unauthorized();
+
+        // 2. Достаем из базы все задачи этого пользователя, сортируем от новых к старым
+        using var db = await dbFactory.CreateDbContextAsync();
+        var tasks = await db.Tasks
+            .Where(t => t.UserId == userId)
+            .OrderByDescending(t => t.CreatedTime)
+            .ToListAsync();
+
+        return Results.Ok(tasks);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
 
 app.Run();

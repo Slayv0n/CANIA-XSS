@@ -4,7 +4,7 @@ import { LogoFull, UserLoginIcon, UserProfileIcon, Dark, Light, Password, Mail, 
 import { useState, useRef, useEffect } from 'react';
 export default function Header() {
   const navigate = useNavigate();
-  const { isAuth, logout } = useAuth();
+  const { isAuth, logout, userEmail } = useAuth(); // <--- ДОБАВЬ userEmail
   const { setLoginModal, handlePricesClick } = useUI();
   const { theme, toggleTheme } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -91,9 +91,10 @@ export default function Header() {
                 navigate('/profile');
                 setIsProfileMenuOpen(false);
               }} 
-              className='pt-4 cursor-pointer hover:text-brand-red transition-colors'
+              className='pt-4 cursor-pointer hover:text-brand-red transition-colors text-lg truncate w-full'
+              title={userEmail || 'Профиль'}
             >
-              почта@example.com
+              {userEmail || 'Профиль'}
             </h3>
 
             <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer'>

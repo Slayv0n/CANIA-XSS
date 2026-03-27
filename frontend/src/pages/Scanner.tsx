@@ -4,6 +4,8 @@ import Footer from '../components/Footer';
 import { Download, ReportReady } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
 
+import { api } from '../api';
+
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
 export function Scanner() {
@@ -38,8 +40,7 @@ export function Scanner() {
   }, [scanStatus]);
 
   //надо будет нормально условия отработать
-  const startScan = () => {
-    // Сбрасываем старую ошибку перед новой проверкой
+  const startScan = async () => {
     setError(null);
 
     if (!url) {
@@ -55,8 +56,53 @@ export function Scanner() {
         return;
     }
 
-    setScanStatus('scanning');
-    setTextIndex(0);
+    // 1. Словари для перевода текста в цифры (как ждет бэкенд)
+    const attackMap: Record<string, number> = {
+      'XSS': 1, 'SQL Injections': 2, 'Ddos': 3, 'Все типы': 1, 'CSRF': 1, 'IDOR': 1, 'Security Misconfiguration': 1
+    };
+    const depthMap: Record<string, number> = {
+      'Низкая': 1, 'Средняя': 2, 'Высокая': 3
+    };
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        setError("Вы не авторизованы!");
+        return;
+    }
+
+    try {
+        setScanStatus('scanning');
+        setTextIndex(0);
+
+        const taskData = {
+            host: url,
+            typeOfAttacks: [attackMap[selectedAttack] || 1],
+            depth: depthMap[selectedDepth] || 1
+        };
+
+        const result = await api.createTask(taskData, token);
+        console.log("Задача создана! ID:", result.id);
+
+        // Начинаем опрашивать бэкенд каждые 2 секунды (polling)
+        const intervalId = setInterval(async () => {
+            try {
+                const checkTask = await api.getTask(result.id, token);
+                console.log("Текущий статус задачи на сервере:", checkTask.status);
+                
+                // Если статус 5 (Completed) — останавливаем таймер и показываем отчет!
+                if (checkTask.status === 5) {
+                    setScanStatus('ready');
+                    clearInterval(intervalId); // Выключаем опрос
+                }
+            } catch (e) {
+                console.error("Не удалось проверить статус", e);
+            }
+        }, 2000); // 2000 мс = 2 секунды
+
+    } catch (err: any) {
+        setScanStatus('idle');
+        setError(err.message || "Не удалось запустить сканирование");
+    }
   };
 
   const finishScan = () => {

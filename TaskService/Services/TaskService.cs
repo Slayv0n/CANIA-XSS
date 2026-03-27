@@ -83,6 +83,24 @@ namespace Task_API.Services
                 Depth = task.Depth
             });
 
+            // --- НАЧАЛО КОСТЫЛЯ ДЛЯ ИМИТАЦИИ ИИ ---
+            var taskId = task.Id;
+            _ = Task.Run(async () =>
+            {
+                // Имитируем, что нейронка работает 5 секунд
+                await Task.Delay(5000); 
+                
+                using var scopeDb = await _dbContextFactory.CreateDbContextAsync();
+                var taskToComplete = await scopeDb.Tasks.FindAsync(taskId);
+                if (taskToComplete != null)
+                {
+                    taskToComplete.Status = StatusTask.Completed; // 5 - это Completed
+                    taskToComplete.LastUpdate = DateTime.UtcNow;
+                    await scopeDb.SaveChangesAsync();
+                }
+            });
+            // --- КОНЕЦ КОСТЫЛЯ ---
+
             var response = new TaskResponse
             {
                 Id = task.Id,

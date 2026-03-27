@@ -77,6 +77,24 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+// Инициализация базы с ожиданием (retry logic)
+for (int i = 0; i < 10; i++) // 10 попыток
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<UserContext>>();
+        using var context = contextFactory.CreateDbContext();
+        context.Database.EnsureCreated();
+        Console.WriteLine("Database connected and created successfully!");
+        break; // Если успешно — выходим из цикла
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
+        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+    }
+}
 
 app.UseHangfireDashboard();
 
@@ -91,29 +109,6 @@ RecurringJob.AddOrUpdate<ICleanupService>(
 
 app.MapHangfireDashboard();
 
-// Эндпоинт логина
-app.MapPost("/auth/login", async (UserDb.UserContext db, LoginRequest request) =>
-{
-    var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-    
-    if (user == null)
-    {
-        return Results.Unauthorized();
-    }
-    
-    // Простая проверка пароля (для теста)
-    // В продакшене нужно использовать PasswordHash
-    if (request.Password == "test")
-    {
-        return Results.Ok(new { 
-            id = user.Id, 
-            email = user.Email,
-            token = "fake-jwt-token-" + Guid.NewGuid() 
-        });
-    }
-    
-    return Results.Unauthorized();
-});
 
 app.MapPost("/users/create", async (IUserService userService, CreateRequest request) =>
 {
@@ -224,10 +219,3 @@ app.MapDelete("/users/delete", async (IUserService userService, HttpContext cont
 });
 
 app.Run();
-
-// Класс для запроса логина
-public class LoginRequest
-{
-    public string Email { get; set; } = "";
-    public string Password { get; set; } = "";
-}
