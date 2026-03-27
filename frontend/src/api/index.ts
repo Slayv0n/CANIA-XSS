@@ -127,4 +127,15 @@ export const api = {
     if (!response.ok) throw new Error('Ошибка получения статуса');
     return response.json();
   },
+
+  async deleteTask (taskId: string, token: string) {
+    const response = await fetch(`${API_BASE}/task/cancel/${taskId}`, {
+      method: 'DELETE',
+      headers: { 
+        'Authorization': `Bearer ${token}` 
+      },
+    });
+    
+    if (!response.ok) throw new Error('Ошибка удаления задачи');
+  }
 };

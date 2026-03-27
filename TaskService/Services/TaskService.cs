@@ -37,23 +37,20 @@ namespace Task_API.Services
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
+            // 1. Ищем задачу
             var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId);
 
-            if (task == null)
+            if (task != null)
             {
-                _logger.LogWarning($"Task not found: {taskId}");
-                throw new NotFoundException("Task not found");
+                // 2. УДАЛЯЕМ ЕЁ СОВСЕМ ИЗ БАЗЫ
+                db.Tasks.Remove(task); 
+                await db.SaveChangesAsync();
+                
+                // 3. Уведомляем систему (необязательно, но пусть будет)
+                await _publishEndpoint.Publish<TaskCancelled>(new { Id = taskId });
+                
+                _logger.LogInformation($"Задача {taskId} удалена навсегда.");
             }
-
-            task.Status = StatusTask.Cancelled;
-            task.LastUpdate = DateTime.UtcNow;
-
-            await db.SaveChangesAsync();
-
-            await _publishEndpoint.Publish<TaskCancelled>(new
-            {
-                Id = taskId
-            });
         }
 
         public async Task<TaskResponse> CreateAsync(Guid userId, string host, List<TypeOfAttack> typeOfAttacks, Depth depth)

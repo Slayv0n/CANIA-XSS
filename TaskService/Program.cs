@@ -137,7 +137,7 @@ app.MapGet("/task/all", async (HttpContext context, IDbContextFactory<TaskDb.Tas
         // 2. Достаем из базы все задачи этого пользователя, сортируем от новых к старым
         using var db = await dbFactory.CreateDbContextAsync();
         var tasks = await db.Tasks
-            .Where(t => t.UserId == userId)
+            .Where(t => t.UserId == userId && t.Status != SharedModels.General.StatusTask.Cancelled) 
             .OrderByDescending(t => t.CreatedTime)
             .ToListAsync();
 
