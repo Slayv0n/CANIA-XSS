@@ -59,10 +59,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleTheme = () => {
-    // 1. Блокируем ВСЕ анимации на странице
-    document.documentElement.classList.add('disable-transitions');
-
-    // 2. Вычисляем и ставим новую тему
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     if (newTheme === 'light') {
@@ -70,12 +66,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } else {
       document.documentElement.classList.remove('light');
     }
-
-    // 3. Заставляем браузер применить цвета прямо сейчас (до возврата анимаций)
-    window.getComputedStyle(document.documentElement).cssText;
-
-    // 4. Снимаем блокировку. Теперь hover-эффекты снова работают!
-    document.documentElement.classList.remove('disable-transitions');
   };
 
   const handlePricesClick = (e?: React.MouseEvent) => {

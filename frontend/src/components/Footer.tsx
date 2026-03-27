@@ -36,9 +36,9 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     
                     <div className="flex flex-col gap-6 items-start">
-                        <div 
+                        <div
                             onClick={handleLogoClick}
-                            className={`text-main-text hover:opacity-80 cursor-pointer transition-transform duration-200 ease-out ${
+                            className={`text-main-text hover:opacity-80 cursor-pointer transition-transform ${
                                 isBouncing ? 'scale-95' : 'scale-100'
                             }`}
                         >
@@ -52,30 +52,30 @@ export default function Footer() {
                     <div className="flex flex-col place-items-end gap-4">
                         <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
-                            <button 
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase" 
+                            <button
+                                className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm text-left cursor-pointer uppercase"
                                 onClick={() => {
-                                    if (isAuth) navigate('/scanner'); 
+                                    if (isAuth) navigate('/scanner');
                                     else setLoginModal(true);
-                                }} 
+                                }}
                             >
                                 Функционал
                             </button>
-                            <button 
+                            <button
                                 onClick={handlePricesClick}
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase"
+                                className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Тарифы
                             </button>
-                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors rounded-sm flex uppercase cursor-pointer">
+                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm flex uppercase cursor-pointer">
                                 {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                             </button>
-                            <button className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase">
+                            <button className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm uppercase">
                                 Версия на английском
                             </button>
                             <button
                                 onClick={() => setFeedbackModal(true)}
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase"
+                                className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Оставить отзыв
                             </button>
@@ -85,8 +85,8 @@ export default function Footer() {
                     <div className="flex flex-col gap-4">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
                         <div className="flex flex-col gap-3 text-desc-text text-sm font-medium">
-                            <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors p-1 rounded-sm">+7 (991) 123-03-22</a>
-                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
+                            <a href="tel:+79911230322" className="hover:bg-brand-gray hover:transition-colors p-1 rounded-sm">+7 (991) 123-03-22</a>
+                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray hover:transition-colors p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
                         </div>
                     </div>
 

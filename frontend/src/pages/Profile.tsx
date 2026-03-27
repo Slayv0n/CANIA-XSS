@@ -61,7 +61,7 @@ export function Profile() {
                         <p className="text-desc-text animate-pulse">Загрузка отчетов...</p>
                     ) : reports.length > 0 ? (
                         reports.map((report) => (
-                            <button 
+                            <button
                                 key={report.id}
                                 className="w-full flex justify-between items-center p-6 bg-card-bg border border-card-border rounded-xl hover:border-brand-red hover:transition-colors group cursor-pointer"
                             >
@@ -78,12 +78,12 @@ export function Profile() {
                                 {/* ПРАВАЯ ЧАСТЬ: Крестик и Стрелка вместе */}
                                 <div className="flex items-center gap-6"> 
                                     {/* Кнопка удаления */}
-                                    <div 
+                                    <div
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleDelete(report.id);
                                         }}
-                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red transition-all cursor-pointer"
+                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red hover:transition-all cursor-pointer"
                                     >
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <path d="M18 6L6 18M6 6l12 12"/>
@@ -91,7 +91,7 @@ export function Profile() {
                                     </div>
 
                                     {/* Иконка стрелочки */}
-                                    <svg className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-6 h-6 text-desc-text group-hover:text-brand-red group-hover:transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                     </svg>
                                 </div>

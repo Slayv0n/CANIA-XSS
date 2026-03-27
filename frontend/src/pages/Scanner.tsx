@@ -134,17 +134,17 @@ export function Scanner() {
           </div>
         )}
 
-        <section className="flex flex-col md:flex-row gap-4 mb-8">
+        <section className="flex flex-col md:flex-row gap-4 mb-4">
             <input
                 type="text"
                 placeholder="EXAMPLE.COM"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 bg-card-bg border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors"
+                className="flex-1 bg-card-bg border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red"
             />
-            <button 
+            <button
                 onClick={startScan}
-                className="bg-brand-red text-white px-10 py-4 font-bold uppercase rounded flex items-center justify-center gap-2 hover:bg-red-700 transition-all cursor-pointer"
+                className="bg-brand-red text-white px-10 py-4 font-bold uppercase rounded flex items-center justify-center gap-2 hover:bg-red-700 hover:transition-all cursor-pointer"
             >
                 Проверить <span>→</span>
             </button>

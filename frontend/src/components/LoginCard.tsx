@@ -90,7 +90,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
             <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors z-20 cursor-pointer">
+                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white hover:transition-colors z-20 cursor-pointer">
                     <CloseIcon />
                 </button>
 
@@ -111,13 +111,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             <div className="flex flex-col gap-5">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
-                                
+
                                 <div className="flex flex-col gap-2 relative">
                                     <label className="text-gray-400 text-sm pl-1">Пароль</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" />
+                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
                                             {showPassword ? (
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -131,13 +131,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 {authMode === 'register' && (
                                     <div className="flex flex-col gap-2">
                                         <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                        <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                        <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 )}
 
                                 {authMode === 'login' ? (
                                     <div className="flex justify-end">
-                                        <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white transition-colors cursor-pointer">
+                                        <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white hover:transition-colors cursor-pointer">
                                             Забыли пароль?
                                         </button>
                                     </div>
@@ -186,10 +186,10 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 hover:transition-colors text-sm font-medium text-gray-300 cursor-pointer">
                                     <GoogleIcon className="w-5 h-5" /> Продолжить с Google
                                 </button>
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 hover:transition-colors text-sm font-medium text-gray-300 cursor-pointer">
                                     <GithubIcon className="w-5 h-5 text-white" /> Продолжить с GitHub
                                 </button>
                             </div>
@@ -203,13 +203,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!email} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${email ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
                                     ПРОДОЛЖИТЬ
                                 </button>
                             </div>
-                            <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white text-sm transition-colors cursor-pointer">
+                            <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white hover:transition-colors text-sm cursor-pointer">
                                 ← Назад ко входу
                             </button>
                         </>
@@ -245,12 +245,12 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 <div className="flex flex-col gap-2 relative">
                                     <label className="text-gray-400 text-sm pl-1">Новый пароль</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" />
+                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                    <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                    <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!isNewPasswordValid} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isNewPasswordValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
                                     СОХРАНИТЬ

@@ -71,9 +71,9 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
         {plans.map((plan) => (
           <div key={plan.id} className="relative group h-full flex flex-col justify-end">
             {plan.isPopular && (
-              <GlowSpot className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 transition-opacity! duration-500 pointer-events-none z-0 light:opacity-60 light:group-hover:opacity-100" />
+              <GlowSpot className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 pointer-events-none z-0 light:opacity-60 light:group-hover:opacity-100 transition-opacity" style={{ transitionProperty: 'opacity', transitionDuration: '500ms', transitionTimingFunction: 'ease-out' }} />
             )}
-            <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 transition-all! duration-500 ease-out h-full min-h-145 origin-bottom group-hover:scale-[1.04] group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)]">
+            <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 h-full min-h-145 origin-bottom group-hover:scale-105 group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)] transition-transform transition-shadow" style={{ transitionProperty: 'transform, box-shadow', transitionDuration: '500ms', transitionTimingFunction: 'ease-out' }}>
               {plan.isPopular && (
                 <div className="absolute top-0 right-0 bg-brand-red text-white text-xs font-bold uppercase px-6 py-2 rounded-tr-4xl rounded-bl-2xl">
                   Самый популярный
@@ -94,10 +94,10 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
                   </div>
                 )}
               </div>
-              <button className={`w-full py-4 rounded-full font-bold uppercase tracking-wider transition-all! duration-300 mb-10 cursor-pointer ${plan.isPopular ? 'bg-brand-red text-white hover:bg-red-700' : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'}`}>
+              <button className={`w-full py-4 rounded-full font-bold uppercase tracking-wider mb-10 cursor-pointer ${plan.isPopular ? 'bg-brand-red text-white hover:bg-red-700 hover:transition-all' : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10 hover:transition-all'}`}>
                   Выбрать
               </button>
-              <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors! duration-300"></div>
+              <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 group-hover:transition-colors"></div>
               <ul className="flex flex-col gap-4 mt-auto">
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-desc-text">
@@ -120,7 +120,7 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
       <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto" onClick={handleClose}>
         <div className="relative w-full max-w-7xl my-auto" onClick={(e) => e.stopPropagation()}>
            <button onClick={handleClose} className="absolute -top-12 right-0 text-white hover:text-brand-red text-4xl cursor-pointer">&times;</button>
-           <section className="bg-main-bg border border-white/10 rounded-4xl p-10 relative z-10 transition-colors duration-300">
+           <section className="bg-main-bg border border-white/10 rounded-4xl p-10 relative z-10">
              {Content}
            </section>
         </div>
@@ -129,7 +129,7 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
   }
 
   return (
-    <section id="pricing-section" className="py-24 px-6 relative z-10 transition-colors duration-300 border-y border-light-red">
+    <section id="pricing-section" className="py-24 px-6 relative z-10 border-y border-light-red">
       {Content}
     </section>
   );

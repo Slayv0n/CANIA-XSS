@@ -51,7 +51,7 @@ export default function Safety({ onTryClick }: SafetyProps) {
         <div className="w-full flex justify-end mt-20">
           <button
             onClick={onTryClick}
-            className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-all duration-300 cursor-pointer group"
+            className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white hover:transition-colors cursor-pointer group"
           >
             Запустить аудит <Forward />
           </button>

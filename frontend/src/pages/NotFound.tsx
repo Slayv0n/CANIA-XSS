@@ -22,7 +22,7 @@ export default function NotFound({ onGoHome }: NotFoundProps) {
         Попробуйте вернуться на{' '}
         <button
           onClick={onGoHome}
-          className="text-brand-red font-bold hover:underline cursor-pointer transition-colors"
+          className="text-brand-red font-bold hover:underline cursor-pointer"
         >
           главную.
         </button>

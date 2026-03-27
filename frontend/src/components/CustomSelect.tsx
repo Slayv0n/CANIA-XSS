@@ -28,9 +28,9 @@ export default function CustomSelect({
 
   return (
     <div className="relative flex flex-col gap-2" ref={ref}>
-      <div 
+      <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`bg-card-bg border p-4 rounded-sm text-desc-text outline-none transition-colors cursor-pointer flex justify-between items-center ${
+        className={`bg-card-bg border p-4 rounded-sm text-desc-text outline-none cursor-pointer flex justify-between items-center ${
           isOpen ? 'border-brand-red' : 'border-card-border hover:border-white/20'
         }`}
       >
@@ -56,7 +56,7 @@ export default function CustomSelect({
                 onChange(option);
                 setIsOpen(false);
               }}
-              className="px-4 py-3 cursor-pointer text-main-text hover:bg-card-border transition-colors"
+              className="px-4 py-3 cursor-pointer text-main-text hover:bg-card-border hover:transition-colors"
             >
               {option}
             </div>

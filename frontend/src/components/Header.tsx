@@ -38,24 +38,24 @@ export default function Header() {
       </div>
 
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-desc-text">
-        <button 
+        <button
           onClick={() => {
-              if(isAuth) navigate('/scanner'); 
+              if(isAuth) navigate('/scanner');
               else setLoginModal(true);
-          }} 
-          className='p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer'
+          }}
+          className='p-1 hover:bg-brand-gray hover:transition-colors rounded-sm cursor-pointer'
           >
           Функционал
         </button>
-        <button 
-          onClick={handlePricesClick} 
-          className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer"
+        <button
+          onClick={handlePricesClick}
+          className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm cursor-pointer"
         >
           Тарифы
         </button>
 
-        <div className="h-4 w-px bg-card-border"></div> 
-        <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">EN</a>
+        <div className="h-4 w-px bg-card-border"></div>
+        <a href="#" className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm">EN</a>
       </nav>
 
       {!isAuth ? (
@@ -71,33 +71,35 @@ export default function Header() {
         <div ref={menuRef} className="relative">
           <button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 cursor-pointer flex items-center gap-2 transition-colors duration-300"
+              className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 hover:transition-colors cursor-pointer flex items-center gap-2"
               aria-label="Войти в профиль"
               aria-expanded={isProfileMenuOpen}
           >
               <UserProfileIcon />
           </button>
-          
+
           <div
-            className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-300 origin-top ${
-              isProfileMenuOpen 
-                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100' 
+            className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-500 origin-top ${
+              isProfileMenuOpen
+                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100'
                 : 'opacity-0 pointer-events-none -translate-y-4 scale-95'
             }`}
+            style={{ transitionProperty: 'opacity, transform, scale' }}
           >
             {/* надо будет что то с invisible сделать, плавного перехода нет */}
-            <h3 
+            <h3
               onClick={() => {
                 navigate('/profile');
                 setIsProfileMenuOpen(false);
-              }} 
-              className='pt-4 cursor-pointer hover:text-brand-red transition-colors text-lg truncate w-full'
+              }}
+              className='pt-4 cursor-pointer hover:text-brand-red text-lg truncate w-full'
               title={userEmail || 'Профиль'}
+              style={{ transition: 'none' }}
             >
               {userEmail || 'Профиль'}
             </h3>
 
-            <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer'>
+            <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
               {theme === 'dark' ? (
                 <>
                   <Light /> Светлая тема
@@ -109,25 +111,26 @@ export default function Header() {
               )}
             </button>
 
-            <button className='flex place-items-start gap-2 cursor-pointer'>
+            <button className='flex place-items-start gap-2 cursor-pointer' style={{ transition: 'none' }}>
               <Password /> Смена пароля
             </button>
 
-            <button className='flex place-items-center gap-2 cursor-pointer'>
+            <button className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
               <Mail /> Смена почты
             </button>
 
-            <button className='flex place-items-center gap-2 cursor-pointer'>
+            <button className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
               <FeedbackIcon /> Отправить отзыв
             </button>
 
-            <button 
+            <button
               onClick={() => {
                 logout();
                 navigate('/');
                 setIsProfileMenuOpen(false);
-              }} 
+              }}
               className='pb-4 flex place-items-center gap-2 cursor-pointer'
+              style={{ transition: 'none' }}
             >
               <Exit /> Выход
             </button>
