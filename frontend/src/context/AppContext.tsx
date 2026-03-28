@@ -1,13 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../api';
 
 export type Theme = 'dark' | 'light';
 
 interface AuthContextType {
   isAuth: boolean;
-  userEmail: string | null; // <--- ДОБАВИЛИ
-  login: (email: string) => void; // <--- ТЕПЕРЬ ПЕРЕДАЕМ EMAIL
+  userEmail: string | null;
+  hasSubscription: boolean;
+  login: (email: string) => void;
   logout: () => void;
+  updateSubscriptionStatus: () => Promise<void>;
 }
 
 interface ThemeContextType {
@@ -30,39 +33,61 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const navigate = useNavigate(); // Добавляем навигацию сюда
-  
+  const navigate = useNavigate();
+
+  // Состояния авторизации
   const [isAuth, setIsAuth] = useState<boolean>(() => localStorage.getItem('isAuth') === 'true');
-  const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('userEmail')); // <--- ДОБАВИЛИ
+  const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('userEmail'));
+  const [hasSubscription, setHasSubscription] = useState<boolean>(false);
+
+  // Состояния UI
   const [theme, setTheme] = useState<Theme>('dark');
   const [isLoginModalOpen, setLoginModal] = useState(false);
   const [isPricesModalOpen, setPricesModal] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModal] = useState(false);
 
+  // Функция проверки подписки на сервере
+  const updateSubscriptionStatus = async () => {
+    const token = localStorage.getItem('token');
+    if (isAuth && token) {
+      try {
+        const sub = await api.getMySubscription(token);
+        setHasSubscription(!!sub); 
+      } catch (e) {
+        setHasSubscription(false);
+      }
+    }
+  };
+
+  // Проверяем подписку при загрузке страницы, если пользователь вошел
+  useEffect(() => {
+    if (isAuth) {
+      updateSubscriptionStatus();
+    }
+  }, [isAuth]);
+
   const login = (email: string) => {
-    setIsAuth(true);
-    setUserEmail(email);
     localStorage.setItem('isAuth', 'true');
     localStorage.setItem('userEmail', email);
+    setIsAuth(true);
+    setUserEmail(email);
     setLoginModal(false);
     navigate('/profile');
   };
 
   const logout = () => {
-    setIsAuth(false);
-    setUserEmail(null);
     localStorage.removeItem('isAuth');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken'); // если сохранял
+    localStorage.removeItem('user');
+    setIsAuth(false);
+    setUserEmail(null);
+    setHasSubscription(false); // Это просто очистка экрана для гостя
     navigate('/');
   };
 
   const toggleTheme = () => {
-    // 1. Блокируем все анимации на странице
     document.documentElement.classList.add('theme-transition-disable');
-
-    // 2. Меняем тему
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     if (newTheme === 'light') {
@@ -70,11 +95,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } else {
       document.documentElement.classList.remove('light');
     }
-
-    // 3. Заставляем браузер применить цвета прямо сейчас (без этого не сработает!)
     window.getComputedStyle(document.documentElement).opacity;
-
-    // 4. Возвращаем анимации обратно
     setTimeout(() => {
       document.documentElement.classList.remove('theme-transition-disable');
     }, 10);
@@ -95,7 +116,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <AuthContext.Provider value={{ isAuth, userEmail, login, logout }}>
+      <AuthContext.Provider value={{ isAuth, userEmail, hasSubscription, login, logout, updateSubscriptionStatus }}>
         <UIContext.Provider value={{ 
           isLoginModalOpen, setLoginModal, 
           isPricesModalOpen, setPricesModal,

@@ -5,9 +5,13 @@ EXPOSE 8086
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
 COPY ["TaskService/Task API.csproj", "TaskService/"]
 COPY ["TaskDb/TaskDb.csproj", "TaskDb/"]
 COPY ["SharedModels/SharedModels.csproj", "SharedModels/"]
+
+COPY ["SubscribeDb/SubscribeDb.csproj", "SubscribeDb/"]
+
 RUN dotnet restore "TaskService/Task API.csproj"
 
 COPY . .

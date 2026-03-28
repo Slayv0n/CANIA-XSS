@@ -8,6 +8,7 @@ using Task_API.Consumers;
 using Task_API.Models.Request;
 using Task_API.Services;
 using TaskDb;
+using SubscribeDb;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<TaskContext>(
     options => options.UseNpgsql(builder.Configuration.GetValue<string>("TASK_DB_CONNECTION")));
 
+// <--- ДОБАВИТЬ ЭТО (чтобы сервис мог подключаться к базе подписок)
+builder.Services.AddDbContextFactory<SubscribeDb.SubscribeContext>(
+    options => options.UseNpgsql(builder.Configuration.GetValue<string>("SUBSCRIBE_DB_CONNECTION")));
+    
 builder.Services.AddScoped<ITaskService, TaskService>();
 
 // 2. Настройка MassTransit (RabbitMQ)
@@ -66,12 +71,29 @@ app.UseStaticFiles();
 // --- ЭНДПОИНТЫ ---
 
 // Создать новую задачу
-app.MapPost("/task/create", async (CreateRequest request, HttpContext context, ITaskService taskService) => 
+// Создать новую задачу
+app.MapPost("/task/create", async (
+    CreateRequest request, 
+    HttpContext context, 
+    ITaskService taskService,
+    IDbContextFactory<SubscribeDb.SubscribeContext> subDbFactory) => // <--- Добавили фабрику БД подписок
 {
     try
     {
         bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
         if (!verify) return Results.Unauthorized();
+
+        // --- ПРОВЕРКА ПОДПИСКИ ---
+        using var subDb = await subDbFactory.CreateDbContextAsync();
+        var hasActiveSub = await subDb.Subscribes.AnyAsync(s => 
+            s.Id == userId && s.Status == SharedModels.General.Status.Active);
+
+        if (!hasActiveSub)
+        {
+            // Возвращаем 403 (Forbidden), если подписки нет
+            return Results.Json(new { error = "Subscription required" }, statusCode: 403);
+        }
+        // --- КОНЕЦ ПРОВЕРКИ ---
 
         var task = await taskService.CreateAsync(userId, request.Host, request.TypeOfAttacks, request.Depth);
         return Results.Ok(task);

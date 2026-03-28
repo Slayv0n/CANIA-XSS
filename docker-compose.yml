@@ -68,6 +68,7 @@ services:
       - ASPNETCORE_HTTP_PORTS=8086
       - TASK_DB_CONNECTION=Host=task-db;Port=5432;Database=TaskDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
+      - SUBSCRIBE_DB_CONNECTION=Host=subscribe-db;Port=5432;Database=SubscribeDb;Username=postgres;Password=password;
     depends_on: [task-db, rabbitmq]
     networks: [cania-network]
 

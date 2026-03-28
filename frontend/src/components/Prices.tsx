@@ -1,4 +1,4 @@
-import { useUI } from '../context/AppContext';
+import { useUI, useAuth } from '../context/AppContext';
 import { GlowSpot } from '../assets/icons';
 import { api } from '../api';
 import { useState } from 'react';
@@ -22,6 +22,7 @@ interface PricesProps {
 }
 
 export default function Prices({ isModal = false, onClose }: PricesProps) {
+  const { updateSubscriptionStatus } = useAuth();
   const { setPricesModal } = useUI();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
@@ -43,7 +44,8 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
 
         await api.buySubscription(tariffData, token);
         alert("Оплата прошла успешно!");
-        // Тут можно закрыть модалку, если она открыта: if (onClose) onClose();
+        await updateSubscriptionStatus(); // Обновляем статус подписки в контексте
+        if (onClose) onClose(); // Закрываем модалку
     } catch (err) {
         alert("Ошибка при оплате");
     } finally {

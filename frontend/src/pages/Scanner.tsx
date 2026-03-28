@@ -3,12 +3,15 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Download, ReportReady } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
+import { useAuth } from '../context/AppContext';
 
 import { api } from '../api';
 
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
 export function Scanner() {
+  const { hasSubscription } = useAuth(); 
+
   const [url, setUrl] = useState('');
   const [scanStatus, setScanStatus] = useState<ScanStatus>('idle');
   const [textIndex, setTextIndex] = useState(0);
@@ -142,11 +145,19 @@ export function Scanner() {
                 onChange={(e) => setUrl(e.target.value)}
                 className="flex-1 bg-card-bg border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red"
             />
-            <button
+            
+            <button 
                 onClick={startScan}
-                className="bg-brand-red text-white px-10 py-4 font-bold uppercase rounded flex items-center justify-center gap-2 hover:bg-red-700 hover:transition-all cursor-pointer"
+                // Блокируем кнопку, если нет подписки или уже идет сканирование
+                disabled={!hasSubscription || scanStatus === 'scanning'} 
+                className={`px-10 py-4 font-bold uppercase rounded flex items-center justify-center gap-2 transition-all 
+                    ${!hasSubscription 
+                        ? 'bg-gray-600 cursor-not-allowed opacity-70' // Стиль для заблокированной кнопки
+                        : 'bg-brand-red hover:bg-red-700 cursor-pointer' // Обычный стиль
+                    }`}
             >
-                Проверить <span>→</span>
+                {!hasSubscription ? "Нужна подписка" : "Проверить"} <span>→</span>
+            
             </button>
         </section>
 
