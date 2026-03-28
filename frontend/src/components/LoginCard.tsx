@@ -90,7 +90,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
             <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white hover:transition-colors z-20 cursor-pointer">
+                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors duration-300 z-20 cursor-pointer">
                     <CloseIcon />
                 </button>
 
@@ -137,7 +137,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
                                 {authMode === 'login' ? (
                                     <div className="flex justify-end">
-                                        <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white hover:transition-colors cursor-pointer">
+                                        <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white transition-colors duration-300 cursor-pointer">
                                             Забыли пароль?
                                         </button>
                                     </div>
@@ -186,10 +186,10 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 hover:transition-colors text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GoogleIcon className="w-5 h-5" /> Продолжить с Google
                                 </button>
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 hover:transition-colors text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GithubIcon className="w-5 h-5 text-white" /> Продолжить с GitHub
                                 </button>
                             </div>
@@ -209,7 +209,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                     ПРОДОЛЖИТЬ
                                 </button>
                             </div>
-                            <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white hover:transition-colors text-sm cursor-pointer">
+                            <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white transition-colors duration-300 text-sm cursor-pointer">
                                 ← Назад ко входу
                             </button>
                         </>

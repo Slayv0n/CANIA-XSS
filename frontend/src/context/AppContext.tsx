@@ -59,6 +59,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleTheme = () => {
+    // 1. Блокируем все анимации на странице
+    document.documentElement.classList.add('theme-transition-disable');
+
+    // 2. Меняем тему
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     if (newTheme === 'light') {
@@ -66,6 +70,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } else {
       document.documentElement.classList.remove('light');
     }
+
+    // 3. Заставляем браузер применить цвета прямо сейчас (без этого не сработает!)
+    window.getComputedStyle(document.documentElement).opacity;
+
+    // 4. Возвращаем анимации обратно
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transition-disable');
+    }, 10);
   };
 
   const handlePricesClick = (e?: React.MouseEvent) => {

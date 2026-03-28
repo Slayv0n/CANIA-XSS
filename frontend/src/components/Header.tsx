@@ -43,19 +43,19 @@ export default function Header() {
               if(isAuth) navigate('/scanner');
               else setLoginModal(true);
           }}
-          className='p-1 hover:bg-brand-gray hover:transition-colors rounded-sm cursor-pointer'
+          className='p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer'
           >
           Функционал
         </button>
         <button
           onClick={handlePricesClick}
-          className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm cursor-pointer"
+          className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer"
         >
           Тарифы
         </button>
 
         <div className="h-4 w-px bg-card-border"></div>
-        <a href="#" className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm">EN</a>
+        <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">EN</a>
       </nav>
 
       {!isAuth ? (
@@ -71,7 +71,7 @@ export default function Header() {
         <div ref={menuRef} className="relative">
           <button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 hover:transition-colors cursor-pointer flex items-center gap-2"
+              className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 transition-colors duration-300 cursor-pointer flex items-center gap-2"
               aria-label="Войти в профиль"
               aria-expanded={isProfileMenuOpen}
           >

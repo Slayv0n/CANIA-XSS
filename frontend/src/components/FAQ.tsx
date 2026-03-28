@@ -32,7 +32,7 @@ export default function FAQ() {
                 <div key={index} className={`border-b border-light-red ${index === 0 ? 'border-t border-t-light-red' : ''}`}>
                     <button
                         onClick={() => toggleIndex(index)}
-                        className="w-full py-8 flex justify-between items-center text-left text-main-text hover:text-brand-red hover:transition-colors group cursor-pointer"
+                        className="w-full py-8 flex justify-between items-center text-left text-main-text hover:text-brand-red transition-colors duration-300 group cursor-pointer"
                     >
                         <span className="text-xl font-bold uppercase">{item.question}</span>
                         <span className={`text-3xl ml-4 transition-transform! duration-500 ${isOpen ? 'rotate-180' : ''}`}>

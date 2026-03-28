@@ -53,7 +53,7 @@ export default function Footer() {
                         <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
                             <button
-                                className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm text-left cursor-pointer uppercase"
+                                className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                                 onClick={() => {
                                     if (isAuth) navigate('/scanner');
                                     else setLoginModal(true);
@@ -63,19 +63,19 @@ export default function Footer() {
                             </button>
                             <button
                                 onClick={handlePricesClick}
-                                className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm text-left cursor-pointer uppercase"
+                                className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Тарифы
                             </button>
-                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm flex uppercase cursor-pointer">
+                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm flex uppercase cursor-pointer">
                                 {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                             </button>
-                            <button className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm uppercase">
+                            <button className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm uppercase">
                                 Версия на английском
                             </button>
                             <button
                                 onClick={() => setFeedbackModal(true)}
-                                className="p-1 hover:bg-brand-gray hover:transition-colors rounded-sm text-left cursor-pointer uppercase"
+                                className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Оставить отзыв
                             </button>
@@ -85,8 +85,8 @@ export default function Footer() {
                     <div className="flex flex-col gap-4">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
                         <div className="flex flex-col gap-3 text-desc-text text-sm font-medium">
-                            <a href="tel:+79911230322" className="hover:bg-brand-gray hover:transition-colors p-1 rounded-sm">+7 (991) 123-03-22</a>
-                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray hover:transition-colors p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
+                            <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">+7 (991) 123-03-22</a>
+                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
                         </div>
                     </div>
 
