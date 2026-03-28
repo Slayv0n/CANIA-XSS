@@ -63,7 +63,7 @@
     // 6. ПОДПИСКИ (SubscribeService - 8085, НУЖЕН ТОКЕН)
     {
       "UpstreamPathTemplate": "/api/subscribes/{everything}",
-      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
       "DownstreamPathTemplate": "/subscribes/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "subscribe-api", "Port": 8085 }],

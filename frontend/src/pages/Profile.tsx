@@ -8,21 +8,37 @@ export function Profile() {
   // 1. Состояние для списка отчетов
   const [reports, setReports] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [subLoading, setSubLoading] = useState(true);
 
   const { userEmail } = useAuth();
 
   const handleDelete = async (taskId: string) => {
-  const token = localStorage.getItem('token');
-  if (!token) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-  try {
-    const deleteStatus = await api.deleteTask(taskId, token);
-    setReports(reports.filter(report => report.id !== taskId))
-    
-  } catch (err) {
-    console.error("Ошибка удаления отчета:", err);
-  }
-};
+    try {
+        const deleteStatus = await api.deleteTask(taskId, token);
+        setReports(reports.filter(report => report.id !== taskId))
+        
+    } catch (err) {
+        console.error("Ошибка удаления отчета:", err);
+    }
+  };
+
+  const handleCancelSub = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      await api.cancelSubscription(token);
+      // Магия: просто зануляем стейт, и React сам перерисует блок на "Базовый" тариф
+      setSubscription(null); 
+    } catch (err) {
+      console.error(err);
+      alert("Не удалось отменить подписку");
+    }
+  };
 
   // 2. Загружаем данные при входе на страницу
   useEffect(() => {
@@ -38,6 +54,12 @@ export function Profile() {
           console.error("Ошибка загрузки профиля:", err);
           setLoading(false);
         });
+
+        api.getMySubscription(token)
+         .then(setSubscription)
+         .catch(console.error)
+         .finally(() => setSubLoading(false));
+
     } else {
       setLoading(false);
       console.warn("Запрос не отправлен: токен отсутствует");
@@ -107,10 +129,77 @@ export function Profile() {
 
             <div className="md:col-span-1 flex flex-col">
                 <div className="bg-card-bg border border-card-border rounded-xl p-8 min-h-125">
-                    <div className="text-desc-text text-sm leading-relaxed flex flex-col gap-2">
-                        <p className="text-main-text font-bold">Аккаунт: {userEmail}</p>
-                        <p>Статус: <span className="text-brand-red">Active</span></p>
-                        {/* Тут потом добавим данные из SubscribeService */}
+                    
+                    <h2 className="text-2xl font-bold uppercase text-main-text mb-12">
+                        Подписка
+                    </h2>
+
+                    {subscription && (
+                            <button 
+                                onClick={handleCancelSub}
+                                style={{ marginTop: '30px', color: 'gray', fontSize: '12px', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                            >
+                                [DEV] Сбросить подписку
+                            </button>
+                    )}
+                    
+                    <div className="text-desc-text text-sm leading-relaxed flex flex-col gap-6">
+                        
+                        {/* Блок с аккаунтом */}
+                        <div>
+                            <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Аккаунт</p>
+                            <p className="font-bold text-main-text truncate" title={userEmail || ''}>
+                                {userEmail || "Неизвестно"}
+                            </p>
+                        </div>
+
+                        {/* Блок с тарифом (Зависит от того, пришла ли подписка с бэка) */}
+                        {subLoading ? (
+                            <p className="animate-pulse text-brand-red">Проверка статуса...</p>
+                        ) : subscription ? (
+                            // ЕСЛИ ПОДПИСКА КУПЛЕНА:
+                            <>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="font-bold text-brand-red text-xl uppercase">
+                                        {subscription.name} {/* Название тарифа с бэкенда */}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-green-500 font-bold uppercase tracking-wider">
+                                        Активен
+                                    </p>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-card-border">
+                                    <p className="text-xs opacity-70">
+                                        Безлимитные проверки и приоритетная обработка отчетов включены.
+                                    </p>
+                                </div>
+                            </>
+                        ) : (
+                            // ЕСЛИ ПОДПИСКИ НЕТ (Базовый уровень):
+                            <>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="font-bold text-main-text text-xl uppercase">
+                                        Базовый
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-desc-text font-bold uppercase tracking-wider">
+                                        Активен
+                                    </p>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-card-border">
+                                    <p className="text-xs opacity-50 mt-2">
+                                        Оформите подписку в разделе "Тарифы" для снятия ограничений.
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
                     </div>
                 </div>
             </div>

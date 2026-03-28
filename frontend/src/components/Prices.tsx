@@ -1,5 +1,8 @@
 import { useUI } from '../context/AppContext';
-import { GlowSpot } from '../assets/icons'; 
+import { GlowSpot } from '../assets/icons';
+import { api } from '../api';
+import { useState } from 'react';
+
 
 interface Plan {
   id: string;
@@ -20,6 +23,33 @@ interface PricesProps {
 
 export default function Prices({ isModal = false, onClose }: PricesProps) {
   const { setPricesModal } = useUI();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleBuy = async (plan: Plan) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert("Пожалуйста, войдите в аккаунт!");
+        return;
+    }
+
+    setLoadingPlan(plan.id); // Включаем крутилку на конкретной кнопке
+    try {
+        // Формируем объект тарифа для бэкенда. Цену переводим в число.
+        const tariffData = {
+            name: plan.name,
+            description: plan.desc,
+            cost: parseInt(plan.price.replace(/\D/g, '')) || 0 
+        };
+
+        await api.buySubscription(tariffData, token);
+        alert("Оплата прошла успешно!");
+        // Тут можно закрыть модалку, если она открыта: if (onClose) onClose();
+    } catch (err) {
+        alert("Ошибка при оплате");
+    } finally {
+        setLoadingPlan(null);
+    }
+  };
   
   const plans: Plan[] = [
     {
@@ -100,9 +130,16 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
                 )}
               </div>
               
-              {/* Вернули обычный transition-colors для кнопки */}
-              <button className={`w-full py-4 rounded-full font-bold uppercase tracking-wider mb-10 transition-colors duration-300 cursor-pointer ${plan.isPopular ? 'bg-brand-red text-white hover:bg-red-700' : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'}`}>
-                  Выбрать
+              <button 
+                  onClick={() => handleBuy(plan)}
+                  disabled={loadingPlan === plan.id}
+                  className={`w-full py-4 rounded-full font-bold uppercase tracking-wider mb-10 transition-colors duration-300 cursor-pointer ${
+                      plan.isPopular 
+                      ? 'bg-brand-red text-white hover:bg-red-700' 
+                      : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'
+                  }`}
+              >
+                  {loadingPlan === plan.id ? "ОБРАБОТКА ОПЛАТЫ..." : "ВЫБРАТЬ"}
               </button>
               
               <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors duration-500"></div>
