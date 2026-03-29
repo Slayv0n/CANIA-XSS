@@ -43,6 +43,73 @@ export interface LoginResponse {
 }
 
 export const api = {
+  // Смена пароля
+  async updatePassword(password: string, token: string) {
+    const response = await fetch(`${API_BASE}/passwords/update`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      // Отправляем объект с полем password, как ждет бэкенд
+      body: JSON.stringify({ password }) 
+    });
+    
+    if (!response.ok) throw new Error('Ошибка смены пароля');
+  },
+
+  // Смена почты
+  async updateEmail(email: string, token: string) {
+    const response = await fetch(`${API_BASE}/users/update`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      // Отправляем объект { email: "..." }
+      body: JSON.stringify({ email }) 
+    });
+    
+    if (!response.ok) throw new Error('Ошибка смены почты');
+    return response.json();
+  },
+
+  // Запрос на сброс пароля (генерация токена)
+  async resetPasswordRequest(email: string) {
+    const response = await fetch(`${API_BASE}/passwords/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!response.ok) throw new Error('Ошибка запроса на сброс');
+  },
+
+  // Проверка токена и установка нового пароля
+  // Проверка токена сброса пароля
+  async verifyResetToken(token: string, email: string) {
+    const response = await fetch(`${API_BASE}/passwords/reset/${token}/${email}`, {
+      method: 'POST'
+    });
+    
+    // Бэкенд возвращает true или false
+    const isValid = await response.json();
+    if (!isValid) throw new Error('Неверный или просроченный код');
+    return isValid;
+  },
+
+  async completeReset(email: string, token: string, newPassword: string) {
+    const response = await fetch(`${API_BASE}/passwords/reset/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email: email, 
+        token: token, 
+        newPassword: newPassword 
+      })
+    });
+    if (!response.ok) throw new Error('Не удалось сменить пароль');
+  },
+
   // Покупка подписки (Умный метод: создает или обновляет)
   async buySubscription(tariff: Tariff, token: string) {
     // 1. Сначала пробуем просто СОЗДАТЬ подписку (POST)

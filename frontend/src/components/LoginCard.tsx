@@ -25,6 +25,8 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     // Таймер
     const [timer, setTimer] = useState(60);
 
+    const [resetToken, setResetToken] = useState('');
+
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
         if (authMode === 'forgot_timer' && timer > 0) {
@@ -71,12 +73,26 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                 // Вызываем login и передаем email, который юзер ввел в форму
                 login(email); 
             }
+            //пока что не доделано
             if (authMode === 'forgot_email' && email) {
+                // 1. Отправляем запрос на реальный бэкенд
+                await api.resetPasswordRequest(email);
+                
+                // 2. Переключаем интерфейс на таймер
                 setAuthMode('forgot_timer');
                 setTimer(60);
             }
+            if (authMode === 'forgot_timer') {
+                // 2. Юзер ввел токен из письма и жмет подтвердить
+                await api.verifyResetToken(resetToken, email);
+                // Если токен верный (ошибки не вылетело), пускаем менять пароль
+                setAuthMode('new_password');
+            }
+
             if (authMode === 'new_password' && isNewPasswordValid) {
-                login(email);
+                await api.completeReset(email, resetToken, password); 
+                alert("Пароль успешно изменен! Теперь войдите.");
+                setAuthMode('login');
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ошибка');
@@ -215,26 +231,62 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                         </>
                     )}
 
-                    {/* Таймер восстановления */}
+                    {/* ЭКРАН ВВОДА КОДА */}
                     {authMode === 'forgot_timer' && (
-                        <>
-                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">ВОССТАНОВЛЕНИЕ ПАРОЛЯ</h1>
-                            <div className="flex flex-col gap-6">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" value={email} disabled className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-gray-600 outline-none cursor-not-allowed" />
-                                </div>
-                                <p className="text-gray-400 text-sm leading-relaxed mt-2">
-                                    Вам на почту было отправлено письмо с инструкциями. Проверьте ваш почтовый ящик.
-                                </p>
-                                <div className="text-center mt-6 text-3xl font-bold tracking-widest text-white">
-                                    {formatTime(timer)}
-                                </div>
-                                <button type="button" onClick={() => setAuthMode('new_password')} className="mt-8 text-brand-red text-sm hover:underline font-bold cursor-pointer">
-                                    [ТЕСТ] Перейди к смене пароля
-                                </button>
+                        <div className="flex flex-col gap-6 text-center animate-fade-in">
+                            <h1 className="text-3xl font-bold uppercase tracking-wide">ВВОД КОДА</h1>
+                            
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                                Мы отправили код для сброса пароля на <br/>
+                                <span className="text-white font-bold">{email}</span>
+                            </p>
+
+                            {/* ИНПУТ ДЛЯ КОДА */}
+                            <div className="flex flex-col gap-2 text-left mt-2">
+                                <label className="text-gray-400 text-sm pl-1">Код из письма</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Вставьте код..." 
+                                    value={resetToken} 
+                                    onChange={(e) => setResetToken(e.target.value)} 
+                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" 
+                                />
                             </div>
-                        </>
+
+                            {/* ЛОГИКА ТАЙМЕРА И КНОПКИ ПОВТОРА */}
+                            <div className="mt-2">
+                                {timer > 0 ? (
+                                    <div className="text-3xl font-bold tracking-widest text-brand-red">
+                                        {formatTime(timer)}
+                                    </div>
+                                ) : (
+                                    <button 
+                                        type="button" 
+                                        onClick={async () => {
+                                            setTimer(60);
+                                            await api.resetPasswordRequest(email);
+                                        }} 
+                                        className="text-brand-red hover:text-white font-bold text-sm transition-colors cursor-pointer uppercase tracking-wider"
+                                    >
+                                        Отправить код ещё раз
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* КНОПКА ПОДТВЕРЖДЕНИЯ */}
+                            <button 
+                                type="button" 
+                                onClick={handleSubmit}
+                                disabled={!resetToken || loading} 
+                                className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${resetToken ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}
+                            >
+                                {loading ? 'ПРОВЕРКА...' : 'ПОДТВЕРДИТЬ'}
+                            </button>
+
+                            <button type="button" onClick={() => setAuthMode('login')} className="mt-2 text-gray-500 hover:text-white text-sm transition-colors cursor-pointer">
+                                Вернуться ко входу
+                            </button>
+                        </div>
                     )}
 
                     {/* новый пароль */}

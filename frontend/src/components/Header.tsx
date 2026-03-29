@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 export default function Header() {
   const navigate = useNavigate();
   const { isAuth, logout, userEmail } = useAuth(); // <--- ДОБАВЬ userEmail
-  const { setLoginModal, handlePricesClick } = useUI();
+  const { setLoginModal, handlePricesClick, setFeedbackModal, setChangeEmailModal, setChangePasswordModal, openSettingsModal } = useUI();
   const { theme, toggleTheme } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -111,15 +111,21 @@ export default function Header() {
               )}
             </button>
 
-            <button className='flex place-items-start gap-2 cursor-pointer' style={{ transition: 'none' }}>
+            <button
+              onClick={() => { openSettingsModal('password'); setIsProfileMenuOpen(false); }}  
+              className='flex place-items-start gap-2 cursor-pointer'>
               <Password /> Смена пароля
             </button>
 
-            <button className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
+            <button 
+              onClick={() => { openSettingsModal('email'); setIsProfileMenuOpen(false); }} 
+              className='flex place-items-center gap-2 cursor-pointer'>
               <Mail /> Смена почты
             </button>
 
-            <button className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
+            <button 
+              onClick={() => setFeedbackModal(true)} 
+              className='flex place-items-center gap-2 cursor-pointer'>
               <FeedbackIcon /> Отправить отзыв
             </button>
 

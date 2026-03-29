@@ -16,10 +16,11 @@ import Feedback from './components/Feedback';
 import NotFound from './pages/NotFound';
 import { Profile } from './pages/Profile';
 import { Scanner } from './pages/Scanner';
+import SettingsModal from './components/SettingsModal';
 
 function App() {
   const { isAuth } = useAuth();
-  const { isLoginModalOpen, setLoginModal, isPricesModalOpen, setPricesModal, isFeedbackModalOpen, setFeedbackModal } = useUI();
+  const { isLoginModalOpen, setLoginModal, isPricesModalOpen, setPricesModal, isFeedbackModalOpen, setFeedbackModal, isSettingsModalOpen, settingsMode, closeSettingsModal } = useUI();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -73,6 +74,7 @@ function App() {
       {isLoginModalOpen && <LoginCard onClose={() => setLoginModal(false)} />}
       {isPricesModalOpen && <Prices isModal={true} onClose={() => setPricesModal(false)} />}
       {isFeedbackModalOpen && <Feedback isOpen={isFeedbackModalOpen} onClose={() => setFeedbackModal(false)} />}
+      {isSettingsModalOpen && <SettingsModal mode={settingsMode} onClose={closeSettingsModal} />}
     </div>
   );
 }

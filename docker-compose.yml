@@ -112,7 +112,9 @@ services:
       - ASPNETCORE_HTTP_PORTS=8083
       - NOTIFICATION_DB_CONNECTION=Host=notification-db;Port=5432;Database=NotificationDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
-      - GMAIL_PASSWORD=your_app_password_here
+      - GMAIL_PASSWORD=${GMAIL_APP_PASS}
+      - Email__Smtp__Username=${GMAIL_USER}
+      - Email__FromEmail=${GMAIL_USER}
     depends_on: [notification-db, rabbitmq]
     networks: [cania-network]
 

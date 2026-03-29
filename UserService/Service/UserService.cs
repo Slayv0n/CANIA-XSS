@@ -39,7 +39,7 @@ namespace UserAPI.Service
         public async Task<UserResponse> CreateUserAsync(CreateRequest request)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
+            
             // 1. ПРОВЕРКА НА ДУБЛИКАТ
             var exists = await db.Users.AnyAsync(u => u.Email == request.Email);
             if (exists)

@@ -26,6 +26,16 @@ interface UIContextType {
   isFeedbackModalOpen: boolean;
   setFeedbackModal: (open: boolean) => void;
   handlePricesClick: (e?: React.MouseEvent) => void;
+
+  isChangePasswordModalOpen: boolean;
+  setChangePasswordModal: (open: boolean) => void;
+  isChangeEmailModalOpen: boolean;
+  setChangeEmailModal: (open: boolean) => void;
+
+  isSettingsModalOpen: boolean;
+  settingsMode: 'password' | 'email';
+  openSettingsModal: (mode: 'password' | 'email') => void;
+  closeSettingsModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,6 +55,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isLoginModalOpen, setLoginModal] = useState(false);
   const [isPricesModalOpen, setPricesModal] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModal] = useState(false);
+  const [isChangePasswordModalOpen, setChangePasswordModal] = useState(false);
+  const [isChangeEmailModalOpen, setChangeEmailModal] = useState(false);
+
+  const[isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsMode, setSettingsMode] = useState<'password' | 'email'>('password');
+
+  const openSettingsModal = (mode: 'password' | 'email') => {
+    setSettingsMode(mode);
+    setIsSettingsModalOpen(true);
+  };
+
+  const closeSettingsModal = () => {
+    setIsSettingsModalOpen(false);
+  };
 
   // Функция проверки подписки на сервере
   const updateSubscriptionStatus = async () => {
@@ -121,7 +145,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           isLoginModalOpen, setLoginModal, 
           isPricesModalOpen, setPricesModal,
           isFeedbackModalOpen, setFeedbackModal,
-          handlePricesClick 
+          handlePricesClick,
+          isChangePasswordModalOpen, setChangePasswordModal,
+          isChangeEmailModalOpen, setChangeEmailModal,
+          isSettingsModalOpen, openSettingsModal,
+          settingsMode,  closeSettingsModal
         }}>
           {children}
         </UIContext.Provider>
