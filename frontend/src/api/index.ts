@@ -1,4 +1,6 @@
 const API_BASE = '/api';
+const ACCESS_TOKEN_KEY = 'token';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 
 export interface Tariff {
   name: string;
@@ -38,60 +40,145 @@ export interface User {
 
 export interface LoginResponse {
   userId: string;
-  accessToken: string; // исправлено
-  refreshToken: string; // добавлено
+  accessToken: string;
+  refreshToken: string;
+}
+
+export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
+export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+export const setAccessToken = (token: string) => localStorage.setItem(ACCESS_TOKEN_KEY, token);
+export const setRefreshToken = (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token);
+export const clearTokens = () => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+};
+
+export async function refreshTokenRequest(): Promise<boolean> {
+  return refreshToken();
+}
+
+export function getTokenExpiration(accessToken: string | null): number | null {
+  if (!accessToken) return null;
+
+  try {
+    const [, payloadBase64] = accessToken.split('.');
+    if (!payloadBase64) return null;
+
+    const payloadJson = decodeURIComponent(
+      atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'))
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(''),
+    );
+
+    const payload = JSON.parse(payloadJson);
+    if (payload.exp && typeof payload.exp === 'number') {
+      return payload.exp;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshToken(): Promise<boolean> {
+  const refresh = getRefreshToken();
+  if (!refresh) return false;
+
+  const resp = await fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: refresh }),
+  });
+
+  if (!resp.ok) {
+    clearTokens();
+    return false;
+  }
+
+  const data = await resp.json();
+  if (data?.accessToken && data?.refreshToken) {
+    setAccessToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
+    return true;
+  }
+
+  clearTokens();
+  return false;
+}
+
+async function authFetch(input: RequestInfo, init: RequestInit = {}, attempt = 0): Promise<Response> {
+  const token = getAccessToken();
+
+  const headers = new Headers(init.headers || {});
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // JSON default
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const response = await fetch(input, { ...init, headers });
+
+  if (response.status === 401 && attempt === 0) {
+    const refreshed = await refreshToken();
+    if (refreshed) {
+      return authFetch(input, init, 1);
+    }
+    clearTokens();
+    window.dispatchEvent(new Event('auth-expired'));
+    throw new Error('Unauthorized');
+  }
+
+  if (response.status === 401) {
+    clearTokens();
+    window.dispatchEvent(new Event('auth-expired'));
+    throw new Error('Unauthorized');
+  }
+
+  return response;
 }
 
 export const api = {
-  // Смена пароля
-  async updatePassword(password: string, token: string) {
-    const response = await fetch(`${API_BASE}/passwords/update`, {
+  async updatePassword(password: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/passwords/update`, {
       method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      },
-      // Отправляем объект с полем password, как ждет бэкенд
-      body: JSON.stringify({ password }) 
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ password }),
     });
-    
+
     if (!response.ok) throw new Error('Ошибка смены пароля');
   },
 
-  // Смена почты
-  async updateEmail(email: string, token: string) {
-    const response = await fetch(`${API_BASE}/users/update`, {
+  async updateEmail(email: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/users/update`, {
       method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      },
-      // Отправляем объект { email: "..." }
-      body: JSON.stringify({ email }) 
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ email }),
     });
-    
+
     if (!response.ok) throw new Error('Ошибка смены почты');
     return response.json();
   },
 
-  // Запрос на сброс пароля (генерация токена)
   async resetPasswordRequest(email: string) {
     const response = await fetch(`${API_BASE}/passwords/reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email }),
     });
+
     if (!response.ok) throw new Error('Ошибка запроса на сброс');
   },
 
-  // Проверка токена и установка нового пароля
-  // Проверка токена сброса пароля
   async verifyResetToken(token: string, email: string) {
     const response = await fetch(`${API_BASE}/passwords/reset/${token}/${email}`, {
-      method: 'POST'
+      method: 'POST',
     });
-    
-    // Бэкенд возвращает true или false
+
     const isValid = await response.json();
     if (!isValid) throw new Error('Неверный или просроченный код');
     return isValid;
@@ -101,37 +188,26 @@ export const api = {
     const response = await fetch(`${API_BASE}/passwords/reset/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email: email, 
-        token: token, 
-        newPassword: newPassword 
-      })
+      body: JSON.stringify({ email, token, newPassword }),
     });
+
     if (!response.ok) throw new Error('Не удалось сменить пароль');
   },
 
-  // Покупка подписки (Умный метод: создает или обновляет)
-  async buySubscription(tariff: Tariff, token: string) {
-    // 1. Сначала пробуем просто СОЗДАТЬ подписку (POST)
-    let response = await fetch(`${API_BASE}/subscribes/subscribe`, {
+  async buySubscription(tariff: Tariff, token?: string) {
+    const response1 = await authFetch(`${API_BASE}/subscribes/subscribe`, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      },
-      body: JSON.stringify(tariff)
+      body: JSON.stringify(tariff),
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     });
-    
-    // 2. Если бэкенд выдал 400 (Bad Request), значит подписка УЖЕ ЕСТЬ.
-    // Тогда мы делаем запрос на ОБНОВЛЕНИЕ (PUT)
+
+    let response = response1;
+
     if (response.status === 400) {
-      response = await fetch(`${API_BASE}/subscribes/update`, {
+      response = await authFetch(`${API_BASE}/subscribes/update`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify(tariff)
+        body: JSON.stringify(tariff),
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
     }
 
@@ -139,63 +215,57 @@ export const api = {
     return response.json();
   },
 
-  // Получение текущей подписки
-  async getMySubscription(token: string): Promise<Tariff | null> {
-    const response = await fetch(`${API_BASE}/subscribes/my`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+  async getMySubscription(token?: string): Promise<Tariff | null> {
+    const response = await authFetch(`${API_BASE}/subscribes/my`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    
+
     if (!response.ok) throw new Error('Ошибка получения подписки');
-    
-    // Читаем текст ответа. Если он пустой, значит подписки нет (null)
+
     const text = await response.text();
     return text ? JSON.parse(text) : null;
   },
 
-  // [DEV] Удаление подписки
-  async cancelSubscription(token: string) {
-    const response = await fetch(`${API_BASE}/subscribes/unscribe`, {
+  async cancelSubscription(token?: string) {
+    const response = await authFetch(`${API_BASE}/subscribes/unscribe`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    
+
     if (!response.ok) throw new Error('Ошибка отмены подписки');
-    // Бэкенд возвращает Results.Ok() без тела, поэтому json() не вызываем
   },
 
-  async getMyTasks(token: string): Promise<TaskItem[]> {
-    const response = await fetch(`${API_BASE}/task/all`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+  async getMyTasks(token?: string): Promise<TaskItem[]> {
+    const response = await authFetch(`${API_BASE}/task/all`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    
+
     if (!response.ok) throw new Error('Ошибка получения отчетов');
     return response.json();
   },
 
-  // Регистрация
   async register(data: RegisterRequest): Promise<User> {
     const response = await fetch(`${API_BASE}/users/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error);
     }
-    
+
     return response.json();
   },
 
-  // Логин
   async login(data: LoginRequest): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       if (response.status === 401) {
         throw new Error('Неверный email или пароль');
@@ -203,65 +273,54 @@ export const api = {
       const error = await response.text();
       throw new Error(error || 'Ошибка сети');
     }
-    
+
     return response.json();
   },
 
-  // Получение профиля
-  async getProfile(token: string): Promise<User> {
-    const response = await fetch(`${API_BASE}/users/account`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+  async getProfile(token?: string): Promise<User> {
+    const response = await authFetch(`${API_BASE}/users/account`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error);
     }
-    
+
     return response.json();
   },
 
-  // Создание задачи на сканирование
-  async createTask(data: CreateTaskRequest, token: string) {
-    const response = await fetch(`${API_BASE}/task/create`, {
+  async createTask(data: CreateTaskRequest, token?: string) {
+    const response = await authFetch(`${API_BASE}/task/create`, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // Передаем токен для проверки в Gateway!
-      },
       body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error || 'Ошибка создания задачи');
     }
-    
+
     return response.json();
   },
 
-  // Получение статуса задачи
-  async getTask(taskId: string, token: string) {
-    const response = await fetch(`${API_BASE}/task/${taskId}`, {
-      headers: { 
-        'Authorization': `Bearer ${token}` 
-      },
+  async getTask(taskId: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/task/${taskId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    
+
     if (!response.ok) throw new Error('Ошибка получения статуса');
     return response.json();
   },
 
-  async deleteTask (taskId: string, token: string) {
-    const response = await fetch(`${API_BASE}/task/cancel/${taskId}`, {
+  async deleteTask(taskId: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/task/cancel/${taskId}`, {
       method: 'DELETE',
-      headers: { 
-        'Authorization': `Bearer ${token}` 
-      },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    
+
     if (!response.ok) throw new Error('Ошибка удаления задачи');
-  }
+  },
 };
+

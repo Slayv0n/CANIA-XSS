@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest } from '../api';
 
 export type Theme = 'dark' | 'light';
 
@@ -8,6 +8,8 @@ interface AuthContextType {
   isAuth: boolean;
   userEmail: string | null;
   hasSubscription: boolean;
+  notification: string | null;
+  setNotification: (message: string | null) => void;
   login: (email: string) => void;
   logout: () => void;
   updateSubscriptionStatus: () => Promise<void>;
@@ -46,9 +48,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   // Состояния авторизации
-  const [isAuth, setIsAuth] = useState<boolean>(() => localStorage.getItem('isAuth') === 'true');
+  const [isAuth, setIsAuth] = useState<boolean>(() => {
+    const token = getAccessToken();
+    const refresh = getRefreshToken();
+    return Boolean(token && refresh);
+  });
   const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('userEmail'));
   const [hasSubscription, setHasSubscription] = useState<boolean>(false);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  const tokenRefreshTimerRef = useRef<number | null>(null);
 
   // Состояния UI
   const [theme, setTheme] = useState<Theme>('dark');
@@ -72,14 +81,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Функция проверки подписки на сервере
   const updateSubscriptionStatus = async () => {
-    const token = localStorage.getItem('token');
-    if (isAuth && token) {
-      try {
-        const sub = await api.getMySubscription(token);
-        setHasSubscription(!!sub); 
-      } catch (e) {
-        setHasSubscription(false);
-      }
+    if (!isAuth) {
+      setHasSubscription(false);
+      return;
+    }
+
+    try {
+      const sub = await api.getMySubscription();
+      setHasSubscription(!!sub);
+    } catch (e) {
+      setHasSubscription(false);
     }
   };
 
@@ -96,19 +107,77 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsAuth(true);
     setUserEmail(email);
     setLoginModal(false);
+    setNotification('Вы успешно вошли.');
     navigate('/profile');
   };
 
   const logout = () => {
+    if (tokenRefreshTimerRef.current) {
+      clearTimeout(tokenRefreshTimerRef.current);
+      tokenRefreshTimerRef.current = null;
+    }
     localStorage.removeItem('isAuth');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     setIsAuth(false);
     setUserEmail(null);
     setHasSubscription(false); // Это просто очистка экрана для гостя
+    setNotification(null);
     navigate('/');
   };
+
+  useEffect(() => {
+    if (!isAuth) return;
+
+    const token = getAccessToken();
+    const expiration = getTokenExpiration(token);
+    if (!expiration) return;
+
+    const refreshInMs = expiration * 1000 - Date.now() - 30000; // 30s before expire
+
+    if (tokenRefreshTimerRef.current) {
+      clearTimeout(tokenRefreshTimerRef.current);
+      tokenRefreshTimerRef.current = null;
+    }
+
+    const doRefresh = async () => {
+      const ok = await refreshTokenRequest();
+      if (!ok) {
+        setNotification('Сессия истекла, пожалуйста, войдите снова.');
+        logout();
+        return;
+      }
+      setNotification('Токен обновлен автоматически.');
+      setIsAuth(true);
+    };
+
+    if (refreshInMs <= 0) {
+      doRefresh();
+      return;
+    }
+
+    tokenRefreshTimerRef.current = window.setTimeout(doRefresh, refreshInMs);
+
+    return () => {
+      if (tokenRefreshTimerRef.current) {
+        clearTimeout(tokenRefreshTimerRef.current);
+        tokenRefreshTimerRef.current = null;
+      }
+    };
+  }, [isAuth, logout]);
+
+  // В случае устаревшего access token - челленж бэкенда вызывает этот эвент
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      logout();
+      setNotification('Сессия истекла, пожалуйста, войдите снова.');
+    };
+
+    window.addEventListener('auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('auth-expired', handleAuthExpired);
+  }, [logout]);
 
   const toggleTheme = () => {
     document.documentElement.classList.add('theme-transition-disable');
@@ -140,7 +209,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <AuthContext.Provider value={{ isAuth, userEmail, hasSubscription, login, logout, updateSubscriptionStatus }}>
+      <AuthContext.Provider value={{ isAuth, userEmail, hasSubscription, notification, setNotification, login, logout, updateSubscriptionStatus }}>
         <UIContext.Provider value={{ 
           isLoginModalOpen, setLoginModal, 
           isPricesModalOpen, setPricesModal,

@@ -25,6 +25,8 @@ services:
 
   auth-api:
     build: { context: ., dockerfile: AuthService/Dockerfile }
+    ports:
+      - "8081:8081"
     environment:
       - ASPNETCORE_HTTP_PORTS=8081
       - AUTH_DB_CONNECTION=Host=auth-db;Port=5432;Database=AuthDb;Username=postgres;Password=password;
@@ -50,6 +52,8 @@ services:
 
   user-api:
     build: { context: ., dockerfile: UserService/Dockerfile }
+    ports:
+      - "8082:8082"
     environment:
       - ASPNETCORE_HTTP_PORTS=8082
       - User_Db_Connection=Host=user-db;Port=5432;Database=UserDb;Username=postgres;Password=password;
@@ -64,6 +68,8 @@ services:
 
   task-api:
     build: { context: ., dockerfile: TaskService/Dockerfile }
+    ports:
+      - "8086:8086"
     environment:
       - ASPNETCORE_HTTP_PORTS=8086
       - TASK_DB_CONNECTION=Host=task-db;Port=5432;Database=TaskDb;Username=postgres;Password=password;

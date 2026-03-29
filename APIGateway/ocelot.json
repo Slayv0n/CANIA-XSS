@@ -1,5 +1,19 @@
 {
   "Routes": [
+    {
+      "UpstreamPathTemplate": "/health",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
+    },
+    {
+      "UpstreamPathTemplate": "/api/auth/health",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
+    },
     // 1. АУТЕНТИФИКАЦИЯ (AuthService - Порт 8081)
     {
       "UpstreamPathTemplate": "/api/auth/{everything}",

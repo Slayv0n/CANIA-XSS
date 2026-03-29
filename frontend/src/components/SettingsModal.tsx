@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CloseIcon, GlowSpot } from '../assets/icons';
 import { api } from '../api'; // Импортируем API
-import { useAuth } from '../context/AppContext'; // Импортируем контекст
+import { useAuth } from '../context/AuthContext'; // Импортируем контекст
 
 interface SettingsModalProps {
     mode: 'password' | 'email';
@@ -35,9 +35,6 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
         setLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-
             if (step === 1) {
                 // ШАГ 1: Проверка пароля
                 if (!userEmail) throw new Error("Нет email");
@@ -48,7 +45,7 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
                 // ШАГ 2: Выбор действия в зависимости от режима
                 if (mode === 'password') {
                     // Если это пароль - сразу меняем и закрываем
-                    await api.updatePassword(newPassword, token);
+                    await api.updatePassword(newPassword);
                     alert("Пароль успешно изменен! Пожалуйста, войдите заново.");
                     onClose();
                     logout(); // Выкидываем юзера на экран логина
@@ -62,7 +59,7 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
                 // ШАГ 3: Проверка кода (только для почты)
                 // КОСТЫЛЬ ДЛЯ РАЗРАБОТКИ: принимаем только код 0000
                 if (verificationCode === '0000') {
-                    await api.updateEmail(newEmail, token);
+                    await api.updateEmail(newEmail);
                     alert("Почта успешно изменена! Пожалуйста, войдите заново.");
                     onClose();
                     logout(); // Выкидываем юзера на экран логина

@@ -1,6 +1,10 @@
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
-import { useAuth, useUI } from './context/AppContext';
+import { useAuth } from './context/AuthContext';
+import { useUI } from './context/UIContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import { UIProvider } from './context/UIContext';
 
 import BackgroundDecor from './components/BackgroundDecor';
 import Header from './components/Header';
@@ -18,9 +22,11 @@ import { Profile } from './pages/Profile';
 import { Scanner } from './pages/Scanner';
 import SettingsModal from './components/SettingsModal';
 
-function App() {
-  const { isAuth } = useAuth();
+function AppRoutes() {
+  const { isAuth, notification, setNotification } = useAuth();
   const { isLoginModalOpen, setLoginModal, isPricesModalOpen, setPricesModal, isFeedbackModalOpen, setFeedbackModal, isSettingsModalOpen, settingsMode, closeSettingsModal } = useUI();
+  const [isNotificationClosing, setIsNotificationClosing] = useState(false);
+  const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,6 +34,38 @@ function App() {
     const container = document.getElementById('scroll-container');
     if (container) container.scrollTop = 0;
   }, [location.pathname]);
+
+  useEffect(() => {
+    let autoCloseTimer: number;
+    if (notification) {
+      setIsNotificationVisible(true);
+      setIsNotificationClosing(false);
+      autoCloseTimer = window.setTimeout(() => setIsNotificationClosing(true), 5000);
+    } else {
+      setIsNotificationVisible(false);
+      setIsNotificationClosing(false);
+    }
+
+    return () => {
+      if (autoCloseTimer) window.clearTimeout(autoCloseTimer);
+    };
+  }, [notification]);
+
+  useEffect(() => {
+    let hideTimer: number;
+
+    if (isNotificationClosing) {
+      hideTimer = window.setTimeout(() => {
+        setNotification(null);
+        setIsNotificationVisible(false);
+        setIsNotificationClosing(false);
+      }, 400);
+    }
+
+    return () => {
+      if (hideTimer) window.clearTimeout(hideTimer);
+    };
+  }, [isNotificationClosing, setNotification]);
 
   const LandingPage = () => {
     const handleTryIt = () => {
@@ -75,8 +113,27 @@ function App() {
       {isPricesModalOpen && <Prices isModal={true} onClose={() => setPricesModal(false)} />}
       {isFeedbackModalOpen && <Feedback isOpen={isFeedbackModalOpen} onClose={() => setFeedbackModal(false)} />}
       {isSettingsModalOpen && <SettingsModal mode={settingsMode} onClose={closeSettingsModal} />}
+
+      {isNotificationVisible && (
+        <div className={`fixed top-4 right-4 z-50 rounded-xl border border-white/20 bg-black/80 p-4 text-sm text-white shadow-xl ${isNotificationClosing ? 'animate-notification-out' : 'animate-notification-in'}`}>
+          <div className="flex items-center gap-3">
+            <span>{notification}</span>
+            <button onClick={() => { setNotification(null); setIsNotificationClosing(false); setIsNotificationVisible(false); }} className="text-brand-red hover:text-white">✕</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <UIProvider>
+          <AppRoutes />
+        </UIProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}

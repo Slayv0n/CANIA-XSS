@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot } from '../assets/icons';
-import { api, RegisterRequest, LoginRequest } from '../api';
+import { api, setAccessToken, setRefreshToken, RegisterRequest, LoginRequest } from '../api';
 
 interface LoginCardProps {
     onClose: () => void;
@@ -61,17 +61,22 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
                 // 3. Сразу вызываем ЛОГИН, чтобы получить реальный токен
                 const response = await api.login({ email, password } as LoginRequest);
-                localStorage.setItem('token', response.accessToken);
-                
+                setAccessToken(response.accessToken);
+                setRefreshToken(response.refreshToken);
+
                 // 4. Только теперь пускаем в систему
                 login(email);
+                onClose();
             }
             // Реальный логин через API
             if (authMode === 'login' && isLoginValid) {
                 const response = await api.login({ email, password } as LoginRequest);
-                localStorage.setItem('token', response.accessToken);
+                setAccessToken(response.accessToken);
+                setRefreshToken(response.refreshToken);
+
                 // Вызываем login и передаем email, который юзер ввел в форму
-                login(email); 
+                login(email);
+                onClose();
             }
             //пока что не доделано
             if (authMode === 'forgot_email' && email) {

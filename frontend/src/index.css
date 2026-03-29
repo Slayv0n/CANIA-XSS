@@ -75,6 +75,19 @@
   will-change: opacity, transform;
 }
 
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(30px); }
+}
+
+.animate-notification-in {
+  animation: slideInRight 0.25s ease-out forwards;
+}
+
+.animate-notification-out {
+  animation: slideOutRight 0.4s ease-in forwards;
+}
+
 .light option {
   background-color: #FFFFFF;
   color: #121010;

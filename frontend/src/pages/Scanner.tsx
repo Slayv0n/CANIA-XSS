@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Download, ReportReady } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
-import { useAuth } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 
 import { api } from '../api';
 
@@ -67,12 +67,6 @@ export function Scanner() {
       'Низкая': 1, 'Средняя': 2, 'Высокая': 3
     };
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-        setError("Вы не авторизованы!");
-        return;
-    }
-
     try {
         setScanStatus('scanning');
         setTextIndex(0);
@@ -83,13 +77,13 @@ export function Scanner() {
             depth: depthMap[selectedDepth] || 1
         };
 
-        const result = await api.createTask(taskData, token);
+        const result = await api.createTask(taskData);
         console.log("Задача создана! ID:", result.id);
 
         // Начинаем опрашивать бэкенд каждые 2 секунды (polling)
         const intervalId = setInterval(async () => {
             try {
-                const checkTask = await api.getTask(result.id, token);
+                const checkTask = await api.getTask(result.id);
                 console.log("Текущий статус задачи на сервере:", checkTask.status);
                 
                 // Если статус 5 (Completed) — останавливаем таймер и показываем отчет!

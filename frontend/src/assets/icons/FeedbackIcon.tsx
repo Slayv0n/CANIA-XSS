@@ -1,4 +1,4 @@
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const FeedbackIcon = () => {
     const { theme } = useTheme();

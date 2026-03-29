@@ -1,4 +1,4 @@
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Ai = ({ className = "w-5 h-5" }) => {
     const { theme } = useTheme();

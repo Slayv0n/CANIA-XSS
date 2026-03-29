@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { api, TaskItem } from '../api';
-import { useAuth } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 
 export function Profile() {
   // 1. Состояние для списка отчетов
@@ -14,26 +14,18 @@ export function Profile() {
   const { userEmail } = useAuth();
 
   const handleDelete = async (taskId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     try {
-        const deleteStatus = await api.deleteTask(taskId, token);
-        setReports(reports.filter(report => report.id !== taskId))
-        
+        await api.deleteTask(taskId);
+        setReports(reports.filter(report => report.id !== taskId));
     } catch (err) {
         console.error("Ошибка удаления отчета:", err);
     }
   };
 
   const handleCancelSub = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     try {
-      await api.cancelSubscription(token);
-      // Магия: просто зануляем стейт, и React сам перерисует блок на "Базовый" тариф
-      setSubscription(null); 
+      await api.cancelSubscription();
+      setSubscription(null);
     } catch (err) {
       console.error(err);
       alert("Не удалось отменить подписку");
@@ -42,28 +34,21 @@ export function Profile() {
 
   // 2. Загружаем данные при входе на страницу
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    // Если токена нет или он подозрительно короткий - даже не делаем запрос
-    if (token && token.length > 50) { 
-      api.getMyTasks(token)
-        .then((data) => {
-          setReports(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error("Ошибка загрузки профиля:", err);
-          setLoading(false);
-        });
+    api.getMyTasks()
+      .then((data) => {
+        setReports(data);
+      })
+      .catch((err) => {
+        console.error("Ошибка загрузки профиля:", err);
+      })
+      .finally(() => setLoading(false));
 
-        api.getMySubscription(token)
-         .then(setSubscription)
-         .catch(console.error)
-         .finally(() => setSubLoading(false));
-
-    } else {
-      setLoading(false);
-      console.warn("Запрос не отправлен: токен отсутствует");
-    }
+    api.getMySubscription()
+      .then(setSubscription)
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => setSubLoading(false));
   }, []);
 
   return (

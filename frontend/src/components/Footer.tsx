@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth, useUI, useTheme } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
+import { useUI } from "../context/UIContext";
+import { useTheme } from "../context/ThemeContext";
 import { GlowSpot, LogoFooter } from "../assets/icons";
 
 export default function Footer() {

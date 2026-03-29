@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useUI, useTheme } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { useUI } from '../context/UIContext';
+import { useTheme } from '../context/ThemeContext';
 import { LogoFull, UserLoginIcon, UserProfileIcon, Dark, Light, Password, Mail, FeedbackIcon, Exit } from '../assets/icons';
 import { useState, useRef, useEffect } from 'react';
 export default function Header() {
   const navigate = useNavigate();
   const { isAuth, logout, userEmail } = useAuth(); // <--- ДОБАВЬ userEmail
-  const { setLoginModal, handlePricesClick, setFeedbackModal, setChangeEmailModal, setChangePasswordModal, openSettingsModal } = useUI();
+  const { setLoginModal, handlePricesClick, setFeedbackModal, openSettingsModal } = useUI();
   const { theme, toggleTheme } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

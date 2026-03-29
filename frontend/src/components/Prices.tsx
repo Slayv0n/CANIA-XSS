@@ -1,4 +1,5 @@
-import { useUI, useAuth } from '../context/AppContext';
+import { useUI } from '../context/UIContext';
+import { useAuth } from '../context/AuthContext';
 import { GlowSpot } from '../assets/icons';
 import { api } from '../api';
 import { useState } from 'react';
@@ -27,22 +28,15 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleBuy = async (plan: Plan) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert("Пожалуйста, войдите в аккаунт!");
-        return;
-    }
-
     setLoadingPlan(plan.id); // Включаем крутилку на конкретной кнопке
     try {
-        // Формируем объект тарифа для бэкенда. Цену переводим в число.
         const tariffData = {
             name: plan.name,
             description: plan.desc,
             cost: parseInt(plan.price.replace(/\D/g, '')) || 0 
         };
 
-        await api.buySubscription(tariffData, token);
+        await api.buySubscription(tariffData);
         alert("Оплата прошла успешно!");
         await updateSubscriptionStatus(); // Обновляем статус подписки в контексте
         if (onClose) onClose(); // Закрываем модалку

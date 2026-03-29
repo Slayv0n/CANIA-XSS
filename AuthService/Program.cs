@@ -37,7 +37,7 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.IsEssential = true;
-    options.Cookie.HttpOnly = false;
+    options.Cookie.HttpOnly = true;
 })
 .AddOpenIdConnect("Google", options =>
 {
@@ -176,18 +176,53 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", policy =>
+    {
+        policy.WithOrigins(
+            builder.Configuration["Frontend:Url"] ?? builder.Configuration["FRONTEND_URL"] ?? "http://localhost:5173",
+            builder.Configuration["Frontend:UrlHttps"] ?? builder.Configuration["FRONTEND_URL_HTTPS"] ?? "https://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddDbContextFactory<AuthContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("AUTH_DB_CONNECTION")));
 
-var jwtSettings = new JwtSettings()
+var jwtConfig = builder.Configuration.GetSection("JwtSettings");
+
+var secret = jwtConfig["SecretKey"]
+    ?? builder.Configuration["JWT_SECRET"]
+    ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!";
+
+var issuer = jwtConfig["Issuer"]
+    ?? builder.Configuration["JWT_ISSUER"]
+    ?? "Cania";
+
+var audience = jwtConfig["Audience"]
+    ?? builder.Configuration["JWT_AUDIENCE"]
+    ?? "Cania";
+
+var accessMinutes = double.TryParse(jwtConfig["ExpirationAccessTokenMinutes"], out var access) && access > 0
+    ? access
+    : 60;
+
+var refreshDays = double.TryParse(jwtConfig["ExpirationRefreshTokenDays"], out var refresh) && refresh > 0
+    ? refresh
+    : 7;
+
+var jwtSettings = new JwtSettings
 {
-    SecretKey = builder.Configuration["JWT_SECRET"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!",
-    Issuer = builder.Configuration["JWT_ISSUER"] ?? "Cania",
-    Audience = builder.Configuration["JWT_AUDIENCE"] ?? "Cania",
-    ExpirationAccessTokenMinutes = 60,
-    ExpirationRefreshTokenDays = 7
+    SecretKey = secret,
+    Issuer = issuer,
+    Audience = audience,
+    ExpirationAccessTokenMinutes = accessMinutes,
+    ExpirationRefreshTokenDays = refreshDays
 };
 
 builder.Services.AddSingleton<JwtSettings>(jwtSettings);
@@ -244,11 +279,13 @@ for (int i = 0; i < 10; i++) // 10 попыток
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
+        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10). Error: {ex.Message}");
         Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
     }
 }
 app.UseForwardedHeaders();
+
+app.UseCors("AllowLocalhost");
 
 app.UseRouting();
 
@@ -333,6 +370,8 @@ app.MapPost("/auth/logout/all", async (TokenRequest request, HttpContext context
 });
 
 //Social auth
+
+app.MapGet("/health", () => Results.Ok(new { status = "OK", time = DateTime.UtcNow }));
 
 app.MapGet("/auth/login/google", () =>
     Results.Challenge(new AuthenticationProperties { RedirectUri = "/auth/callback" }, new[] { "Google" }));
