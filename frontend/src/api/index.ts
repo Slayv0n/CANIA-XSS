@@ -18,6 +18,7 @@ export interface TaskItem {
   host: string;
   status: number;
   createdTime: string;
+  reportContent?: string;
 }
 
 export interface CreateTaskRequest {

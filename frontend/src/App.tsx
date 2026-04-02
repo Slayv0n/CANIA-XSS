@@ -102,7 +102,7 @@ function AppRoutes() {
             element={isAuth ? <Profile /> : <Navigate to="/" replace />} 
           />
           <Route 
-            path="/scanner" 
+            path="/scanner/:taskId?" 
             element={isAuth ? <Scanner /> : <Navigate to="/" replace />} 
           />
           <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />

@@ -37,7 +37,7 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     
-                    <div className="flex flex-col gap-6 items-start">
+                    <div className="flex flex-col gap-6 items-center md:items-start">
                         <div
                             onClick={handleLogoClick}
                             className={`text-main-text hover:opacity-80 cursor-pointer transition-transform ${
@@ -46,13 +46,13 @@ export default function Footer() {
                         >
                             <LogoFooter className="w-52.75 h-auto" />
                         </div>
-                        <p className="text-desc-text text-sm leading-relaxed max-w-sm">
+                        <p className="text-desc-text text-sm leading-relaxed max-w-sm text-center md:text-left">
                             Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati et esse aperiam mollitia fuga.
                         </p>
                     </div>
-
-                    <div className="flex flex-col place-items-end gap-4">
-                        <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1">
+                    <div className="flex flex-col md:place-items-end gap-4">
+                        
+                        <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1 items-center md:items-start">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
                             <button
                                 className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
@@ -69,10 +69,10 @@ export default function Footer() {
                             >
                                 Тарифы
                             </button>
-                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm flex uppercase cursor-pointer">
+                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase cursor-pointer">
                                 {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                             </button>
-                            <button className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm uppercase">
+                            <button className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase">
                                 Версия на английском
                             </button>
                             <button
@@ -84,9 +84,9 @@ export default function Footer() {
                         </nav>
                     </div>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 items-center md:items-start">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
-                        <div className="flex flex-col gap-3 text-desc-text text-sm font-medium">
+                        <div className="flex flex-col gap-3 text-desc-text text-sm font-medium items-center md:items-start">
                             <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">+7 (991) 123-03-22</a>
                             <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
                         </div>

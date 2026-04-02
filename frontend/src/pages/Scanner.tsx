@@ -1,73 +1,105 @@
-import { useState , useEffect} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Download, ReportReady } from '../assets/icons';
+import { Download } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
-import { useAuth } from '../context/AuthContext';
-
 import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
+import ReactMarkdown from 'react-markdown';
+import { useParams, useNavigate } from 'react-router-dom';
 
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
 export function Scanner() {
-  const { hasSubscription } = useAuth(); 
+  const { hasSubscription } = useAuth();
+  const { taskId } = useParams<{ taskId: string }>(); 
+  const navigate = useNavigate();
 
   const [url, setUrl] = useState('');
+  const [scannedHost, setScannedHost] = useState('');
   const [scanStatus, setScanStatus] = useState<ScanStatus>('idle');
   const [textIndex, setTextIndex] = useState(0);
   
-  // Состояния для выбранных значений
   const [selectedAttack, setSelectedAttack] = useState('');
   const [selectedDepth, setSelectedDepth] = useState('');
-
   const [error, setError] = useState<string | null>(null);
 
+  const [zoom, setZoom] = useState(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [reportText, setReportText] = useState('');
+  
+  const reportRef = useRef<HTMLDivElement>(null);
 
-  const scanTexts = [
-    "проверяем код...",
-    "ищем уязвимости...",
-    "проверка может занять несколько минут..."
+  // ВЕРНУЛ ТВОЙ ОРИГИНАЛЬНЫЙ ТЕКСТ
+  const scanTexts =[
+    "Проверяем код",
+    "ищем уязвимости",
+    "проверка может занять несколько минут",
   ];
 
-  const attackTypes = ['XSS', 'SQL Injections', 'CSRF', 'IDOR', 'Security Misconfiguration', 'Все типы'];
-  const depthLevels = ['Низкая', 'Средняя', 'Высокая'];
+  const attackTypes =['XSS', 'SQL Injections', 'CSRF', 'IDOR', 'Все типы'];
+  const depthLevels =['Низкая', 'Средняя', 'Высокая'];
 
   useEffect(() => {
     if (scanStatus !== 'scanning') return;
-
     const interval = setInterval(() => {
       setTextIndex((prevIndex) => (prevIndex + 1) % scanTexts.length);
-    }, 3000);
-
+    }, 2500);
     return () => clearInterval(interval);
-  }, [scanStatus]);
+  }, [scanStatus, scanTexts.length]);
 
-  //надо будет нормально условия отработать
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  },[]);
+
+    // Добавь этот useEffect перед функцией startScan
+    useEffect(() => {
+        if (taskId) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            // Включаем статус загрузки (чтобы не моргала пустая форма)
+            setScanStatus('scanning'); 
+            
+            // Идем на бэкенд за конкретной задачей
+            api.getTask(taskId, token)
+                .then((task) => {
+                    setScannedHost(task.host);
+                    setReportText(task.reportContent || "Отчет пуст или еще генерируется");
+                    setScanStatus('ready');
+                })
+                .catch((err) => {
+                    console.error(err);
+                    setError("Не удалось загрузить отчет");
+                    setScanStatus('idle');
+                });
+        } else {
+            // Если ID нет (просто зашли на /scanner), сбрасываем всё
+            setScanStatus('idle');
+            setUrl('');
+            setScannedHost('');
+        }
+    }, [taskId]); // Перезапускать, если ID в URL изменится
+
   const startScan = async () => {
     setError(null);
 
-    if (!url) {
-        setError("Сначала введите URL сайта для проверки!");
-        return;
-    }
-    if (!selectedAttack || !selectedDepth) {
-        setError("Пожалуйста, выберите тип атаки и глубину проверки!");
-        return;
-    }
-    if (!url.includes('.')) {
-        setError("Пожалуйста, введите корректный URL сайта (например, example.com)!");
-        return;
-    }
+    if (!url) { setError("Введите URL сайта!"); return; }
+    if (!selectedAttack || !selectedDepth) { setError("Выберите тип атаки и глубину!"); return; }
+    if (!url.includes('.')) { setError("Введите корректный URL (например, example.com)!"); return; }
 
-    // 1. Словари для перевода текста в цифры (как ждет бэкенд)
-    const attackMap: Record<string, number> = {
-      'XSS': 1, 'SQL Injections': 2, 'Ddos': 3, 'Все типы': 1, 'CSRF': 1, 'IDOR': 1, 'Security Misconfiguration': 1
-    };
-    const depthMap: Record<string, number> = {
-      'Низкая': 1, 'Средняя': 2, 'Высокая': 3
-    };
+    const token = localStorage.getItem('token');
+    if (!token) { setError("Вы не авторизованы!"); return; }
+
+    const attackMap: Record<string, number> = { 'XSS': 1, 'SQL Injections': 2, 'Все типы': 1 };
+    const depthMap: Record<string, number> = { 'Низкая': 1, 'Средняя': 2, 'Высокая': 3 };
 
     try {
+        setScannedHost(url);
         setScanStatus('scanning');
         setTextIndex(0);
 
@@ -77,24 +109,20 @@ export function Scanner() {
             depth: depthMap[selectedDepth] || 1
         };
 
-        const result = await api.createTask(taskData);
-        console.log("Задача создана! ID:", result.id);
+        const result = await api.createTask(taskData, token);
 
-        // Начинаем опрашивать бэкенд каждые 2 секунды (polling)
         const intervalId = setInterval(async () => {
             try {
-                const checkTask = await api.getTask(result.id);
-                console.log("Текущий статус задачи на сервере:", checkTask.status);
-                
-                // Если статус 5 (Completed) — останавливаем таймер и показываем отчет!
+                const checkTask = await api.getTask(result.id, token);
                 if (checkTask.status === 5) {
+                    setReportText(checkTask.reportContent || "Отчет пуст");
                     setScanStatus('ready');
-                    clearInterval(intervalId); // Выключаем опрос
+                    clearInterval(intervalId);
                 }
             } catch (e) {
-                console.error("Не удалось проверить статус", e);
+                console.error("Ошибка опроса статуса", e);
             }
-        }, 2000); // 2000 мс = 2 секунды
+        }, 2000);
 
     } catch (err: any) {
         setScanStatus('idle');
@@ -102,9 +130,22 @@ export function Scanner() {
     }
   };
 
-  const finishScan = () => {
-    if (scanStatus === 'scanning') {
-      setScanStatus('ready');
+  const handleDownload = () => {
+    const blob = new Blob([reportText], { type: 'text/markdown' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `CANIA_Report_${scannedHost.replace(/[^a-z0-9]/gi, '_')}.md`;
+    link.click();
+  };
+
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+        reportRef.current?.requestFullscreen().catch(err => {
+            console.error("Ошибка фуллскрина:", err);
+        });
+    } else {
+        document.exitFullscreen();
     }
   };
 
@@ -112,134 +153,164 @@ export function Scanner() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-6 mb-40 md:p-20 relative z-10">
-        <section className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold uppercase text-main-text mb-4">
-                Проверьте ваш сайт на уязвимости
-            </h1>
-            <p className="text-brand-red text-xs uppercase font-bold tracking-wider">
-                Мы не несем ответственность за использование инструмента в противоправных целях
-            </p>
-        </section>
+      <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-12 relative z-10 flex flex-col">
+        
+        {scanStatus !== 'ready' && (
+            <div className="animate-fade-in">
+                <section className="mb-12 mt-8">
+                    <h1 className="text-4xl md:text-5xl font-bold uppercase text-main-text mb-4">
+                        Проверьте ваш сайт на уязвимости
+                    </h1>
+                    <p className="text-brand-red text-xs uppercase font-bold tracking-wider">
+                        Мы не несем ответственность за использование инструмента в противоправных целях
+                    </p>
+                </section>
 
-        {error && (
-          <div className="mb-6 bg-brand-red/10 border border-brand-red text-red-500 px-4 py-3 rounded-xl flex items-center gap-3 animate-fade-in">
-            <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span className="text-sm font-medium">{error}</span>
-          </div>
-        )}
+                {error && (
+                <div className="mb-6 bg-brand-red/10 border border-brand-red text-red-500 px-4 py-3 rounded-xl flex items-center gap-3">
+                    <span className="text-sm font-medium">{error}</span>
+                </div>
+                )}
 
-        <section className="flex flex-col md:flex-row gap-4 mb-4">
-            <input
-                type="text"
-                placeholder="EXAMPLE.COM"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 bg-card-bg border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red"
-            />
-            
-            <button 
-                onClick={startScan}
-                // Блокируем кнопку, если нет подписки или уже идет сканирование
-                disabled={!hasSubscription || scanStatus === 'scanning'} 
-                className={`px-10 py-4 font-bold uppercase rounded flex items-center justify-center gap-2 transition-all 
-                    ${!hasSubscription 
-                        ? 'bg-gray-600 cursor-not-allowed opacity-70' // Стиль для заблокированной кнопки
-                        : 'bg-brand-red hover:bg-red-700 cursor-pointer' // Обычный стиль
-                    }`}
-            >
-                {!hasSubscription ? "Нужна подписка" : "Проверить"} <span>→</span>
-            
-            </button>
-        </section>
+                <section className="flex flex-col md:flex-row gap-4 mb-8">
+                    <input
+                        type="text"
+                        placeholder="EXAMPLE.COM"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        disabled={scanStatus === 'scanning'}
+                        className="flex-1 bg-transparent border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors disabled:opacity-50"
+                    />
+                    <button 
+                        onClick={startScan}
+                        disabled={!hasSubscription || scanStatus === 'scanning'}
+                        className={`px-10 py-4 font-bold uppercase rounded-sm flex items-center justify-center gap-2 transition-all 
+                            ${!hasSubscription ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-brand-red hover:bg-red-700 cursor-pointer'}`}
+                    >
+                        {scanStatus === 'scanning' ? 'СКАНИРОВАНИЕ...' : 'ЗАПУСТИТЬ АУДИТ'} <span className="text-xl">→</span>
+                    </button>
+                </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-            {/* Селект для типа атаки */}
-            <CustomSelect 
-                value={selectedAttack}
-                onChange={setSelectedAttack}
-                options={attackTypes}
-                placeholder="Тип атаки"
-            />
+                {!hasSubscription && (
+                    <p className="text-brand-red text-[10px] -mt-6 mb-6 uppercase font-bold text-right">
+                        Для использования сканера необходимо выбрать тариф
+                    </p>
+                )}
 
-            {/* Селект для глубины */}
-            <CustomSelect 
-                value={selectedDepth}
-                onChange={setSelectedDepth}
-                options={depthLevels}
-                placeholder="Глубина атаки"
-            />
-        </section>
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+                    <CustomSelect value={selectedAttack} onChange={setSelectedAttack} options={attackTypes} placeholder="Тип атаки" />
+                    <CustomSelect value={selectedDepth} onChange={setSelectedDepth} options={depthLevels} placeholder="Глубина атаки" />
+                </section>
 
-        {scanStatus !== 'idle' && (
-            <div className="flex flex-col items-center justify-center py-12 min-h-62.5">
-                {scanStatus === 'ready' ? (
-                    <div className="animate-in zoom-in duration-300">
-                        <ReportReady />
-                    </div>
-                ) : (
-                    <>
-                        <div className="mb-8 cursor-pointer" onClick={finishScan}>
-                            <svg className="w-20 h-20 text-brand-red animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                {scanStatus === 'scanning' && (
+                    <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
+                        <div className="mb-8">
+                            <svg className="w-16 h-16 text-brand-red animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                                 <circle cx="12" cy="12" r="10" strokeDasharray="45 20" />
                             </svg>
                         </div>
-                        <div className="h-16 flex items-start justify-center overflow-hidden w-full text-center relative pointer-events-none">
-                            <p key={textIndex} className="absolute animate-slide-text font-mono text-sm md:text-base text-desc-text">
-                                {scanTexts[textIndex]}
-                            </p>
-                        </div>
-                    </>
+                        <p key={textIndex} className="animate-slide-text font-mono text-sm md:text-base text-desc-text h-6 uppercase">
+                            {scanTexts[textIndex]}
+                        </p>
+                    </div>
                 )}
             </div>
         )}
 
         {scanStatus === 'ready' && (
-        <div>
-            <section className='flex justify-between items-center'>
-                <h2 className='text-2xl'>Отчет по сайту ***</h2>
-                <button className='flex items-center bg-brand-red py-6 px-16 rounded gap-2 cursor-pointer'>
-                    Скачать <Download />
-                </button>
-            </section>
+            <div className="animate-fade-in flex-1 flex flex-col mt-4 md:mt-8">
+                
+                {!isFullscreen && (
+                    <button 
+                        onClick={() => { 
+                            navigate('/scanner'); // <--- Меняем URL на чистый
+                            setScanStatus('idle'); 
+                            setUrl(''); 
+                        }} 
+                        className="text-desc-text hover:text-white mb-6 flex items-center gap-2 cursor-pointer w-fit uppercase text-sm font-bold tracking-wider"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        Новый скан
+                    </button>
+                )}
 
-            <div className="mt-8 border border-card-border rounded-xl overflow-hidden bg-black/40 relative">
-                <div className="flex justify-between items-center bg-white/5 px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text">
-                    <div className="flex-1 italic">*название файла*</div>
-                    <div className="flex items-center gap-4 bg-black/20 px-4 py-1 rounded-full border border-card-border">
-                        <button className="hover:text-white cursor-pointer">+</button>
-                        <span className="text-main-text">100%</span>
-                        <button className="hover:text-white cursor-pointer">—</button>
+                <section className='flex justify-between items-center mb-6 shrink-0'>
+                    <h2 className='text-2xl md:text-3xl font-bold uppercase tracking-wide'>
+                        Отчет по сайту <span className="text-brand-red lowercase">{scannedHost}</span>
+                    </h2>
+                    <button 
+                        onClick={handleDownload} 
+                        className='flex items-center bg-brand-red hover:bg-red-700 py-3 px-8 rounded-sm font-bold uppercase gap-3 cursor-pointer transition-colors shadow-lg shadow-brand-red/20'
+                    >
+                        Скачать <Download />
+                    </button>
+
+                </section>
+
+                <div 
+                    ref={reportRef} 
+                    className={`border border-card-border rounded-lg overflow-hidden bg-[#0A0A0A] flex flex-col relative transition-all duration-300 ${isFullscreen ? 'w-screen h-screen' : 'h-150'}`}
+                >
+                    
+                    <div className="flex justify-between items-center bg-[#151515] px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text shrink-0 z-20">
+                        <div className="flex-1 italic">*report_{scannedHost}.md*</div>
+                        
+                        <div className="flex items-center gap-4 bg-black/50 px-4 py-1 rounded-full border border-card-border">
+                            <button onClick={() => setZoom(z => Math.max(z - 10, 50))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">—</button>
+                            <span className="text-main-text min-w-11.25 text-center select-none">{zoom}%</span>
+                            <button onClick={() => setZoom(z => Math.min(z + 10, 200))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">+</button>
+                        </div>
+                        
+                        <div className="flex-1 flex justify-end">
+                            <button onClick={toggleFullscreen} className="hover:text-white cursor-pointer p-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
+                                {isFullscreen ? (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" /></svg>
+                                ) : (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+                                )}
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex-1 flex justify-end">
-                        <button className="hover:text-white cursor-pointer">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div className="h-125 md:h-175 p-8 overflow-y-auto custom-scrollbar">
-                    <div className="space-y-4 opacity-20">
-                        <div className="h-4 bg-white/10 w-3/4 rounded"></div>
-                        <div className="h-4 bg-white/10 w-full rounded"></div>
-                        <div className="h-4 bg-white/10 w-5/6 rounded"></div>
-                        <div className="h-4 bg-white/10 w-1/2 rounded"></div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <p className="text-white/5 font-bold text-4xl md:text-6xl uppercase rotate-[-10deg] select-none">
-                            CANIA REPORT PREVIEW
-                        </p>
+
+                    <div className="flex-1 relative min-h-0 bg-main-bg">
+                        <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 md:p-12 z-10">
+                            
+                            <div 
+                                className="max-w-4xl mx-auto font-mono text-desc-text leading-relaxed"
+                                style={{ fontSize: `${zoom}%` }}
+                            >
+                                <ReactMarkdown
+                                    children={reportText.replace(/^[ \t]+/gm, '')} 
+                                    components={{
+                                        h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-white mb-6 border-b border-white/10 pb-4 uppercase tracking-wide" {...props} />,
+                                        h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-white mt-10 mb-4" {...props} />,
+                                        p: ({node, ...props}) => {
+                                            // Простой парсер: если строка содержит лог, красим в зеленый
+                                            const text = String(props.children);
+                                            const isLog = text.includes('[INFO]') || text.includes('[SUCCESS]');
+                                            return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-gray-300'}`} {...props} />;
+                                        },
+                                        ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-brand-red text-[1em]" {...props} />,
+                                        li: ({node, ...props}) => <li className="text-gray-300" {...props} />,
+                                        strong: ({node, ...props}) => <strong className="text-brand-red font-bold" {...props} />,
+                                    }}
+                                />
+                            </div>
+
+                        </div>
+
+                        {/* Водяной знак оставляем фоном */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0 overflow-hidden">
+                            <p className="font-black text-4xl md:text-8xl uppercase -rotate-12 select-none whitespace-nowrap">
+                                CANIA REPORT PREVIEW
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         )}
 
       </main>
-
       <Footer />
     </div>
   );
