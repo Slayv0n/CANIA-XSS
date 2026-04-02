@@ -9,5 +9,7 @@ namespace Task_API.Models.Response
         public List<TypeOfAttack> TypeOfAttacks { get; init; } = new();
         public Depth Depth { get; init; }
         public StatusTask Status { get; set; }
+
+        public string? ReportContent { get; set; }
     }
 }
