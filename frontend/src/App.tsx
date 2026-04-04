@@ -1,10 +1,12 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState, Suspense } from 'react';
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useUI } from './context/UIContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { UIProvider } from './context/UIContext';
+import { LanguageProvider } from './context/LanguageContext';
+
 
 import BackgroundDecor from './components/BackgroundDecor';
 import Header from './components/Header';
@@ -18,8 +20,11 @@ import Footer from './components/Footer';
 import LoginCard from './components/LoginCard';
 import Feedback from './components/Feedback';
 import NotFound from './pages/NotFound';
-import { Profile } from './pages/Profile';
-import { Scanner } from './pages/Scanner';
+// import { Profile } from './pages/Profile';
+const Profile = React.lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
+// import { Scanner } from './pages/Scanner';
+const Scanner = React.lazy(() => import('./pages/Scanner').then(module => ({ default: module.Scanner })));
+
 import SettingsModal from './components/SettingsModal';
 
 function AppRoutes() {
@@ -94,19 +99,21 @@ function AppRoutes() {
 
   return (
     <div className="h-screen w-full bg-main-bg overflow-hidden relative">
-      <div id="scroll-container" className="fixed inset-0 overflow-y-auto z-10 custom-scrollbar animate-fade-in"> 
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route 
-            path="/profile" 
-            element={isAuth ? <Profile /> : <Navigate to="/" replace />} 
-          />
-          <Route 
-            path="/scanner/:taskId?" 
-            element={isAuth ? <Scanner /> : <Navigate to="/" replace />} 
-          />
-          <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
-        </Routes>
+      <div id="scroll-container" className="fixed inset-0 overflow-y-auto z-10 custom-scrollbar animate-fade-in">
+        <Suspense fallback={<div className="flex h-screen items-center justify-center text-brand-red animate-pulse font-bold uppercase">Загрузка модуля...</div>}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route 
+              path="/profile" 
+              element={isAuth ? <Profile /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/scanner/:taskId?" 
+              element={isAuth ? <Scanner /> : <Navigate to="/" replace />} 
+            />
+            <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
+          </Routes>
+        </Suspense> 
       </div>
 
       {isLoginModalOpen && <LoginCard onClose={() => setLoginModal(false)} />}
@@ -129,11 +136,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <UIProvider>
-          <AppRoutes />
-        </UIProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <UIProvider>
+            <AppRoutes />
+          </UIProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

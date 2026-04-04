@@ -111,7 +111,10 @@ export default function LoginCard({ onClose }: LoginCardProps) {
             <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors duration-300 z-20 cursor-pointer">
+                <button 
+                    onClick={onClose} 
+                    aria-label="Закрыть окно" 
+                    className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors duration-300 z-20 cursor-pointer">
                     <CloseIcon />
                 </button>
 

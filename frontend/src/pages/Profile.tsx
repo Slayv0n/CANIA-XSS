@@ -4,6 +4,8 @@ import Footer from '../components/Footer';
 import { api, TaskItem } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { CloseIcon , Download, ArrowUpRight} from '../assets/icons';
+
 
 export function Profile() {
   // 1. Состояние для списка отчетов
@@ -96,38 +98,33 @@ export function Profile() {
                                 </div>
 
                                 {/* ПРАВАЯ ЧАСТЬ: Крестик и Стрелка вместе */}
-                                <div className="flex items-center gap-6"> 
+                                <div className="flex items-center gap-8"> 
                                     {/* Кнопка удаления */}
-                                    <div
+                                    <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleDelete(report.id);
                                         }}
-                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red hover:transition-all cursor-pointer"
+                                        className="hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+                                        aria-label="Удалить отчет"
+                                        title="Удалить отчет"
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M18 6L6 18M6 6l12 12"/>
-                                        </svg>
-                                    </div>
+                                        <CloseIcon />
+                                    </button>
 
                                     
 
                                     {/* КНОПКА СКАЧАТЬ */}
-                                    <div 
+                                    <button
                                         onClick={(e) => handleDownload(e, report.host)}
-                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-white transition-all cursor-pointer"
+                                        className="hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+                                        aria-label="Скачать отчет"
                                         title="Скачать отчет"
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                            <polyline points="7 10 12 15 17 10" />
-                                            <line x1="12" y1="15" x2="12" y2="3" />
-                                        </svg>
-                                    </div>
+                                        <Download />
+                                    </button>
 
-                                    <svg className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                    </svg>
+                                    <ArrowUpRight className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors duration-300"/>
                                 </div>
                             </button>
                         ))

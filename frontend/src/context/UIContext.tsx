@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 
 interface UIContextType {
   isLoginModalOpen: boolean;
@@ -51,26 +51,21 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const contextValue = useMemo(() => ({
+    isLoginModalOpen, setLoginModal,
+    isPricesModalOpen, setPricesModal,
+    isFeedbackModalOpen, setFeedbackModal,
+    isSettingsModalOpen, openSettingsModal, closeSettingsModal,
+    settingsMode, handlePricesClick,
+    isChangePasswordModalOpen, setChangePasswordModal,
+    isChangeEmailModalOpen, setChangeEmailModal
+  }),[
+    isLoginModalOpen, isPricesModalOpen, isFeedbackModalOpen, 
+    isSettingsModalOpen, settingsMode, isChangePasswordModalOpen, isChangeEmailModalOpen
+  ]);
+
   return (
-    <UIContext.Provider
-      value={{
-        isLoginModalOpen,
-        setLoginModal,
-        isPricesModalOpen,
-        setPricesModal,
-        isFeedbackModalOpen,
-        setFeedbackModal,
-        isChangePasswordModalOpen,
-        setChangePasswordModal,
-        isChangeEmailModalOpen,
-        setChangeEmailModal,
-        isSettingsModalOpen,
-        settingsMode,
-        openSettingsModal,
-        closeSettingsModal,
-        handlePricesClick,
-      }}
-    >
+    <UIContext.Provider value={contextValue}>
       {children}
     </UIContext.Provider>
   );

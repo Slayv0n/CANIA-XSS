@@ -4,8 +4,11 @@ import { useAuth } from "../context/AuthContext";
 import { useUI } from "../context/UIContext";
 import { useTheme } from "../context/ThemeContext";
 import { GlowSpot, LogoFooter } from "../assets/icons";
+import { useLanguage } from '../context/LanguageContext';
+
 
 export default function Footer() {
+    const { t, toggleLanguage, lang } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -47,13 +50,13 @@ export default function Footer() {
                             <LogoFooter className="w-52.75 h-auto" />
                         </div>
                         <p className="text-desc-text text-sm leading-relaxed max-w-sm text-center md:text-left">
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati et esse aperiam mollitia fuga.
+                            {t('footer.desc')}
                         </p>
                     </div>
                     <div className="flex flex-col md:place-items-end gap-4">
                         
                         <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1 items-center md:items-start">
-                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
+                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">{t('footer.navigation')}</h4>
                             <button
                                 className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                                 onClick={() => {
@@ -61,31 +64,31 @@ export default function Footer() {
                                     else setLoginModal(true);
                                 }}
                             >
-                                Функционал
+                                {t('header.features')}
                             </button>
                             <button
-                                onClick={handlePricesClick}
+                                onClick={handlePricesClick} 
                                 className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
-                                Тарифы
+                                {t('header.tariffs')}
                             </button>
                             <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase cursor-pointer">
-                                {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+                                {theme === 'dark' ? t('profileMenu.themeLight') : t('profileMenu.themeDark')}
                             </button>
-                            <button className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase">
-                                Версия на английском
+                            <button onClick={toggleLanguage} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase">
+                                {lang === 'ru' ? t('footer.versionEn') : t('footer.versionRu')}
                             </button>
                             <button
                                 onClick={() => setFeedbackModal(true)}
                                 className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
-                                Оставить отзыв
+                                {t('profileMenu.feedback')}
                             </button>
                         </nav>
                     </div>
 
                     <div className="flex flex-col gap-4 items-center md:items-start">
-                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
+                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">{t('footer.contact')}:</h4>
                         <div className="flex flex-col gap-3 text-desc-text text-sm font-medium items-center md:items-start">
                             <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">+7 (991) 123-03-22</a>
                             <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
@@ -96,7 +99,7 @@ export default function Footer() {
 
                 <div className="border-t border-light-red pt-8">
                     <span className="text-brand-red text-xs font-mono uppercase tracking-wider">
-                        © 2026 CANIA-XSS-UI. Все права защищены
+                        {t('footer.copyright')}
                     </span>
                 </div>
             </div>

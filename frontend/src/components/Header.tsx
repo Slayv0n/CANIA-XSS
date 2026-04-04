@@ -2,9 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { LogoFull, UserLoginIcon, UserProfileIcon, Dark, Light, Password, Mail, FeedbackIcon, Exit } from '../assets/icons';
 import { useState, useRef, useEffect } from 'react';
 export default function Header() {
+  const { t, toggleLanguage, lang } = useLanguage();
   const navigate = useNavigate();
   const { isAuth, logout, userEmail } = useAuth(); // <--- ДОБАВЬ userEmail
   const { setLoginModal, handlePricesClick, setFeedbackModal, openSettingsModal } = useUI();
@@ -31,13 +33,15 @@ export default function Header() {
 
   return (
     <header className="h-20 border-b border-light-red flex items-center justify-between px-10 relative z-50 header-root">
-      
-      <div 
+
+      <button 
         onClick={() => navigate('/')} 
-        className="flex items-center cursor-pointer text-main-text hover:opacity-80 transition-opacity"
+        className="flex items-center cursor-pointer text-main-text hover:opacity-80 transition-opacity rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+        aria-label="На главную страницу" 
+        title="На главную страницу"
       >
         <LogoFull className="w-28 md:w-36 h-auto" />
-      </div>
+      </button>
 
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-desc-text">
         <button
@@ -47,17 +51,23 @@ export default function Header() {
           }}
           className='p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer'
           >
-          Функционал
+          {t('header.features')}
         </button>
         <button
           onClick={handlePricesClick}
           className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer"
         >
-          Тарифы
+          {t('header.tariffs')}
         </button>
 
         <div className="h-4 w-px bg-card-border"></div>
-        <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">EN</a>
+        {/* className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm" */}
+        <button 
+          onClick={toggleLanguage} 
+          className="cursor-pointer p-1"
+        >
+          {lang === 'ru' ? 'EN' : 'RU'}
+        </button>
       </nav>
 
       {!isAuth ? (
@@ -67,7 +77,7 @@ export default function Header() {
             aria-label="Войти в аккаунт"
         >
             <UserLoginIcon />
-            Вход
+             {t('header.login')}
         </button>
       ) : (
         <div ref={menuRef} className="relative">

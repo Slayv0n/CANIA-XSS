@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 
 export type Theme = 'dark' | 'light';
 
@@ -15,6 +15,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
+    
     if (nextTheme === 'light') {
       document.documentElement.classList.add('light');
     } else {
@@ -25,7 +26,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setTimeout(() => document.documentElement.classList.remove('theme-transition-disable'), 10);
   };
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  const contextValue = useMemo(() => ({ theme, toggleTheme }), [theme]);
+
+  return (
+    <ThemeContext.Provider value={contextValue}>
+      {children}
+    </ThemeContext.Provider>
+  )
 };
 
 export const useTheme = () => {

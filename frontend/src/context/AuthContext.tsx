@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest } from '../api';
 
@@ -125,19 +125,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/profile');
   };
 
+  const contextValue = useMemo(() => ({
+    isAuth,
+    userEmail,
+    hasSubscription,
+    notification,
+    setNotification,
+    login,
+    logout,
+    updateSubscriptionStatus
+  }), [isAuth, userEmail, hasSubscription, notification]); // Пересоздавать объект ТОЛЬКО если изменились эти переменные 
+
   return (
-    <AuthContext.Provider
-      value={{
-        isAuth,
-        userEmail,
-        hasSubscription,
-        notification,
-        setNotification,
-        login,
-        logout,
-        updateSubscriptionStatus,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

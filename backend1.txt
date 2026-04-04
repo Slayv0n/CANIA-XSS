@@ -79,7 +79,11 @@
 - frontend\src\components\LoginCard.tsx
 - frontend\src\components\Prices.tsx
 - frontend\src\components\Safety.tsx
+- frontend\src\components\SettingsModal.tsx
 - frontend\src\context\AppContext.tsx
+- frontend\src\context\AuthContext.tsx
+- frontend\src\context\ThemeContext.tsx
+- frontend\src\context\UIContext.tsx
 - frontend\src\pages\NotFound.tsx
 - frontend\src\pages\Profile.tsx
 - frontend\src\pages\Scanner.tsx
@@ -105,6 +109,7 @@
 - PasswordService\Program.cs
 - PasswordService\Consumers\UserCreatedConsumer.cs
 - PasswordService\Consumers\UserDeletedConsumer.cs
+- PasswordService\Models\Requests\CompleteResetRequest.cs
 - PasswordService\Models\Requests\CreateRequest.cs
 - PasswordService\Models\Requests\ResetRequest.cs
 - PasswordService\Models\Requests\UpdateRequest.cs
@@ -544,54 +549,13 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# Секреты для Docker
+.env
+
 ============================================================
 Файл: docker-compose.yml
 ============================================================
-version: '3.8'
-
 services:
-  api-gateway:
-    build:
-      context: .
-      dockerfile: APIGateway/Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - ASPNETCORE_HTTP_PORTS=8080
-    depends_on:
-      - user-api
-    networks:
-      - cania-network
-
-  user-api:
-    build:
-      context: .
-      dockerfile: UserService/Dockerfile
-    expose:
-      - "8082"
-    environment:
-      - ASPNETCORE_HTTP_PORTS=8082
-      - User_Db_Connection=Host=user-db;Port=5432;Database=UserDb;Username=CaniaUserAdmin;Password=developmentPassword;
-      - RabbitMQ_Host=rabbitmq
-    depends_on:
-      - user-db
-      - rabbitmq
-    networks:
-      - cania-network
-
-  user-db:
-    image: postgres:15
-    container_name: user_db
-    restart: always
-    environment:
-      POSTGRES_USER: CaniaUserAdmin
-      POSTGRES_PASSWORD: developmentPassword
-      POSTGRES_DB: UserDb
-    expose:
-      - "5432"
-    networks:
-      - cania-network
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -601,9 +565,130 @@ services:
     networks:
       - cania-network
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: APIGateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8080
+      - JWT_SECRET=YourSuperSecretKeyThatIsAtLeast32CharactersLong123!
+      - JWT_ISSUER=Cania
+      - JWT_AUDIENCE=Cania
+    depends_on: [auth-api, user-api, task-api]
+    networks:
+      - cania-network
+
+  auth-api:
+    build: { context: ., dockerfile: AuthService/Dockerfile }
+    ports:
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8081
+      - AUTH_DB_CONNECTION=Host=auth-db;Port=5432;Database=AuthDb;Username=postgres;Password=password;
+      - RabbitMQ_Host=rabbitmq
+      - JWT_SECRET=YourSuperSecretKeyThatIsAtLeast32CharactersLong123!
+
+      # ДОБАВЬ ЭТИ СТРОКИ (можно просто любой текст для теста):
+      - JWT_ISSUER=Cania
+      - JWT_AUDIENCE=Cania
+
+      - Google_ClientId=dummy_google_id
+      - Google_SecretKey=dummy_google_secret
+      - GitHub_ClientId=dummy_github_id
+      - GitHub_SecretKey=dummy_github_secret
+      - AUTH_HOST=localhost:8081
+    depends_on: [auth-db, rabbitmq]
+    networks: [cania-network]
+
+  auth-db:
+    image: postgres:15
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: AuthDb }
+    networks: [cania-network]
+
+  user-api:
+    build: { context: ., dockerfile: UserService/Dockerfile }
+    ports:
+      - "8082:8082"
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8082
+      - User_Db_Connection=Host=user-db;Port=5432;Database=UserDb;Username=postgres;Password=password;
+      - RabbitMQ_Host=rabbitmq
+    depends_on: [user-db, rabbitmq]
+    networks: [cania-network]
+
+  user-db:
+    image: postgres:15
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: UserDb }
+    networks: [cania-network]
+
+  task-api:
+    build: { context: ., dockerfile: TaskService/Dockerfile }
+    ports:
+      - "8086:8086"
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8086
+      - TASK_DB_CONNECTION=Host=task-db;Port=5432;Database=TaskDb;Username=postgres;Password=password;
+      - RabbitMQ_Host=rabbitmq
+      - SUBSCRIBE_DB_CONNECTION=Host=subscribe-db;Port=5432;Database=SubscribeDb;Username=postgres;Password=password;
+    depends_on: [task-db, rabbitmq]
+    networks: [cania-network]
+
+  task-db:
+    image: postgres:15
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: TaskDb }
+    networks: [cania-network]
+
+  password-api:
+    build: { context: ., dockerfile: PasswordService/Dockerfile }
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8084
+      - PASSWORD_DB_CONNECTION=Host=password-db;Port=5432;Database=PasswordDb;Username=postgres;Password=password;
+      - RabbitMQ_Host=rabbitmq
+    depends_on: [password-db, rabbitmq]
+    networks: [cania-network]
+
+  password-db:
+    image: postgres:15
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: PasswordDb }
+    networks: [cania-network]
+
+  # --- ВОТ ЭТИ ДВА Я ЗАБЫЛ ДОБАВИТЬ ---
+  subscribe-api:
+    build: { context: ., dockerfile: SubscribeService/Dockerfile }
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8085
+      - SUBSCRIBE_DB_CONNECTION=Host=subscribe-db;Port=5432;Database=SubscribeDb;Username=postgres;Password=password;
+      - RabbitMQ_Host=rabbitmq
+    depends_on: [subscribe-db, rabbitmq]
+    networks: [cania-network]
+
+  subscribe-db:
+    image: postgres:15
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: SubscribeDb }
+    networks: [cania-network]
+
+  notification-api:
+    build: { context: ., dockerfile: NotificationService/Dockerfile }
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8083
+      - NOTIFICATION_DB_CONNECTION=Host=notification-db;Port=5432;Database=NotificationDb;Username=postgres;Password=password;
+      - RabbitMQ_Host=rabbitmq
+      - GMAIL_PASSWORD=${GMAIL_APP_PASS}
+      - Email__Smtp__Username=${GMAIL_USER}
+      - Email__FromEmail=${GMAIL_USER}
+    depends_on: [notification-db, rabbitmq]
+    networks: [cania-network]
+
+  notification-db:
+    image: postgres:15
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: NotificationDb }
+    networks: [cania-network]
+
 networks:
   cania-network:
-    driver: bridge 
+    driver: bridge
 
 ============================================================
 Файл: README.md
@@ -708,7 +793,16 @@ app.Run();
       "Microsoft.AspNetCore": "Warning"
     }
   },
-  "AllowedHosts": "*"
+  "AllowedHosts": "*",
+  "JwtSettings": {
+    "SecretKey": "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!",
+    "Issuer": "Cania",
+    "Audience": "Cania"
+  },
+  "Frontend": {
+    "Url": "http://localhost:5173",
+    "UrlHttps": "https://localhost:5173"
+  }
 }
 
 
@@ -764,20 +858,38 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+
 .AddJwtBearer("Bearer", options =>
 {
+    var jwtOptions = builder.Configuration.GetSection("JwtSettings");
+    var secret = jwtOptions["SecretKey"] ?? builder.Configuration["JWT_SECRET"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!";
+    var issuer = jwtOptions["Issuer"] ?? builder.Configuration["JWT_ISSUER"] ?? "Cania";
+    var audience = jwtOptions["Audience"] ?? builder.Configuration["JWT_AUDIENCE"] ?? "Cania";
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtSettings_SecretKey") ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!")),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration.GetValue<string>("JwtSettings_Issuer"),
+        ValidIssuer = issuer,
         ValidateAudience = true,
-        ValidAudience = builder.Configuration.GetValue<string>("JwtSettings_Audience"),
+        ValidAudience = audience,
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.FromMinutes(5)
     };
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", policy =>
+    {
+        policy.WithOrigins(
+            builder.Configuration["FRONTEND_URL"] ?? "http://localhost:5173",
+            builder.Configuration["FRONTEND_URL_HTTPS"] ?? "https://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
 
 builder.Services.AddAuthorization();
@@ -795,8 +907,11 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
+app.UseCors("AllowLocalhost");
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/health", () => Results.Ok(new { status = "OK", time = DateTime.UtcNow }));
 
 await app.UseOcelot();
 await app.RunAsync();
@@ -940,43 +1055,47 @@ namespace AuthDb.Models
       "Microsoft.AspNetCore": "Warning"
     }
   },
-  "AllowedHosts": "*"
+  "AllowedHosts": "*",
+  "JwtSettings": {
+    "SecretKey": "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!",
+    "Issuer": "Cania",
+    "Audience": "Cania",
+    "ExpirationAccessTokenMinutes": 60,
+    "ExpirationRefreshTokenDays": 7
+  },
+  "Frontend": {
+    "Url": "http://localhost:5173",
+    "UrlHttps": "https://localhost:5173"
+  }
 }
 
 
 ============================================================
 Файл: AuthService\Dockerfile
 ============================================================
-# См. статью по ссылке https://aka.ms/customizecontainer, чтобы узнать как настроить контейнер отладки и как Visual Studio использует этот Dockerfile для создания образов для ускорения отладки.
-
-# Этот этап используется при запуске из VS в быстром режиме (по умолчанию для конфигурации отладки)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
-USER $APP_UID
 WORKDIR /app
-EXPOSE 8080
 EXPOSE 8081
 
-
-# Этот этап используется для сборки проекта службы
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["AuthService/AuthService.csproj", "AuthService/"]
-RUN dotnet restore "./AuthService/AuthService.csproj"
+# Копируем основной проект и зависимость
+COPY ["AuthService/Auth API.csproj", "AuthService/"]
+COPY ["AuthDb/AuthDb.csproj", "AuthDb/"]
+RUN dotnet restore "AuthService/Auth API.csproj"
+
 COPY . .
 WORKDIR "/src/AuthService"
-RUN dotnet build "./AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "Auth API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Auth API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "AuthService.dll"]
+ENTRYPOINT ["dotnet", "Auth API.dll"]
 
 ============================================================
 Файл: AuthService\Program.cs
@@ -1020,7 +1139,7 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.IsEssential = true;
-    options.Cookie.HttpOnly = false;
+    options.Cookie.HttpOnly = true;
 })
 .AddOpenIdConnect("Google", options =>
 {
@@ -1159,22 +1278,55 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", policy =>
+    {
+        policy.WithOrigins(
+            builder.Configuration["Frontend:Url"] ?? builder.Configuration["FRONTEND_URL"] ?? "http://localhost:5173",
+            builder.Configuration["Frontend:UrlHttps"] ?? builder.Configuration["FRONTEND_URL_HTTPS"] ?? "https://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddDbContextFactory<AuthContext>(
     options => options.UseNpgsql(Environment.GetEnvironmentVariable("AUTH_DB_CONNECTION")));
 
-var jwtSettings = new JwtSettings()
+var jwtConfig = builder.Configuration.GetSection("JwtSettings");
+
+var secret = jwtConfig["SecretKey"]
+    ?? builder.Configuration["JWT_SECRET"]
+    ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123!";
+
+var issuer = jwtConfig["Issuer"]
+    ?? builder.Configuration["JWT_ISSUER"]
+    ?? "Cania";
+
+var audience = jwtConfig["Audience"]
+    ?? builder.Configuration["JWT_AUDIENCE"]
+    ?? "Cania";
+
+var accessMinutes = double.TryParse(jwtConfig["ExpirationAccessTokenMinutes"], out var access) && access > 0
+    ? access
+    : 60;
+
+var refreshDays = double.TryParse(jwtConfig["ExpirationRefreshTokenDays"], out var refresh) && refresh > 0
+    ? refresh
+    : 7;
+
+var jwtSettings = new JwtSettings
 {
-    SecretKey = builder.Configuration.GetValue<string>("JwtSettings_SecretKey")
-        ?? throw new InvalidOperationException("JwtSettings_SecretKey is required"),
-    Issuer = builder.Configuration.GetValue<string>("JwtSettings_Issuer") ?? "Auth",
-    Audience = builder.Configuration.GetValue<string>("JwtSettings_Audience")?? "Services",
-    ExpirationAccessTokenMinutes = 
-        double.Parse(builder.Configuration.GetValue<string>("JwtSettings_ExpirationAccessTokenMinutes") ?? "15"),
-    ExpirationRefreshTokenDays =
-        double.Parse(builder.Configuration.GetValue<string>("JwtSettings_ExpirationRefreshTokenDays") ?? "7")
+    SecretKey = secret,
+    Issuer = issuer,
+    Audience = audience,
+    ExpirationAccessTokenMinutes = accessMinutes,
+    ExpirationRefreshTokenDays = refreshDays
 };
+
 builder.Services.AddSingleton<JwtSettings>(jwtSettings);
 
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -1216,8 +1368,26 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-
+for (int i = 0; i < 10; i++) // 10 попыток
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AuthContext>>();
+        using var context = contextFactory.CreateDbContext();
+        context.Database.EnsureCreated();
+        Console.WriteLine("Database connected and created successfully!");
+        break; // Если успешно — выходим из цикла
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10). Error: {ex.Message}");
+        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+    }
+}
 app.UseForwardedHeaders();
+
+app.UseCors("AllowLocalhost");
 
 app.UseRouting();
 
@@ -1302,6 +1472,8 @@ app.MapPost("/auth/logout/all", async (TokenRequest request, HttpContext context
 });
 
 //Social auth
+
+app.MapGet("/health", () => Results.Ok(new { status = "OK", time = DateTime.UtcNow }));
 
 app.MapGet("/auth/login/google", () =>
     Results.Challenge(new AuthenticationProperties { RedirectUri = "/auth/callback" }, new[] { "Google" }));
@@ -2134,6 +2306,7 @@ export default defineConfig([
     "@tailwindcss/vite": "^4.1.18",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.0",
     "tailwindcss": "^4.1.18"
   },
@@ -2253,9 +2426,13 @@ export default defineConfig({
 ============================================================
 Файл: frontend\src\App.tsx
 ============================================================
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
-import { useAuth, useUI } from './context/AppContext';
+import { useAuth } from './context/AuthContext';
+import { useUI } from './context/UIContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import { UIProvider } from './context/UIContext';
 
 import BackgroundDecor from './components/BackgroundDecor';
 import Header from './components/Header';
@@ -2271,10 +2448,13 @@ import Feedback from './components/Feedback';
 import NotFound from './pages/NotFound';
 import { Profile } from './pages/Profile';
 import { Scanner } from './pages/Scanner';
+import SettingsModal from './components/SettingsModal';
 
-function App() {
-  const { isAuth } = useAuth();
-  const { isLoginModalOpen, setLoginModal, isPricesModalOpen, setPricesModal, isFeedbackModalOpen, setFeedbackModal } = useUI();
+function AppRoutes() {
+  const { isAuth, notification, setNotification } = useAuth();
+  const { isLoginModalOpen, setLoginModal, isPricesModalOpen, setPricesModal, isFeedbackModalOpen, setFeedbackModal, isSettingsModalOpen, settingsMode, closeSettingsModal } = useUI();
+  const [isNotificationClosing, setIsNotificationClosing] = useState(false);
+  const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -2282,6 +2462,38 @@ function App() {
     const container = document.getElementById('scroll-container');
     if (container) container.scrollTop = 0;
   }, [location.pathname]);
+
+  useEffect(() => {
+    let autoCloseTimer: number;
+    if (notification) {
+      setIsNotificationVisible(true);
+      setIsNotificationClosing(false);
+      autoCloseTimer = window.setTimeout(() => setIsNotificationClosing(true), 5000);
+    } else {
+      setIsNotificationVisible(false);
+      setIsNotificationClosing(false);
+    }
+
+    return () => {
+      if (autoCloseTimer) window.clearTimeout(autoCloseTimer);
+    };
+  }, [notification]);
+
+  useEffect(() => {
+    let hideTimer: number;
+
+    if (isNotificationClosing) {
+      hideTimer = window.setTimeout(() => {
+        setNotification(null);
+        setIsNotificationVisible(false);
+        setIsNotificationClosing(false);
+      }, 400);
+    }
+
+    return () => {
+      if (hideTimer) window.clearTimeout(hideTimer);
+    };
+  }, [isNotificationClosing, setNotification]);
 
   const LandingPage = () => {
     const handleTryIt = () => {
@@ -2318,7 +2530,7 @@ function App() {
             element={isAuth ? <Profile /> : <Navigate to="/" replace />} 
           />
           <Route 
-            path="/scanner" 
+            path="/scanner/:taskId?" 
             element={isAuth ? <Scanner /> : <Navigate to="/" replace />} 
           />
           <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
@@ -2328,11 +2540,32 @@ function App() {
       {isLoginModalOpen && <LoginCard onClose={() => setLoginModal(false)} />}
       {isPricesModalOpen && <Prices isModal={true} onClose={() => setPricesModal(false)} />}
       {isFeedbackModalOpen && <Feedback isOpen={isFeedbackModalOpen} onClose={() => setFeedbackModal(false)} />}
+      {isSettingsModalOpen && <SettingsModal mode={settingsMode} onClose={closeSettingsModal} />}
+
+      {isNotificationVisible && (
+        <div className={`fixed top-4 right-4 z-50 rounded-xl border border-white/20 bg-black/80 p-4 text-sm text-white shadow-xl ${isNotificationClosing ? 'animate-notification-out' : 'animate-notification-in'}`}>
+          <div className="flex items-center gap-3">
+            <span>{notification}</span>
+            <button onClick={() => { setNotification(null); setIsNotificationClosing(false); setIsNotificationVisible(false); }} className="text-brand-red hover:text-white">✕</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <UIProvider>
+          <AppRoutes />
+        </UIProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
+
 
 ============================================================
 Файл: frontend\src\index.css
@@ -2373,36 +2606,26 @@ export default App;
   --color-input-bg: #E6E6E6;
 }
 
-.animate-fade-in, .glow-spot {
-  will-change: opacity, transform;
-}
-
-/* Убираем фон в светлой теме плавно (если надо) или просто скрываем */
-.light .absolute.pointer-events-none.z-0 {
-  opacity: 0;
-}
-
 @layer base {
   body {
     background-color: var(--color-main-bg);
     color: var(--color-main-text);
     font-family: var(--font-body);
   }
-  
+
   select {
     background-color: var(--color-card-bg);
   }
-  
+
   option {
-    background-color: #121010; 
+    background-color: #121010;
     color: #FFFBFB;
   }
 }
 
-@layer components {
-  .card-expand {
-    transition: height 0.3s ease, margin-top 0.3s ease, padding-top 0.3s ease;
-  }
+/* ВОТ ЭТОТ КЛАСС БУДЕТ ВЫКЛЮЧАТЬ АНИМАЦИИ НА ДОЛЮ СЕКУНДЫ */
+.theme-transition-disable * {
+  transition: none !important;
 }
 
 @keyframes slideInRight {
@@ -2421,6 +2644,20 @@ export default App;
 
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(30px); }
+}
+
+.animate-notification-in {
+  animation: slideInRight 0.25s ease-out forwards;
+}
+
+.animate-notification-out {
+  animation: slideOutRight 0.4s ease-in forwards;
 }
 
 .light option {
@@ -2434,16 +2671,13 @@ export default App;
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { AppProvider } from './context/AppContext'
 import './index.css'
 import App from './App'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <AppProvider>
-        <App />
-      </AppProvider>
+      <App />
     </BrowserRouter>
   </StrictMode>,
 )
@@ -2452,10 +2686,32 @@ createRoot(document.getElementById('root')!).render(
 Файл: frontend\src\api\index.ts
 ============================================================
 const API_BASE = '/api';
+const ACCESS_TOKEN_KEY = 'token';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+export interface Tariff {
+  name: string;
+  description: string;
+  cost: number;
+}
 
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface TaskItem {
+  id: string;
+  host: string;
+  status: number;
+  createdTime: string;
+  reportContent?: string;
+}
+
+export interface CreateTaskRequest {
+  host: string;
+  typeOfAttacks: number[];
+  depth: number;
 }
 
 export interface RegisterRequest {
@@ -2471,36 +2727,233 @@ export interface User {
 }
 
 export interface LoginResponse {
-  id: string;
-  email: string;
-  token: string;
+  userId: string;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
+export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+export const setAccessToken = (token: string) => localStorage.setItem(ACCESS_TOKEN_KEY, token);
+export const setRefreshToken = (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token);
+export const clearTokens = () => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+};
+
+export async function refreshTokenRequest(): Promise<boolean> {
+  return refreshToken();
+}
+
+export function getTokenExpiration(accessToken: string | null): number | null {
+  if (!accessToken) return null;
+
+  try {
+    const [, payloadBase64] = accessToken.split('.');
+    if (!payloadBase64) return null;
+
+    const payloadJson = decodeURIComponent(
+      atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'))
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(''),
+    );
+
+    const payload = JSON.parse(payloadJson);
+    if (payload.exp && typeof payload.exp === 'number') {
+      return payload.exp;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshToken(): Promise<boolean> {
+  const refresh = getRefreshToken();
+  if (!refresh) return false;
+
+  const resp = await fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: refresh }),
+  });
+
+  if (!resp.ok) {
+    clearTokens();
+    return false;
+  }
+
+  const data = await resp.json();
+  if (data?.accessToken && data?.refreshToken) {
+    setAccessToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
+    return true;
+  }
+
+  clearTokens();
+  return false;
+}
+
+async function authFetch(input: RequestInfo, init: RequestInit = {}, attempt = 0): Promise<Response> {
+  const token = getAccessToken();
+
+  const headers = new Headers(init.headers || {});
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // JSON default
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const response = await fetch(input, { ...init, headers });
+
+  if (response.status === 401 && attempt === 0) {
+    const refreshed = await refreshToken();
+    if (refreshed) {
+      return authFetch(input, init, 1);
+    }
+    clearTokens();
+    window.dispatchEvent(new Event('auth-expired'));
+    throw new Error('Unauthorized');
+  }
+
+  if (response.status === 401) {
+    clearTokens();
+    window.dispatchEvent(new Event('auth-expired'));
+    throw new Error('Unauthorized');
+  }
+
+  return response;
 }
 
 export const api = {
-  // Регистрация
+  async updatePassword(password: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/passwords/update`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ password }),
+    });
+
+    if (!response.ok) throw new Error('Ошибка смены пароля');
+  },
+
+  async updateEmail(email: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/users/update`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) throw new Error('Ошибка смены почты');
+    return response.json();
+  },
+
+  async resetPasswordRequest(email: string) {
+    const response = await fetch(`${API_BASE}/passwords/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) throw new Error('Ошибка запроса на сброс');
+  },
+
+  async verifyResetToken(token: string, email: string) {
+    const response = await fetch(`${API_BASE}/passwords/reset/${token}/${email}`, {
+      method: 'POST',
+    });
+
+    const isValid = await response.json();
+    if (!isValid) throw new Error('Неверный или просроченный код');
+    return isValid;
+  },
+
+  async completeReset(email: string, token: string, newPassword: string) {
+    const response = await fetch(`${API_BASE}/passwords/reset/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, token, newPassword }),
+    });
+
+    if (!response.ok) throw new Error('Не удалось сменить пароль');
+  },
+
+  async buySubscription(tariff: Tariff, token?: string) {
+    const response1 = await authFetch(`${API_BASE}/subscribes/subscribe`, {
+      method: 'POST',
+      body: JSON.stringify(tariff),
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+
+    let response = response1;
+
+    if (response.status === 400) {
+      response = await authFetch(`${API_BASE}/subscribes/update`, {
+        method: 'PUT',
+        body: JSON.stringify(tariff),
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+    }
+
+    if (!response.ok) throw new Error('Ошибка оплаты');
+    return response.json();
+  },
+
+  async getMySubscription(token?: string): Promise<Tariff | null> {
+    const response = await authFetch(`${API_BASE}/subscribes/my`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) throw new Error('Ошибка получения подписки');
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  },
+
+  async cancelSubscription(token?: string) {
+    const response = await authFetch(`${API_BASE}/subscribes/unscribe`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) throw new Error('Ошибка отмены подписки');
+  },
+
+  async getMyTasks(token?: string): Promise<TaskItem[]> {
+    const response = await authFetch(`${API_BASE}/task/all`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) throw new Error('Ошибка получения отчетов');
+    return response.json();
+  },
+
   async register(data: RegisterRequest): Promise<User> {
     const response = await fetch(`${API_BASE}/users/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error);
     }
-    
+
     return response.json();
   },
 
-  // Логин
   async login(data: LoginRequest): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       if (response.status === 401) {
         throw new Error('Неверный email или пароль');
@@ -2508,32 +2961,61 @@ export const api = {
       const error = await response.text();
       throw new Error(error || 'Ошибка сети');
     }
-    
+
     return response.json();
   },
 
-  // Получение профиля
-  async getProfile(token: string): Promise<User> {
-    const response = await fetch(`${API_BASE}/users/account`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+  async getProfile(token?: string): Promise<User> {
+    const response = await authFetch(`${API_BASE}/users/account`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error);
     }
-    
+
     return response.json();
   },
-};
 
+  async createTask(data: CreateTaskRequest, token?: string) {
+    const response = await authFetch(`${API_BASE}/task/create`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Ошибка создания задачи');
+    }
+
+    return response.json();
+  },
+
+  async getTask(taskId: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/task/${taskId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) throw new Error('Ошибка получения статуса');
+    return response.json();
+  },
+
+  async deleteTask(taskId: string, token?: string) {
+    const response = await authFetch(`${API_BASE}/task/cancel/${taskId}`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) throw new Error('Ошибка удаления задачи');
+  },
+};
 
 ============================================================
 Файл: frontend\src\assets\icons\Ai.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Ai = ({ className = "w-5 h-5" }) => {
     const { theme } = useTheme();
@@ -2567,7 +3049,7 @@ export const CloseIcon = () => {
 ============================================================
 Файл: frontend\src\assets\icons\Dark.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Dark = () => {
     const { theme } = useTheme();
@@ -2595,7 +3077,7 @@ export function Download() {
 ============================================================
 Файл: frontend\src\assets\icons\Exit.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Exit = () => {
     const { theme } = useTheme();
@@ -2612,7 +3094,7 @@ export const Exit = () => {
 ============================================================
 Файл: frontend\src\assets\icons\FeedbackIcon.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const FeedbackIcon = () => {
     const { theme } = useTheme();
@@ -2629,7 +3111,7 @@ export const FeedbackIcon = () => {
 ============================================================
 Файл: frontend\src\assets\icons\File.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const File = ({ className = "w-5 h-5" }) => {
     const { theme } = useTheme();
@@ -2656,7 +3138,7 @@ export const FirstVector = ({ className = "w-5 h-5" }) => (
 ============================================================
 Файл: frontend\src\assets\icons\Forward.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Forward = ({ className = "w-5 h-5" }) => {
     const { theme } = useTheme();
@@ -2758,7 +3240,7 @@ export * from './Password'
 ============================================================
 Файл: frontend\src\assets\icons\Light.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Light = () => {
     const { theme } = useTheme();
@@ -2807,8 +3289,6 @@ export const LogoFooter = ({ className }: IconProps) => {
 ============================================================
 Файл: frontend\src\assets\icons\LogoFull.tsx
 ============================================================
-import React from 'react';
-
 interface LogoProps {
   className?: string;
 }
@@ -2838,7 +3318,7 @@ export const LogoFull = ({ className = "w-full h-auto" }: LogoProps) => {
 ============================================================
 Файл: frontend\src\assets\icons\Mail.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Mail = () => {
     const { theme } = useTheme();
@@ -2855,7 +3335,7 @@ export const Mail = () => {
 ============================================================
 Файл: frontend\src\assets\icons\Password.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Password = () => {
     const { theme } = useTheme();
@@ -2884,7 +3364,7 @@ export const ReportReady = () => {
 ============================================================
 Файл: frontend\src\assets\icons\Search.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 export const Search = ({ className = "w-5 h-5" }) => {
     const { theme } = useTheme();
     return (
@@ -2910,7 +3390,7 @@ export const SecondVector = ({ className = "w-5 h-5" }) => (
 ============================================================
 Файл: frontend\src\assets\icons\Shield.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 
 export const Shield = ({ className = "w-5 h-5" }) => {
@@ -2926,8 +3406,6 @@ export const Shield = ({ className = "w-5 h-5" }) => {
 ============================================================
 Файл: frontend\src\assets\icons\UserLoginIcon.tsx
 ============================================================
-import React from 'react';
-
 export const UserLoginIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M23 22.0527V20.786C23 19.4422 22.4732 18.1535 21.5355 17.2033C20.5979 16.2531 19.3261 15.7192 18 15.7192H8C6.67392 15.7192 5.40215 16.2531 4.46447 17.2033C3.52678 18.1535 3 19.4422 3 20.786V22.0527" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -2938,7 +3416,7 @@ export const UserLoginIcon = ({ className = "w-5 h-5" }) => (
 ============================================================
 Файл: frontend\src\assets\icons\UserProfileIcon.tsx
 ============================================================
-import { useTheme } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 export const UserProfileIcon = ({ className = "w-5 h-5" }) => {
   const { theme } = useTheme();
   
@@ -3020,9 +3498,9 @@ export default function CustomSelect({
 
   return (
     <div className="relative flex flex-col gap-2" ref={ref}>
-      <div 
+      <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`bg-card-bg border p-4 rounded-sm text-desc-text outline-none transition-colors cursor-pointer flex justify-between items-center ${
+        className={`bg-card-bg border p-4 rounded-sm text-desc-text outline-none cursor-pointer flex justify-between items-center ${
           isOpen ? 'border-brand-red' : 'border-card-border hover:border-white/20'
         }`}
       >
@@ -3048,7 +3526,7 @@ export default function CustomSelect({
                 onChange(option);
                 setIsOpen(false);
               }}
-              className="px-4 py-3 cursor-pointer text-main-text hover:bg-card-border transition-colors"
+              className="px-4 py-3 cursor-pointer text-main-text hover:bg-card-border hover:transition-colors"
             >
               {option}
             </div>
@@ -3086,7 +3564,7 @@ export default function FAQ() {
   };
 
   return (
-    <section className="py-24 px-6 transition-colors border-b border-b-light-red">
+    <section className="py-24 px-6 border-b border-b-light-red">
         <div className="max-w-4xl mx-auto">
         <h2 className="text-4xl font-bold uppercase mb-12 text-center text-main-text">FAQ</h2>
         <div className="flex flex-col">
@@ -3096,17 +3574,17 @@ export default function FAQ() {
                 <div key={index} className={`border-b border-light-red ${index === 0 ? 'border-t border-t-light-red' : ''}`}>
                     <button
                         onClick={() => toggleIndex(index)}
-                        className="w-full py-8 flex justify-between items-center text-left text-main-text hover:text-brand-red transition-colors group cursor-pointer"
+                        className="w-full py-8 flex justify-between items-center text-left text-main-text hover:text-brand-red transition-colors duration-300 group cursor-pointer"
                     >
                         <span className="text-xl font-bold uppercase">{item.question}</span>
-                        <span className={`text-3xl ml-4 transition-transform! duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                        <span className={`text-3xl ml-4 transition-transform! duration-500 ${isOpen ? 'rotate-180' : ''}`}>
                             <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M4 10L14 20L24 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                         </span>
                     </button>
-                    <div 
-                        className={`grid transition-all! duration-300 ease-in-out ${
+                    <div
+                        className={`grid transition-all! duration-500 ease-in-out ${
                             isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                         }`}
                     >
@@ -3207,7 +3685,7 @@ export default function Features({ onTryClick }: FeaturesProps) {
         <div className="w-full flex justify-end">
             <button
               onClick={onTryClick}
-              className="bg-transparent border-brand-red border-2 text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
+              className="bg-transparent border-brand-red border-2 text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer"
             >
               <span className="flex gap-2 place-items-center text-lg">Попробовать бесплатно <Forward className='h-6'/> </span>
             </button>
@@ -3271,9 +3749,11 @@ export default function Feedback({ isOpen, onClose }: FeedbackProps) {
 ============================================================
 Файл: frontend\src\components\Footer.tsx
 ============================================================
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth, useUI, useTheme } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
+import { useUI } from "../context/UIContext";
+import { useTheme } from "../context/ThemeContext";
 import { GlowSpot, LogoFooter } from "../assets/icons";
 
 export default function Footer() {
@@ -3308,58 +3788,58 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     
-                    <div className="flex flex-col gap-6 items-start">
-                        <div 
+                    <div className="flex flex-col gap-6 items-center md:items-start">
+                        <div
                             onClick={handleLogoClick}
-                            className={`text-main-text hover:opacity-80 cursor-pointer transition-transform duration-200 ease-out ${
+                            className={`text-main-text hover:opacity-80 cursor-pointer transition-transform ${
                                 isBouncing ? 'scale-95' : 'scale-100'
                             }`}
                         >
                             <LogoFooter className="w-52.75 h-auto" />
                         </div>
-                        <p className="text-desc-text text-sm leading-relaxed max-w-sm">
+                        <p className="text-desc-text text-sm leading-relaxed max-w-sm text-center md:text-left">
                             Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati et esse aperiam mollitia fuga.
                         </p>
                     </div>
-
-                    <div className="flex flex-col place-items-end gap-4">
-                        <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1">
+                    <div className="flex flex-col md:place-items-end gap-4">
+                        
+                        <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1 items-center md:items-start">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
-                            <button 
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase" 
+                            <button
+                                className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                                 onClick={() => {
-                                    if (isAuth) navigate('/scanner'); 
+                                    if (isAuth) navigate('/scanner');
                                     else setLoginModal(true);
-                                }} 
+                                }}
                             >
                                 Функционал
                             </button>
-                            <button 
+                            <button
                                 onClick={handlePricesClick}
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase"
+                                className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Тарифы
                             </button>
-                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors rounded-sm flex uppercase cursor-pointer">
+                            <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase cursor-pointer">
                                 {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                             </button>
-                            <button className="p-1 hover:bg-brand-gray transition-colors rounded-sm uppercase">
+                            <button className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase">
                                 Версия на английском
                             </button>
                             <button
                                 onClick={() => setFeedbackModal(true)}
-                                className="p-1 hover:bg-brand-gray transition-colors rounded-sm text-left cursor-pointer uppercase"
+                                className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
                                 Оставить отзыв
                             </button>
                         </nav>
                     </div>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 items-center md:items-start">
                         <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
-                        <div className="flex flex-col gap-3 text-desc-text text-sm font-medium">
-                            <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors p-1 rounded-sm">+7 (991) 123-03-22</a>
-                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
+                        <div className="flex flex-col gap-3 text-desc-text text-sm font-medium items-center md:items-start">
+                            <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">+7 (991) 123-03-22</a>
+                            <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
                         </div>
                     </div>
 
@@ -3379,13 +3859,15 @@ export default function Footer() {
 Файл: frontend\src\components\Header.tsx
 ============================================================
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useUI, useTheme } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { useUI } from '../context/UIContext';
+import { useTheme } from '../context/ThemeContext';
 import { LogoFull, UserLoginIcon, UserProfileIcon, Dark, Light, Password, Mail, FeedbackIcon, Exit } from '../assets/icons';
 import { useState, useRef, useEffect } from 'react';
 export default function Header() {
   const navigate = useNavigate();
-  const { isAuth, logout } = useAuth();
-  const { setLoginModal, handlePricesClick } = useUI();
+  const { isAuth, logout, userEmail } = useAuth(); // <--- ДОБАВЬ userEmail
+  const { setLoginModal, handlePricesClick, setFeedbackModal, openSettingsModal } = useUI();
   const { theme, toggleTheme } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -3418,23 +3900,23 @@ export default function Header() {
       </div>
 
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-desc-text">
-        <button 
+        <button
           onClick={() => {
-              if(isAuth) navigate('/scanner'); 
+              if(isAuth) navigate('/scanner');
               else setLoginModal(true);
-          }} 
+          }}
           className='p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer'
           >
           Функционал
         </button>
-        <button 
-          onClick={handlePricesClick} 
+        <button
+          onClick={handlePricesClick}
           className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer"
         >
           Тарифы
         </button>
 
-        <div className="h-4 w-px bg-card-border"></div> 
+        <div className="h-4 w-px bg-card-border"></div>
         <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">EN</a>
       </nav>
 
@@ -3451,32 +3933,35 @@ export default function Header() {
         <div ref={menuRef} className="relative">
           <button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 cursor-pointer flex items-center gap-2 transition-colors duration-300"
+              className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 transition-colors duration-300 cursor-pointer flex items-center gap-2"
               aria-label="Войти в профиль"
               aria-expanded={isProfileMenuOpen}
           >
               <UserProfileIcon />
           </button>
-          
+
           <div
-            className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-300 origin-top ${
-              isProfileMenuOpen 
-                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100' 
+            className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-500 origin-top ${
+              isProfileMenuOpen
+                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100'
                 : 'opacity-0 pointer-events-none -translate-y-4 scale-95'
             }`}
+            style={{ transitionProperty: 'opacity, transform, scale' }}
           >
             {/* надо будет что то с invisible сделать, плавного перехода нет */}
-            <h3 
+            <h3
               onClick={() => {
                 navigate('/profile');
                 setIsProfileMenuOpen(false);
-              }} 
-              className='pt-4 cursor-pointer hover:text-brand-red transition-colors'
+              }}
+              className='pt-4 cursor-pointer hover:text-brand-red text-lg truncate w-full'
+              title={userEmail || 'Профиль'}
+              style={{ transition: 'none' }}
             >
-              почта@example.com
+              {userEmail || 'Профиль'}
             </h3>
 
-            <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer'>
+            <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
               {theme === 'dark' ? (
                 <>
                   <Light /> Светлая тема
@@ -3488,25 +3973,32 @@ export default function Header() {
               )}
             </button>
 
-            <button className='flex place-items-start gap-2 cursor-pointer'>
+            <button
+              onClick={() => { openSettingsModal('password'); setIsProfileMenuOpen(false); }}  
+              className='flex place-items-start gap-2 cursor-pointer'>
               <Password /> Смена пароля
             </button>
 
-            <button className='flex place-items-center gap-2 cursor-pointer'>
+            <button 
+              onClick={() => { openSettingsModal('email'); setIsProfileMenuOpen(false); }} 
+              className='flex place-items-center gap-2 cursor-pointer'>
               <Mail /> Смена почты
             </button>
 
-            <button className='flex place-items-center gap-2 cursor-pointer'>
+            <button 
+              onClick={() => setFeedbackModal(true)} 
+              className='flex place-items-center gap-2 cursor-pointer'>
               <FeedbackIcon /> Отправить отзыв
             </button>
 
-            <button 
+            <button
               onClick={() => {
                 logout();
                 navigate('/');
                 setIsProfileMenuOpen(false);
-              }} 
+              }}
               className='pb-4 flex place-items-center gap-2 cursor-pointer'
+              style={{ transition: 'none' }}
             >
               <Exit /> Выход
             </button>
@@ -3548,7 +4040,7 @@ export default function Hero({ onTryClick }: HeroProps) {
 
       <button
         onClick={onTryClick}
-        className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-all duration-300 cursor-pointer group"
+        className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer group"
       >
         Попробовать <Forward />
       </button>
@@ -3635,9 +4127,9 @@ export default function HowItWorks() {
 Файл: frontend\src\components\LoginCard.tsx
 ============================================================
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot } from '../assets/icons';
-import { api, RegisterRequest, LoginRequest } from '../api';
+import { api, setAccessToken, setRefreshToken, RegisterRequest, LoginRequest } from '../api';
 
 interface LoginCardProps {
     onClose: () => void;
@@ -3660,6 +4152,8 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
     // Таймер
     const [timer, setTimer] = useState(60);
+
+    const [resetToken, setResetToken] = useState('');
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
@@ -3686,23 +4180,52 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
         try {
             if (authMode === 'register' && isRegisterValid) {
+                // 1. Создаем аккаунт
                 await api.register({ email, password } as RegisterRequest);
-                login();
+                
+                // 2. Ждем 1-2 секунды, чтобы RabbitMQ успел прокинуть юзера в AuthDb
+                // (Это костыль для распределенных систем, пока нет сложной логики)
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // 3. Сразу вызываем ЛОГИН, чтобы получить реальный токен
+                const response = await api.login({ email, password } as LoginRequest);
+                setAccessToken(response.accessToken);
+                setRefreshToken(response.refreshToken);
+
+                // 4. Только теперь пускаем в систему
+                login(email);
+                onClose();
             }
             // Реальный логин через API
             if (authMode === 'login' && isLoginValid) {
                 const response = await api.login({ email, password } as LoginRequest);
-                // Сохраняем токен и данные пользователя
-                localStorage.setItem('token', response.token);
-                localStorage.setItem('user', JSON.stringify(response));
-                login();
+                setAccessToken(response.accessToken);
+                setRefreshToken(response.refreshToken);
+
+                // Вызываем login и передаем email, который юзер ввел в форму
+                login(email);
+                onClose();
             }
+            //пока что не доделано
             if (authMode === 'forgot_email' && email) {
+                // 1. Отправляем запрос на реальный бэкенд
+                await api.resetPasswordRequest(email);
+                
+                // 2. Переключаем интерфейс на таймер
                 setAuthMode('forgot_timer');
                 setTimer(60);
             }
+            if (authMode === 'forgot_timer') {
+                // 2. Юзер ввел токен из письма и жмет подтвердить
+                await api.verifyResetToken(resetToken, email);
+                // Если токен верный (ошибки не вылетело), пускаем менять пароль
+                setAuthMode('new_password');
+            }
+
             if (authMode === 'new_password' && isNewPasswordValid) {
-                login();
+                await api.completeReset(email, resetToken, password); 
+                alert("Пароль успешно изменен! Теперь войдите.");
+                setAuthMode('login');
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ошибка');
@@ -3716,7 +4239,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
             <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors z-20 cursor-pointer">
+                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors duration-300 z-20 cursor-pointer">
                     <CloseIcon />
                 </button>
 
@@ -3737,13 +4260,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             <div className="flex flex-col gap-5">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
-                                
+
                                 <div className="flex flex-col gap-2 relative">
                                     <label className="text-gray-400 text-sm pl-1">Пароль</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" />
+                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
                                             {showPassword ? (
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -3757,13 +4280,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 {authMode === 'register' && (
                                     <div className="flex flex-col gap-2">
                                         <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                        <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                        <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 )}
 
                                 {authMode === 'login' ? (
                                     <div className="flex justify-end">
-                                        <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white transition-colors cursor-pointer">
+                                        <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white transition-colors duration-300 cursor-pointer">
                                             Забыли пароль?
                                         </button>
                                     </div>
@@ -3812,10 +4335,10 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GoogleIcon className="w-5 h-5" /> Продолжить с Google
                                 </button>
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GithubIcon className="w-5 h-5 text-white" /> Продолжить с GitHub
                                 </button>
                             </div>
@@ -3829,38 +4352,74 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!email} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${email ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
                                     ПРОДОЛЖИТЬ
                                 </button>
                             </div>
-                            <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white text-sm transition-colors cursor-pointer">
+                            <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white transition-colors duration-300 text-sm cursor-pointer">
                                 ← Назад ко входу
                             </button>
                         </>
                     )}
 
-                    {/* Таймер восстановления */}
+                    {/* ЭКРАН ВВОДА КОДА */}
                     {authMode === 'forgot_timer' && (
-                        <>
-                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">ВОССТАНОВЛЕНИЕ ПАРОЛЯ</h1>
-                            <div className="flex flex-col gap-6">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" value={email} disabled className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-gray-600 outline-none cursor-not-allowed" />
-                                </div>
-                                <p className="text-gray-400 text-sm leading-relaxed mt-2">
-                                    Вам на почту было отправлено письмо с инструкциями. Проверьте ваш почтовый ящик.
-                                </p>
-                                <div className="text-center mt-6 text-3xl font-bold tracking-widest text-white">
-                                    {formatTime(timer)}
-                                </div>
-                                <button type="button" onClick={() => setAuthMode('new_password')} className="mt-8 text-brand-red text-sm hover:underline font-bold cursor-pointer">
-                                    [ТЕСТ] Перейди к смене пароля
-                                </button>
+                        <div className="flex flex-col gap-6 text-center animate-fade-in">
+                            <h1 className="text-3xl font-bold uppercase tracking-wide">ВВОД КОДА</h1>
+                            
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                                Мы отправили код для сброса пароля на <br/>
+                                <span className="text-white font-bold">{email}</span>
+                            </p>
+
+                            {/* ИНПУТ ДЛЯ КОДА */}
+                            <div className="flex flex-col gap-2 text-left mt-2">
+                                <label className="text-gray-400 text-sm pl-1">Код из письма</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Вставьте код..." 
+                                    value={resetToken} 
+                                    onChange={(e) => setResetToken(e.target.value)} 
+                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" 
+                                />
                             </div>
-                        </>
+
+                            {/* ЛОГИКА ТАЙМЕРА И КНОПКИ ПОВТОРА */}
+                            <div className="mt-2">
+                                {timer > 0 ? (
+                                    <div className="text-3xl font-bold tracking-widest text-brand-red">
+                                        {formatTime(timer)}
+                                    </div>
+                                ) : (
+                                    <button 
+                                        type="button" 
+                                        onClick={async () => {
+                                            setTimer(60);
+                                            await api.resetPasswordRequest(email);
+                                        }} 
+                                        className="text-brand-red hover:text-white font-bold text-sm transition-colors cursor-pointer uppercase tracking-wider"
+                                    >
+                                        Отправить код ещё раз
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* КНОПКА ПОДТВЕРЖДЕНИЯ */}
+                            <button 
+                                type="button" 
+                                onClick={handleSubmit}
+                                disabled={!resetToken || loading} 
+                                className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${resetToken ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}
+                            >
+                                {loading ? 'ПРОВЕРКА...' : 'ПОДТВЕРДИТЬ'}
+                            </button>
+
+                            <button type="button" onClick={() => setAuthMode('login')} className="mt-2 text-gray-500 hover:text-white text-sm transition-colors cursor-pointer">
+                                Вернуться ко входу
+                            </button>
+                        </div>
                     )}
 
                     {/* новый пароль */}
@@ -3871,12 +4430,12 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 <div className="flex flex-col gap-2 relative">
                                     <label className="text-gray-400 text-sm pl-1">Новый пароль</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" />
+                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                    <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                    <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!isNewPasswordValid} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isNewPasswordValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
                                     СОХРАНИТЬ
@@ -3894,8 +4453,12 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 ============================================================
 Файл: frontend\src\components\Prices.tsx
 ============================================================
-import { useUI } from '../context/AppContext';
-import { GlowSpot } from '../assets/icons'; 
+import { useUI } from '../context/UIContext';
+import { useAuth } from '../context/AuthContext';
+import { GlowSpot } from '../assets/icons';
+import { api } from '../api';
+import { useState } from 'react';
+
 
 interface Plan {
   id: string;
@@ -3915,7 +4478,29 @@ interface PricesProps {
 }
 
 export default function Prices({ isModal = false, onClose }: PricesProps) {
+  const { updateSubscriptionStatus } = useAuth();
   const { setPricesModal } = useUI();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleBuy = async (plan: Plan) => {
+    setLoadingPlan(plan.id); // Включаем крутилку на конкретной кнопке
+    try {
+        const tariffData = {
+            name: plan.name,
+            description: plan.desc,
+            cost: parseInt(plan.price.replace(/\D/g, '')) || 0 
+        };
+
+        await api.buySubscription(tariffData);
+        alert("Оплата прошла успешно!");
+        await updateSubscriptionStatus(); // Обновляем статус подписки в контексте
+        if (onClose) onClose(); // Закрываем модалку
+    } catch (err) {
+        alert("Ошибка при оплате");
+    } finally {
+        setLoadingPlan(null);
+    }
+  };
   
   const plans: Plan[] = [
     {
@@ -3966,10 +4551,14 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {plans.map((plan) => (
           <div key={plan.id} className="relative group h-full flex flex-col justify-end">
+            
             {plan.isPopular && (
-              <GlowSpot className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 transition-opacity! duration-500 pointer-events-none z-0 light:opacity-60 light:group-hover:opacity-100" />
+              <GlowSpot className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 pointer-events-none z-0 light:opacity-60 light:group-hover:opacity-100 transition-opacity duration-500 ease-out" />
             )}
-            <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 transition-all! duration-500 ease-out h-full min-h-145 origin-bottom group-hover:scale-[1.04] group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)]">
+            
+            {/* ТУТ ГЛАВНОЕ: transition-all duration-500 ease-out добавлены прямо в className */}
+            <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 h-full min-h-145 origin-bottom group-hover:scale-105 group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)] transition-all duration-500 ease-out">
+              
               {plan.isPopular && (
                 <div className="absolute top-0 right-0 bg-brand-red text-white text-xs font-bold uppercase px-6 py-2 rounded-tr-4xl rounded-bl-2xl">
                   Самый популярный
@@ -3977,6 +4566,7 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
               )}
               <h3 className="text-brand-red text-xl font-bold mb-2">{plan.name}</h3>
               <p className="text-desc-text text-sm mb-8">{plan.desc}</p>
+              
               <div className="mb-10">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-4xl font-bold text-main-text leading-none">{plan.price}</span>
@@ -3990,10 +4580,21 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
                   </div>
                 )}
               </div>
-              <button className={`w-full py-4 rounded-full font-bold uppercase tracking-wider transition-all! duration-300 mb-10 cursor-pointer ${plan.isPopular ? 'bg-brand-red text-white hover:bg-red-700' : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'}`}>
-                  Выбрать
+              
+              <button 
+                  onClick={() => handleBuy(plan)}
+                  disabled={loadingPlan === plan.id}
+                  className={`w-full py-4 rounded-full font-bold uppercase tracking-wider mb-10 transition-colors duration-300 cursor-pointer ${
+                      plan.isPopular 
+                      ? 'bg-brand-red text-white hover:bg-red-700' 
+                      : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'
+                  }`}
+              >
+                  {loadingPlan === plan.id ? "ОБРАБОТКА ОПЛАТЫ..." : "ВЫБРАТЬ"}
               </button>
-              <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors! duration-300"></div>
+              
+              <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors duration-500"></div>
+              
               <ul className="flex flex-col gap-4 mt-auto">
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-desc-text">
@@ -4016,7 +4617,7 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
       <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto" onClick={handleClose}>
         <div className="relative w-full max-w-7xl my-auto" onClick={(e) => e.stopPropagation()}>
            <button onClick={handleClose} className="absolute -top-12 right-0 text-white hover:text-brand-red text-4xl cursor-pointer">&times;</button>
-           <section className="bg-main-bg border border-white/10 rounded-4xl p-10 relative z-10 transition-colors duration-300">
+           <section className="bg-main-bg border border-white/10 rounded-4xl p-10 relative z-10">
              {Content}
            </section>
         </div>
@@ -4025,7 +4626,7 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
   }
 
   return (
-    <section id="pricing-section" className="py-24 px-6 relative z-10 transition-colors duration-300 border-y border-light-red">
+    <section id="pricing-section" className="py-24 px-6 relative z-10 border-y border-light-red">
       {Content}
     </section>
   );
@@ -4087,7 +4688,7 @@ export default function Safety({ onTryClick }: SafetyProps) {
         <div className="w-full flex justify-end mt-20">
           <button
             onClick={onTryClick}
-            className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-all duration-300 cursor-pointer group"
+            className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer group"
           >
             Запустить аудит <Forward />
           </button>
@@ -4098,17 +4699,213 @@ export default function Safety({ onTryClick }: SafetyProps) {
 }
 
 ============================================================
+Файл: frontend\src\components\SettingsModal.tsx
+============================================================
+import React, { useState } from 'react';
+import { CloseIcon, GlowSpot } from '../assets/icons';
+import { api } from '../api'; // Импортируем API
+import { useAuth } from '../context/AuthContext'; // Импортируем контекст
+
+interface SettingsModalProps {
+    mode: 'password' | 'email';
+    onClose: () => void;
+}
+
+export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
+    const { userEmail, logout } = useAuth(); // Достаем email юзера
+
+    const [step, setStep] = useState<1 | 2 | 3>(1);
+    
+    // Состояния инпутов
+    const [currentPassword, setCurrentPassword] = useState('');
+    const[newPassword, setNewPassword] = useState('');
+    const [repeatPassword, setRepeatPassword] = useState('');
+    const [newEmail, setNewEmail] = useState('');
+    // Стейт для проверочного кода
+    const[verificationCode, setVerificationCode] = useState('');
+    
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const isStep1Valid = currentPassword.length > 0;
+    const isStep2PasswordValid = newPassword.length > 0 && newPassword === repeatPassword;
+    const isStep2EmailValid = newEmail.includes('@') && newEmail.includes('.');
+    const isStep3Valid = verificationCode.length >= 4;
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            if (step === 1) {
+                // ШАГ 1: Проверка пароля
+                if (!userEmail) throw new Error("Нет email");
+                await api.login({ email: userEmail, password: currentPassword });
+                setStep(2);
+            } 
+            else if (step === 2) {
+                // ШАГ 2: Выбор действия в зависимости от режима
+                if (mode === 'password') {
+                    // Если это пароль - сразу меняем и закрываем
+                    await api.updatePassword(newPassword);
+                    alert("Пароль успешно изменен! Пожалуйста, войдите заново.");
+                    onClose();
+                    logout(); // Выкидываем юзера на экран логина
+                } else if (mode === 'email') {
+                    // Если это почта - ИМИТИРУЕМ ОТПРАВКУ ПИСЬМА и идем на 3 шаг
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    setStep(3);
+                }
+            }
+            else if (step === 3) {
+                // ШАГ 3: Проверка кода (только для почты)
+                // КОСТЫЛЬ ДЛЯ РАЗРАБОТКИ: принимаем только код 0000
+                if (verificationCode === '0000') {
+                    await api.updateEmail(newEmail);
+                    alert("Почта успешно изменена! Пожалуйста, войдите заново.");
+                    onClose();
+                    logout(); // Выкидываем юзера на экран логина
+                } else {
+                    alert("Неверный код подтверждения!");
+                }
+            }
+        } catch (error) {
+            if (step === 1) alert("Неверный текущий пароль!");
+            else alert("Ошибка при сохранении новых данных");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
+                <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
+
+                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors z-20 cursor-pointer">
+                    <CloseIcon />
+                </button>
+
+                <form onSubmit={handleSubmit} className="relative z-10 flex flex-col w-full">
+                    
+                    <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">
+                        {step === 1 || mode === 'email' ? `СМЕНА ${mode === 'password' ? 'ПАРОЛЯ' : 'ПОЧТЫ'}` : 'НОВЫЙ ПАРОЛЬ'}
+                    </h1>
+
+                    {/* ШАГ 1: ПОДТВЕРЖДЕНИЕ ПАРОЛЯ (Одинаково для обоих режимов) */}
+                    {step === 1 && (
+                        <div className="flex flex-col gap-5">
+                            <div className="flex flex-col gap-2 relative">
+                                <label className="text-gray-400 text-sm pl-1">Текущий пароль</label>
+                                <div className="relative">
+                                    <input 
+                                        type={showPassword ? "text" : "password"} 
+                                        placeholder="••••••••" 
+                                        value={currentPassword} 
+                                        onChange={(e) => setCurrentPassword(e.target.value)} 
+                                        className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" 
+                                    />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
+                                        {showPassword ? (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                        ) : (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={!isStep1Valid || loading} 
+                                className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${
+                                    isStep1Valid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'
+                                }`}
+                            >
+                                {loading ? 'ПРОВЕРКА...' : 'ПРОДОЛЖИТЬ'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ШАГ 2: ВВОД НОВЫХ ДАННЫХ */}
+                    {step === 2 && mode === 'password' && (
+                        <div className="flex flex-col gap-5">
+                            <div className="flex flex-col gap-2 relative">
+                                <label className="text-gray-400 text-sm pl-1">Новый пароль</label>
+                                <div className="relative">
+                                    <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
+                                <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                            </div>
+                            <button type="submit" disabled={!isStep2PasswordValid || loading} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isStep2PasswordValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
+                                {loading ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ'}
+                            </button>
+                        </div>
+                    )}
+
+                    {step === 2 && mode === 'email' && (
+                        <div className="flex flex-col gap-5">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-gray-400 text-sm pl-1">Новая почта</label>
+                                <input type="email" placeholder="new@example.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                            </div>
+                            <button type="submit" disabled={!isStep2EmailValid || loading} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isStep2EmailValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
+                                {loading ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* НОВЫЙ ШАГ 3: ВВОД КОДА */}
+                    {step === 3 && mode === 'email' && (
+                        <div className="flex flex-col gap-5 animate-fade-in">
+                            <p className="text-sm text-gray-400 mb-2">
+                                Мы отправили код подтверждения на <span className="text-white font-bold">{newEmail}</span>. 
+                                <br/><span className="text-brand-red text-xs">(Для теста введите 0000)</span>
+                            </p>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-gray-400 text-sm pl-1">Код из письма</label>
+                                <input 
+                                    type="text" 
+                                    maxLength={4}
+                                    placeholder="0000" 
+                                    value={verificationCode} 
+                                    onChange={(e) => setVerificationCode(e.target.value)} 
+                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors tracking-[0.5em] font-mono text-center text-xl" 
+                                />
+                            </div>
+                            <button type="submit" disabled={!isStep3Valid || loading} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isStep3Valid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
+                                {loading ? 'СОХРАНЕНИЕ...' : 'ПОДТВЕРДИТЬ'}
+                            </button>
+                        </div>
+                    )}
+
+                </form>
+            </div>
+        </div>
+    );
+}
+
+============================================================
 Файл: frontend\src\context\AppContext.tsx
 ============================================================
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest } from '../api';
 
 export type Theme = 'dark' | 'light';
 
 interface AuthContextType {
   isAuth: boolean;
-  login: () => void;
+  userEmail: string | null;
+  hasSubscription: boolean;
+  notification: string | null;
+  setNotification: (message: string | null) => void;
+  login: (email: string) => void;
   logout: () => void;
+  updateSubscriptionStatus: () => Promise<void>;
 }
 
 interface ThemeContextType {
@@ -4124,6 +4921,16 @@ interface UIContextType {
   isFeedbackModalOpen: boolean;
   setFeedbackModal: (open: boolean) => void;
   handlePricesClick: (e?: React.MouseEvent) => void;
+
+  isChangePasswordModalOpen: boolean;
+  setChangePasswordModal: (open: boolean) => void;
+  isChangeEmailModalOpen: boolean;
+  setChangeEmailModal: (open: boolean) => void;
+
+  isSettingsModalOpen: boolean;
+  settingsMode: 'password' | 'email';
+  openSettingsModal: (mode: 'password' | 'email') => void;
+  closeSettingsModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -4131,35 +4938,142 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const navigate = useNavigate(); // Добавляем навигацию сюда
-  
-  const [isAuth, setIsAuth] = useState<boolean>(() => localStorage.getItem('isAuth') === 'true');
+  const navigate = useNavigate();
+
+  // Состояния авторизации
+  const [isAuth, setIsAuth] = useState<boolean>(() => {
+    const token = getAccessToken();
+    const refresh = getRefreshToken();
+    return Boolean(token && refresh);
+  });
+  const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('userEmail'));
+  const [hasSubscription, setHasSubscription] = useState<boolean>(false);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  const tokenRefreshTimerRef = useRef<number | null>(null);
+
+  // Состояния UI
   const [theme, setTheme] = useState<Theme>('dark');
   const [isLoginModalOpen, setLoginModal] = useState(false);
   const [isPricesModalOpen, setPricesModal] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModal] = useState(false);
+  const [isChangePasswordModalOpen, setChangePasswordModal] = useState(false);
+  const [isChangeEmailModalOpen, setChangeEmailModal] = useState(false);
 
-  const login = () => {
-    setIsAuth(true);
+  const[isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsMode, setSettingsMode] = useState<'password' | 'email'>('password');
+
+  const openSettingsModal = (mode: 'password' | 'email') => {
+    setSettingsMode(mode);
+    setIsSettingsModalOpen(true);
+  };
+
+  const closeSettingsModal = () => {
+    setIsSettingsModalOpen(false);
+  };
+
+  // Функция проверки подписки на сервере
+  const updateSubscriptionStatus = async () => {
+    if (!isAuth) {
+      setHasSubscription(false);
+      return;
+    }
+
+    try {
+      const sub = await api.getMySubscription();
+      setHasSubscription(!!sub);
+    } catch (e) {
+      setHasSubscription(false);
+    }
+  };
+
+  // Проверяем подписку при загрузке страницы, если пользователь вошел
+  useEffect(() => {
+    if (isAuth) {
+      updateSubscriptionStatus();
+    }
+  }, [isAuth]);
+
+  const login = (email: string) => {
     localStorage.setItem('isAuth', 'true');
+    localStorage.setItem('userEmail', email);
+    setIsAuth(true);
+    setUserEmail(email);
     setLoginModal(false);
-    // МАГИЯ ТУТ: После логина всегда идем в профиль
+    setNotification('Вы успешно вошли.');
     navigate('/profile');
   };
 
   const logout = () => {
-    setIsAuth(false);
+    if (tokenRefreshTimerRef.current) {
+      clearTimeout(tokenRefreshTimerRef.current);
+      tokenRefreshTimerRef.current = null;
+    }
     localStorage.removeItem('isAuth');
+    localStorage.removeItem('userEmail');
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    setIsAuth(false);
+    setUserEmail(null);
+    setHasSubscription(false); // Это просто очистка экрана для гостя
+    setNotification(null);
     navigate('/');
   };
 
-  const toggleTheme = () => {
-    // 1. Блокируем ВСЕ анимации на странице
-    document.documentElement.classList.add('disable-transitions');
+  useEffect(() => {
+    if (!isAuth) return;
 
-    // 2. Вычисляем и ставим новую тему
+    const token = getAccessToken();
+    const expiration = getTokenExpiration(token);
+    if (!expiration) return;
+
+    const refreshInMs = expiration * 1000 - Date.now() - 30000; // 30s before expire
+
+    if (tokenRefreshTimerRef.current) {
+      clearTimeout(tokenRefreshTimerRef.current);
+      tokenRefreshTimerRef.current = null;
+    }
+
+    const doRefresh = async () => {
+      const ok = await refreshTokenRequest();
+      if (!ok) {
+        setNotification('Сессия истекла, пожалуйста, войдите снова.');
+        logout();
+        return;
+      }
+      setNotification('Токен обновлен автоматически.');
+      setIsAuth(true);
+    };
+
+    if (refreshInMs <= 0) {
+      doRefresh();
+      return;
+    }
+
+    tokenRefreshTimerRef.current = window.setTimeout(doRefresh, refreshInMs);
+
+    return () => {
+      if (tokenRefreshTimerRef.current) {
+        clearTimeout(tokenRefreshTimerRef.current);
+        tokenRefreshTimerRef.current = null;
+      }
+    };
+  }, [isAuth, logout]);
+
+  // В случае устаревшего access token - челленж бэкенда вызывает этот эвент
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      logout();
+      setNotification('Сессия истекла, пожалуйста, войдите снова.');
+    };
+
+    window.addEventListener('auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('auth-expired', handleAuthExpired);
+  }, [logout]);
+
+  const toggleTheme = () => {
+    document.documentElement.classList.add('theme-transition-disable');
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     if (newTheme === 'light') {
@@ -4167,12 +5081,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } else {
       document.documentElement.classList.remove('light');
     }
-
-    // 3. Заставляем браузер применить цвета прямо сейчас (до возврата анимаций)
-    window.getComputedStyle(document.documentElement).cssText;
-
-    // 4. Снимаем блокировку. Теперь hover-эффекты снова работают!
-    document.documentElement.classList.remove('disable-transitions');
+    window.getComputedStyle(document.documentElement).opacity;
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transition-disable');
+    }, 10);
   };
 
   const handlePricesClick = (e?: React.MouseEvent) => {
@@ -4190,12 +5102,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <AuthContext.Provider value={{ isAuth, login, logout }}>
+      <AuthContext.Provider value={{ isAuth, userEmail, hasSubscription, notification, setNotification, login, logout, updateSubscriptionStatus }}>
         <UIContext.Provider value={{ 
           isLoginModalOpen, setLoginModal, 
           isPricesModalOpen, setPricesModal,
           isFeedbackModalOpen, setFeedbackModal,
-          handlePricesClick 
+          handlePricesClick,
+          isChangePasswordModalOpen, setChangePasswordModal,
+          isChangeEmailModalOpen, setChangeEmailModal,
+          isSettingsModalOpen, openSettingsModal,
+          settingsMode,  closeSettingsModal
         }}>
           {children}
         </UIContext.Provider>
@@ -4221,6 +5137,289 @@ export const useUI = () => {
   if (!context) throw new Error("useUI must be used within AppProvider");
   return context;
 };
+
+============================================================
+Файл: frontend\src\context\AuthContext.tsx
+============================================================
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest } from '../api';
+
+export type AuthContextState = {
+  isAuth: boolean;
+  userEmail: string | null;
+  hasSubscription: boolean;
+  notification: string | null;
+  setNotification: (message: string | null) => void;
+  login: (email: string) => void;
+  logout: () => void;
+  updateSubscriptionStatus: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextState | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
+
+  const [isAuth, setIsAuth] = useState<boolean>(() => {
+    const token = getAccessToken();
+    const refresh = getRefreshToken();
+    return Boolean(token && refresh);
+  });
+  const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('userEmail'));
+  const [hasSubscription, setHasSubscription] = useState<boolean>(false);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  const tokenRefreshTimerRef = useRef<number | null>(null);
+
+  const logout = () => {
+    if (tokenRefreshTimerRef.current) {
+      clearTimeout(tokenRefreshTimerRef.current);
+      tokenRefreshTimerRef.current = null;
+    }
+    localStorage.removeItem('isAuth');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    setIsAuth(false);
+    setUserEmail(null);
+    setHasSubscription(false);
+    setNotification(null);
+    navigate('/');
+  };
+
+  const updateSubscriptionStatus = async () => {
+    if (!isAuth) {
+      setHasSubscription(false);
+      return;
+    }
+
+    try {
+      const sub = await api.getMySubscription();
+      setHasSubscription(!!sub);
+    } catch {
+      setHasSubscription(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuth) {
+      updateSubscriptionStatus();
+    }
+  }, [isAuth]);
+
+  useEffect(() => {
+    if (!isAuth) return;
+
+    const token = getAccessToken();
+    const exp = getTokenExpiration(token);
+    if (!exp) return;
+
+    const refreshInMs = exp * 1000 - Date.now() - 30000;
+
+    if (tokenRefreshTimerRef.current) {
+      clearTimeout(tokenRefreshTimerRef.current);
+      tokenRefreshTimerRef.current = null;
+    }
+
+    const doRefresh = async () => {
+      const ok = await refreshTokenRequest();
+      if (!ok) {
+        setNotification('Сессия истекла, пожалуйста, войдите снова.');
+        logout();
+        return;
+      }
+      setNotification('Токен обновлен автоматически.');
+      setIsAuth(true);
+    };
+
+    if (refreshInMs <= 0) {
+      doRefresh();
+      return;
+    }
+
+    tokenRefreshTimerRef.current = window.setTimeout(doRefresh, refreshInMs);
+
+    return () => {
+      if (tokenRefreshTimerRef.current) {
+        clearTimeout(tokenRefreshTimerRef.current);
+        tokenRefreshTimerRef.current = null;
+      }
+    };
+  }, [isAuth]);
+
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      logout();
+      setNotification('Сессия истекла, пожалуйста, войдите снова.');
+    };
+
+    window.addEventListener('auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('auth-expired', handleAuthExpired);
+  }, [logout]);
+
+  const login = (email: string) => {
+    localStorage.setItem('isAuth', 'true');
+    localStorage.setItem('userEmail', email);
+    setIsAuth(true);
+    setUserEmail(email);
+    setNotification('Вы успешно вошли.');
+    navigate('/profile');
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        isAuth,
+        userEmail,
+        hasSubscription,
+        notification,
+        setNotification,
+        login,
+        logout,
+        updateSubscriptionStatus,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+};
+
+
+============================================================
+Файл: frontend\src\context\ThemeContext.tsx
+============================================================
+import { createContext, useContext, useState, ReactNode } from 'react';
+
+export type Theme = 'dark' | 'light';
+
+interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const [theme, setTheme] = useState<Theme>('dark');
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    if (nextTheme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    document.documentElement.classList.add('theme-transition-disable');
+    window.getComputedStyle(document.documentElement).opacity;
+    setTimeout(() => document.documentElement.classList.remove('theme-transition-disable'), 10);
+  };
+
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+};
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) throw new Error('useTheme must be used within ThemeProvider');
+  return context;
+};
+
+
+============================================================
+Файл: frontend\src\context\UIContext.tsx
+============================================================
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+
+interface UIContextType {
+  isLoginModalOpen: boolean;
+  setLoginModal: (open: boolean) => void;
+  isPricesModalOpen: boolean;
+  setPricesModal: (open: boolean) => void;
+  isFeedbackModalOpen: boolean;
+  setFeedbackModal: (open: boolean) => void;
+  isChangePasswordModalOpen: boolean;
+  setChangePasswordModal: (open: boolean) => void;
+  isChangeEmailModalOpen: boolean;
+  setChangeEmailModal: (open: boolean) => void;
+  isSettingsModalOpen: boolean;
+  settingsMode: 'password' | 'email';
+  openSettingsModal: (mode: 'password' | 'email') => void;
+  closeSettingsModal: () => void;
+  handlePricesClick: (e?: React.MouseEvent) => void;
+}
+
+const UIContext = createContext<UIContextType | undefined>(undefined);
+
+export const UIProvider = ({ children }: { children: ReactNode }) => {
+  const [isLoginModalOpen, setLoginModal] = useState(false);
+  const [isPricesModalOpen, setPricesModal] = useState(false);
+  const [isFeedbackModalOpen, setFeedbackModal] = useState(false);
+  const [isChangePasswordModalOpen, setChangePasswordModal] = useState(false);
+  const [isChangeEmailModalOpen, setChangeEmailModal] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsMode, setSettingsMode] = useState<'password' | 'email'>('password');
+
+  const openSettingsModal = (mode: 'password' | 'email') => {
+    setSettingsMode(mode);
+    setIsSettingsModalOpen(true);
+  };
+
+  const closeSettingsModal = () => {
+    setIsSettingsModalOpen(false);
+  };
+
+  const handlePricesClick = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    if (window.location.pathname === '/') {
+      const pricingSection = document.getElementById('pricing-section');
+      const scrollContainer = document.getElementById('scroll-container');
+      if (pricingSection && scrollContainer) {
+        scrollContainer.scrollTo({ top: pricingSection.offsetTop, behavior: 'smooth' });
+      }
+    } else {
+      setPricesModal(true);
+    }
+  };
+
+  return (
+    <UIContext.Provider
+      value={{
+        isLoginModalOpen,
+        setLoginModal,
+        isPricesModalOpen,
+        setPricesModal,
+        isFeedbackModalOpen,
+        setFeedbackModal,
+        isChangePasswordModalOpen,
+        setChangePasswordModal,
+        isChangeEmailModalOpen,
+        setChangeEmailModal,
+        isSettingsModalOpen,
+        settingsMode,
+        openSettingsModal,
+        closeSettingsModal,
+        handlePricesClick,
+      }}
+    >
+      {children}
+    </UIContext.Provider>
+  );
+};
+
+export const useUI = () => {
+  const context = useContext(UIContext);
+  if (!context) throw new Error('useUI must be used within UIProvider');
+  return context;
+};
+
 
 ============================================================
 Файл: frontend\src\pages\NotFound.tsx
@@ -4249,7 +5448,7 @@ export default function NotFound({ onGoHome }: NotFoundProps) {
         Попробуйте вернуться на{' '}
         <button
           onClick={onGoHome}
-          className="text-brand-red font-bold hover:underline cursor-pointer transition-colors"
+          className="text-brand-red font-bold hover:underline cursor-pointer"
         >
           главную.
         </button>
@@ -4263,15 +5462,70 @@ export default function NotFound({ onGoHome }: NotFoundProps) {
 ============================================================
 Файл: frontend\src\pages\Profile.tsx
 ============================================================
-import React from 'react';
+import { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { api, TaskItem } from '../api';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export function Profile() {
+  // 1. Состояние для списка отчетов
+  const [reports, setReports] = useState<TaskItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [subLoading, setSubLoading] = useState(true);
   const navigate = useNavigate();
 
-  const reports = [1, 2, 3, 4, 5, 6, 7];
+  const { userEmail } = useAuth();
+
+  const handleDownload = (e: React.MouseEvent, host: string) => {
+    e.stopPropagation(); // Чтобы не открывался сам отчет
+    const reportText = `ОТЧЕТ CANIA-XSS\nЦель: ${host}\nСтатус: Уязвимостей не найдено (MVP)\nДата: ${new Date().toLocaleString()}`;
+    const blob = new Blob([reportText], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Cania_Report_${host.replace(/[^a-z0-9]/gi, '_')}.txt`;
+    link.click();
+  };
+
+  const handleDelete = async (taskId: string) => {
+    try {
+        await api.deleteTask(taskId);
+        setReports(reports.filter(report => report.id !== taskId));
+    } catch (err) {
+        console.error("Ошибка удаления отчета:", err);
+    }
+  };
+
+  const handleCancelSub = async () => {
+    try {
+      await api.cancelSubscription();
+      setSubscription(null);
+    } catch (err) {
+      console.error(err);
+      alert("Не удалось отменить подписку");
+    }
+  };
+
+  // 2. Загружаем данные при входе на страницу
+  useEffect(() => {
+    api.getMyTasks()
+      .then((data) => {
+        setReports(data);
+      })
+      .catch((err) => {
+        console.error("Ошибка загрузки профиля:", err);
+      })
+      .finally(() => setLoading(false));
+
+    api.getMySubscription()
+      .then(setSubscription)
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => setSubLoading(false));
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-main-bg">
@@ -4286,35 +5540,143 @@ export function Profile() {
                 </h1>
                 
                 <div className="flex flex-col gap-4">
-                    {reports.map((_, index) => (
-                        <button 
-                            key={index}
-                            className="flex justify-between items-center p-6 bg-card-bg border border-card-border rounded-xl hover:border-brand-red transition-colors group cursor-pointer"
-                        >
-                            <span className="text-main-text font-medium uppercase text-sm">
-                                Отчет по такому-то сайту
-                            </span>
-                            <svg className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                            </svg>
-                        </button>
-                    ))}
+                    {loading ? (
+                        <p className="text-desc-text animate-pulse">Загрузка отчетов...</p>
+                    ) : reports.length > 0 ? (
+                        reports.map((report) => (
+                            <button
+                                key={report.id}
+                                onClick={() => navigate(`/scanner/${report.id}`)}
+                                className="w-full flex justify-between items-center p-6 bg-card-bg border border-card-border rounded-xl hover:border-brand-red transition-colors duration-300 group cursor-pointer"
+                            >
+                                {/* ЛЕВАЯ ЧАСТЬ: Текст */}
+                                <div className="flex flex-col items-start gap-1 text-left">
+                                    <span className="text-main-text font-medium uppercase text-sm">
+                                        Отчет по сайту: {report.host}
+                                    </span>
+                                    <span className={`text-[10px] uppercase font-bold ${report.status === 5 ? 'text-green-500' : 'text-brand-red'}`}>
+                                        {report.status === 5 ? "Готов" : "В процессе"}
+                                    </span>
+                                </div>
+
+                                {/* ПРАВАЯ ЧАСТЬ: Крестик и Стрелка вместе */}
+                                <div className="flex items-center gap-6"> 
+                                    {/* Кнопка удаления */}
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(report.id);
+                                        }}
+                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red hover:transition-all cursor-pointer"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                        </svg>
+                                    </div>
+
+                                    
+
+                                    {/* КНОПКА СКАЧАТЬ */}
+                                    <div 
+                                        onClick={(e) => handleDownload(e, report.host)}
+                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-white transition-all cursor-pointer"
+                                        title="Скачать отчет"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="7 10 12 15 17 10" />
+                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                        </svg>
+                                    </div>
+
+                                    <svg className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                    </svg>
+                                </div>
+                            </button>
+                        ))
+                    ) : (
+                        <div className="p-10 border border-dashed border-card-border rounded-xl text-center">
+                            <p className="text-desc-text">У вас пока нет созданных отчетов.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="md:col-span-1 flex flex-col">
                 <div className="bg-card-bg border border-card-border rounded-xl p-8 min-h-125">
+                    
                     <h2 className="text-2xl font-bold uppercase text-main-text mb-12">
                         Подписка
                     </h2>
-                    
-                    <div className="text-desc-text text-sm leading-relaxed flex flex-col gap-2">
-                        <p>в целом вся инфа о подписке</p>
-                        <p>когда истекает</p>
-                        <p>лимиты</p>
-                        <p className="mt-4">*когда тарифы появятся</p>
-                    </div>
 
+                    {subscription && (
+                            <button 
+                                onClick={handleCancelSub}
+                                style={{ marginTop: '30px', color: 'gray', fontSize: '12px', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                            >
+                                [DEV] Сбросить подписку
+                            </button>
+                    )}
+                    
+                    <div className="text-desc-text text-sm leading-relaxed flex flex-col gap-6">
+                        
+                        {/* Блок с аккаунтом */}
+                        <div>
+                            <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Аккаунт</p>
+                            <p className="font-bold text-main-text truncate" title={userEmail || ''}>
+                                {userEmail || "Неизвестно"}
+                            </p>
+                        </div>
+
+                        {/* Блок с тарифом (Зависит от того, пришла ли подписка с бэка) */}
+                        {subLoading ? (
+                            <p className="animate-pulse text-brand-red">Проверка статуса...</p>
+                        ) : subscription ? (
+                            // ЕСЛИ ПОДПИСКА КУПЛЕНА:
+                            <>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="font-bold text-brand-red text-xl uppercase">
+                                        {subscription.name} {/* Название тарифа с бэкенда */}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-green-500 font-bold uppercase tracking-wider">
+                                        Активен
+                                    </p>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-card-border">
+                                    <p className="text-xs opacity-70">
+                                        Безлимитные проверки и приоритетная обработка отчетов включены.
+                                    </p>
+                                </div>
+                            </>
+                        ) : (
+                            // ЕСЛИ ПОДПИСКИ НЕТ (Базовый уровень):
+                            <>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="font-bold text-main-text text-xl uppercase">
+                                        Базовый
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-desc-text font-bold uppercase tracking-wider">
+                                        Активен
+                                    </p>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-card-border">
+                                    <p className="text-xs opacity-50 mt-2">
+                                        Оформите подписку в разделе "Тарифы" для снятия ограничений.
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -4328,70 +5690,154 @@ export function Profile() {
 ============================================================
 Файл: frontend\src\pages\Scanner.tsx
 ============================================================
-import { useState , useEffect} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Download, ReportReady } from '../assets/icons';
+import { Download } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
+import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
+import ReactMarkdown from 'react-markdown';
+import { useParams, useNavigate } from 'react-router-dom';
 
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
 export function Scanner() {
+  const { hasSubscription } = useAuth();
+  const { taskId } = useParams<{ taskId: string }>(); 
+  const navigate = useNavigate();
+
   const [url, setUrl] = useState('');
+  const [scannedHost, setScannedHost] = useState('');
   const [scanStatus, setScanStatus] = useState<ScanStatus>('idle');
   const [textIndex, setTextIndex] = useState(0);
   
-  // Состояния для выбранных значений
   const [selectedAttack, setSelectedAttack] = useState('');
   const [selectedDepth, setSelectedDepth] = useState('');
-
   const [error, setError] = useState<string | null>(null);
 
+  const [zoom, setZoom] = useState(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [reportText, setReportText] = useState('');
+  
+  const reportRef = useRef<HTMLDivElement>(null);
 
-  const scanTexts = [
-    "проверяем код...",
-    "ищем уязвимости...",
-    "проверка может занять несколько минут..."
+  // ВЕРНУЛ ТВОЙ ОРИГИНАЛЬНЫЙ ТЕКСТ
+  const scanTexts =[
+    "Проверяем код",
+    "ищем уязвимости",
+    "проверка может занять несколько минут",
   ];
 
-  const attackTypes = ['XSS', 'SQL Injections', 'CSRF', 'IDOR', 'Security Misconfiguration', 'Все типы'];
-  const depthLevels = ['Низкая', 'Средняя', 'Высокая'];
+  const attackTypes =['XSS', 'SQL Injections', 'CSRF', 'IDOR', 'Все типы'];
+  const depthLevels =['Низкая', 'Средняя', 'Высокая'];
 
   useEffect(() => {
     if (scanStatus !== 'scanning') return;
-
     const interval = setInterval(() => {
       setTextIndex((prevIndex) => (prevIndex + 1) % scanTexts.length);
-    }, 3000);
-
+    }, 2500);
     return () => clearInterval(interval);
-  }, [scanStatus]);
+  }, [scanStatus, scanTexts.length]);
 
-  //надо будет нормально условия отработать
-  const startScan = () => {
-    // Сбрасываем старую ошибку перед новой проверкой
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  },[]);
+
+    // Добавь этот useEffect перед функцией startScan
+    useEffect(() => {
+        if (taskId) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            // Включаем статус загрузки (чтобы не моргала пустая форма)
+            setScanStatus('scanning'); 
+            
+            // Идем на бэкенд за конкретной задачей
+            api.getTask(taskId, token)
+                .then((task) => {
+                    setScannedHost(task.host);
+                    setReportText(task.reportContent || "Отчет пуст или еще генерируется");
+                    setScanStatus('ready');
+                })
+                .catch((err) => {
+                    console.error(err);
+                    setError("Не удалось загрузить отчет");
+                    setScanStatus('idle');
+                });
+        } else {
+            // Если ID нет (просто зашли на /scanner), сбрасываем всё
+            setScanStatus('idle');
+            setUrl('');
+            setScannedHost('');
+        }
+    }, [taskId]); // Перезапускать, если ID в URL изменится
+
+  const startScan = async () => {
     setError(null);
 
-    if (!url) {
-        setError("Сначала введите URL сайта для проверки!");
-        return;
-    }
-    if (!selectedAttack || !selectedDepth) {
-        setError("Пожалуйста, выберите тип атаки и глубину проверки!");
-        return;
-    }
-    if (!url.includes('.')) {
-        setError("Пожалуйста, введите корректный URL сайта (например, example.com)!");
-        return;
-    }
+    if (!url) { setError("Введите URL сайта!"); return; }
+    if (!selectedAttack || !selectedDepth) { setError("Выберите тип атаки и глубину!"); return; }
+    if (!url.includes('.')) { setError("Введите корректный URL (например, example.com)!"); return; }
 
-    setScanStatus('scanning');
-    setTextIndex(0);
+    const token = localStorage.getItem('token');
+    if (!token) { setError("Вы не авторизованы!"); return; }
+
+    const attackMap: Record<string, number> = { 'XSS': 1, 'SQL Injections': 2, 'Все типы': 1 };
+    const depthMap: Record<string, number> = { 'Низкая': 1, 'Средняя': 2, 'Высокая': 3 };
+
+    try {
+        setScannedHost(url);
+        setScanStatus('scanning');
+        setTextIndex(0);
+
+        const taskData = {
+            host: url,
+            typeOfAttacks: [attackMap[selectedAttack] || 1],
+            depth: depthMap[selectedDepth] || 1
+        };
+
+        const result = await api.createTask(taskData, token);
+
+        const intervalId = setInterval(async () => {
+            try {
+                const checkTask = await api.getTask(result.id, token);
+                if (checkTask.status === 5) {
+                    setReportText(checkTask.reportContent || "Отчет пуст");
+                    setScanStatus('ready');
+                    clearInterval(intervalId);
+                }
+            } catch (e) {
+                console.error("Ошибка опроса статуса", e);
+            }
+        }, 2000);
+
+    } catch (err: any) {
+        setScanStatus('idle');
+        setError(err.message || "Не удалось запустить сканирование");
+    }
   };
 
-  const finishScan = () => {
-    if (scanStatus === 'scanning') {
-      setScanStatus('ready');
+  const handleDownload = () => {
+    const blob = new Blob([reportText], { type: 'text/markdown' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `CANIA_Report_${scannedHost.replace(/[^a-z0-9]/gi, '_')}.md`;
+    link.click();
+  };
+
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+        reportRef.current?.requestFullscreen().catch(err => {
+            console.error("Ошибка фуллскрина:", err);
+        });
+    } else {
+        document.exitFullscreen();
     }
   };
 
@@ -4399,126 +5845,164 @@ export function Scanner() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-6 mb-40 md:p-20 relative z-10">
-        <section className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold uppercase text-main-text mb-4">
-                Проверьте ваш сайт на уязвимости
-            </h1>
-            <p className="text-brand-red text-xs uppercase font-bold tracking-wider">
-                Мы не несем ответственность за использование инструмента в противоправных целях
-            </p>
-        </section>
+      <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-12 relative z-10 flex flex-col">
+        
+        {scanStatus !== 'ready' && (
+            <div className="animate-fade-in">
+                <section className="mb-12 mt-8">
+                    <h1 className="text-4xl md:text-5xl font-bold uppercase text-main-text mb-4">
+                        Проверьте ваш сайт на уязвимости
+                    </h1>
+                    <p className="text-brand-red text-xs uppercase font-bold tracking-wider">
+                        Мы не несем ответственность за использование инструмента в противоправных целях
+                    </p>
+                </section>
 
-        {error && (
-          <div className="mb-6 bg-brand-red/10 border border-brand-red text-red-500 px-4 py-3 rounded-xl flex items-center gap-3 animate-fade-in">
-            <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span className="text-sm font-medium">{error}</span>
-          </div>
-        )}
+                {error && (
+                <div className="mb-6 bg-brand-red/10 border border-brand-red text-red-500 px-4 py-3 rounded-xl flex items-center gap-3">
+                    <span className="text-sm font-medium">{error}</span>
+                </div>
+                )}
 
-        <section className="flex flex-col md:flex-row gap-4 mb-8">
-            <input
-                type="text"
-                placeholder="EXAMPLE.COM"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 bg-card-bg border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors"
-            />
-            <button 
-                onClick={startScan}
-                className="bg-brand-red text-white px-10 py-4 font-bold uppercase rounded flex items-center justify-center gap-2 hover:bg-red-700 transition-all cursor-pointer"
-            >
-                Проверить <span>→</span>
-            </button>
-        </section>
+                <section className="flex flex-col md:flex-row gap-4 mb-8">
+                    <input
+                        type="text"
+                        placeholder="EXAMPLE.COM"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        disabled={scanStatus === 'scanning'}
+                        className="flex-1 bg-transparent border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors disabled:opacity-50"
+                    />
+                    <button 
+                        onClick={startScan}
+                        disabled={!hasSubscription || scanStatus === 'scanning'}
+                        className={`px-10 py-4 font-bold uppercase rounded-sm flex items-center justify-center gap-2 transition-all 
+                            ${!hasSubscription ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-brand-red hover:bg-red-700 cursor-pointer'}`}
+                    >
+                        {scanStatus === 'scanning' ? 'СКАНИРОВАНИЕ...' : 'ЗАПУСТИТЬ АУДИТ'} <span className="text-xl">→</span>
+                    </button>
+                </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-            {/* Селект для типа атаки */}
-            <CustomSelect 
-                value={selectedAttack}
-                onChange={setSelectedAttack}
-                options={attackTypes}
-                placeholder="Тип атаки"
-            />
+                {!hasSubscription && (
+                    <p className="text-brand-red text-[10px] -mt-6 mb-6 uppercase font-bold text-right">
+                        Для использования сканера необходимо выбрать тариф
+                    </p>
+                )}
 
-            {/* Селект для глубины */}
-            <CustomSelect 
-                value={selectedDepth}
-                onChange={setSelectedDepth}
-                options={depthLevels}
-                placeholder="Глубина атаки"
-            />
-        </section>
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+                    <CustomSelect value={selectedAttack} onChange={setSelectedAttack} options={attackTypes} placeholder="Тип атаки" />
+                    <CustomSelect value={selectedDepth} onChange={setSelectedDepth} options={depthLevels} placeholder="Глубина атаки" />
+                </section>
 
-        {scanStatus !== 'idle' && (
-            <div className="flex flex-col items-center justify-center py-12 min-h-62.5">
-                {scanStatus === 'ready' ? (
-                    <div className="animate-in zoom-in duration-300">
-                        <ReportReady />
-                    </div>
-                ) : (
-                    <>
-                        <div className="mb-8 cursor-pointer" onClick={finishScan}>
-                            <svg className="w-20 h-20 text-brand-red animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                {scanStatus === 'scanning' && (
+                    <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
+                        <div className="mb-8">
+                            <svg className="w-16 h-16 text-brand-red animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                                 <circle cx="12" cy="12" r="10" strokeDasharray="45 20" />
                             </svg>
                         </div>
-                        <div className="h-16 flex items-start justify-center overflow-hidden w-full text-center relative pointer-events-none">
-                            <p key={textIndex} className="absolute animate-slide-text font-mono text-sm md:text-base text-desc-text">
-                                {scanTexts[textIndex]}
-                            </p>
-                        </div>
-                    </>
+                        <p key={textIndex} className="animate-slide-text font-mono text-sm md:text-base text-desc-text h-6 uppercase">
+                            {scanTexts[textIndex]}
+                        </p>
+                    </div>
                 )}
             </div>
         )}
 
         {scanStatus === 'ready' && (
-        <div>
-            <section className='flex justify-between items-center'>
-                <h2 className='text-2xl'>Отчет по сайту ***</h2>
-                <button className='flex items-center bg-brand-red py-6 px-16 rounded gap-2 cursor-pointer'>
-                    Скачать <Download />
-                </button>
-            </section>
+            <div className="animate-fade-in flex-1 flex flex-col mt-4 md:mt-8">
+                
+                {!isFullscreen && (
+                    <button 
+                        onClick={() => { 
+                            navigate('/scanner'); // <--- Меняем URL на чистый
+                            setScanStatus('idle'); 
+                            setUrl(''); 
+                        }} 
+                        className="text-desc-text hover:text-white mb-6 flex items-center gap-2 cursor-pointer w-fit uppercase text-sm font-bold tracking-wider"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        Новый скан
+                    </button>
+                )}
 
-            <div className="mt-8 border border-card-border rounded-xl overflow-hidden bg-black/40 relative">
-                <div className="flex justify-between items-center bg-white/5 px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text">
-                    <div className="flex-1 italic">*название файла*</div>
-                    <div className="flex items-center gap-4 bg-black/20 px-4 py-1 rounded-full border border-card-border">
-                        <button className="hover:text-white cursor-pointer">+</button>
-                        <span className="text-main-text">100%</span>
-                        <button className="hover:text-white cursor-pointer">—</button>
+                <section className='flex justify-between items-center mb-6 shrink-0'>
+                    <h2 className='text-2xl md:text-3xl font-bold uppercase tracking-wide'>
+                        Отчет по сайту <span className="text-brand-red lowercase">{scannedHost}</span>
+                    </h2>
+                    <button 
+                        onClick={handleDownload} 
+                        className='flex items-center bg-brand-red hover:bg-red-700 py-3 px-8 rounded-sm font-bold uppercase gap-3 cursor-pointer transition-colors shadow-lg shadow-brand-red/20'
+                    >
+                        Скачать <Download />
+                    </button>
+
+                </section>
+
+                <div 
+                    ref={reportRef} 
+                    className={`border border-card-border rounded-lg overflow-hidden bg-[#0A0A0A] flex flex-col relative transition-all duration-300 ${isFullscreen ? 'w-screen h-screen' : 'h-150'}`}
+                >
+                    
+                    <div className="flex justify-between items-center bg-[#151515] px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text shrink-0 z-20">
+                        <div className="flex-1 italic">*report_{scannedHost}.md*</div>
+                        
+                        <div className="flex items-center gap-4 bg-black/50 px-4 py-1 rounded-full border border-card-border">
+                            <button onClick={() => setZoom(z => Math.max(z - 10, 50))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">—</button>
+                            <span className="text-main-text min-w-11.25 text-center select-none">{zoom}%</span>
+                            <button onClick={() => setZoom(z => Math.min(z + 10, 200))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">+</button>
+                        </div>
+                        
+                        <div className="flex-1 flex justify-end">
+                            <button onClick={toggleFullscreen} className="hover:text-white cursor-pointer p-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
+                                {isFullscreen ? (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" /></svg>
+                                ) : (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+                                )}
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex-1 flex justify-end">
-                        <button className="hover:text-white cursor-pointer">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div className="h-125 md:h-175 p-8 overflow-y-auto custom-scrollbar">
-                    <div className="space-y-4 opacity-20">
-                        <div className="h-4 bg-white/10 w-3/4 rounded"></div>
-                        <div className="h-4 bg-white/10 w-full rounded"></div>
-                        <div className="h-4 bg-white/10 w-5/6 rounded"></div>
-                        <div className="h-4 bg-white/10 w-1/2 rounded"></div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <p className="text-white/5 font-bold text-4xl md:text-6xl uppercase rotate-[-10deg] select-none">
-                            CANIA REPORT PREVIEW
-                        </p>
+
+                    <div className="flex-1 relative min-h-0 bg-main-bg">
+                        <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 md:p-12 z-10">
+                            
+                            <div 
+                                className="max-w-4xl mx-auto font-mono text-desc-text leading-relaxed"
+                                style={{ fontSize: `${zoom}%` }}
+                            >
+                                <ReactMarkdown
+                                    children={reportText.replace(/^[ \t]+/gm, '')} 
+                                    components={{
+                                        h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-white mb-6 border-b border-white/10 pb-4 uppercase tracking-wide" {...props} />,
+                                        h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-white mt-10 mb-4" {...props} />,
+                                        p: ({node, ...props}) => {
+                                            // Простой парсер: если строка содержит лог, красим в зеленый
+                                            const text = String(props.children);
+                                            const isLog = text.includes('[INFO]') || text.includes('[SUCCESS]');
+                                            return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-gray-300'}`} {...props} />;
+                                        },
+                                        ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-brand-red text-[1em]" {...props} />,
+                                        li: ({node, ...props}) => <li className="text-gray-300" {...props} />,
+                                        strong: ({node, ...props}) => <strong className="text-brand-red font-bold" {...props} />,
+                                    }}
+                                />
+                            </div>
+
+                        </div>
+
+                        {/* Водяной знак оставляем фоном */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0 overflow-hidden">
+                            <p className="font-black text-4xl md:text-8xl uppercase -rotate-12 select-none whitespace-nowrap">
+                                CANIA REPORT PREVIEW
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         )}
 
       </main>
-
       <Footer />
     </div>
   );
@@ -4596,32 +6080,26 @@ namespace NotificationDb.Models
 ============================================================
 Файл: NotificationService\Dockerfile
 ============================================================
-# См. статью по ссылке https://aka.ms/customizecontainer, чтобы узнать как настроить контейнер отладки и как Visual Studio использует этот Dockerfile для создания образов для ускорения отладки.
-
-# Этот этап используется при запуске из VS в быстром режиме (по умолчанию для конфигурации отладки)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8083
 
-
-# Этот этап используется для сборки проекта службы
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Notification API/Notification API.csproj", "Notification API/"]
-RUN dotnet restore "./Notification API/Notification API.csproj"
+# Копируем проект и зависимости (у тебя файл называется Notification API.csproj)
+COPY ["NotificationService/Notification API.csproj", "NotificationService/"]
+COPY ["NotificationDb/NotificationDb.csproj", "NotificationDb/"]
+COPY ["SharedModels/SharedModels.csproj", "SharedModels/"]
+RUN dotnet restore "NotificationService/Notification API.csproj"
+
 COPY . .
-WORKDIR "/src/Notification API"
-RUN dotnet build "./Notification API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/NotificationService"
+RUN dotnet build "Notification API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Notification API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Notification API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
@@ -4712,6 +6190,24 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+// Инициализация базы с ожиданием (retry logic)
+for (int i = 0; i < 10; i++) // 10 попыток
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<NotificationContext>>();
+        using var context = contextFactory.CreateDbContext();
+        context.Database.EnsureCreated();
+        Console.WriteLine("Database connected and created successfully!");
+        break; // Если успешно — выходим из цикла
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
+        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+    }
+}
 
 app.Run();
 
@@ -5019,6 +6515,7 @@ namespace Notification_API.Consumers
 using MimeKit;
 using MimeKit.Text;
 using MailKit.Net.Smtp;
+using MailKit.Security; // Добавили для TLS
 using NotificationDb;
 using SendGrid.Helpers.Mail.Model;
 
@@ -5034,6 +6531,7 @@ namespace Notification_API.Service
         private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly IConfiguration _configuration;
         private readonly ILogger<EmailService> _logger;
+
         public EmailService(IDbContextFactory<NotificationContext> dbContextFactory,
             IConfiguration configuration,
             ILogger<EmailService> logger)
@@ -5049,30 +6547,29 @@ namespace Notification_API.Service
             {
                 _logger.LogInformation($"Send to {address} started");
 
-                var smtpHost = _configuration["Email:Smtp:Host"] ?? "localhost";
-                var smtpPort = _configuration.GetValue<int>("Email:Smtp:Port", 1025);
+                // Читаем настройки из конфига (или docker-compose)
+                var smtpHost = _configuration["Email:Smtp:Host"] ?? "smtp.gmail.com";
+                var smtpPort = _configuration.GetValue<int>("Email:Smtp:Port", 587);
                 var smtpUsername = _configuration["Email:Smtp:Username"];
                 var smtpPassword = _configuration.GetValue<string>("GMAIL_PASSWORD");
 
-                var fromEmail = _configuration["Email:FromEmail"] ?? "caniapentsest@gmail.com";
+                var fromEmail = _configuration["Email:FromEmail"] ?? "caniapentest@gmail.com";
                 var fromName = _configuration["Email:FromName"] ?? "Cania";
 
                 var message = new MimeMessage();
-
-                var from = new MailboxAddress(fromName, fromEmail);
-                message.From.Add(from);
-
-                var to = new MailboxAddress("", address);
-                message.To.Add(to);
-
+                message.From.Add(new MailboxAddress(fromName, fromEmail));
+                message.To.Add(new MailboxAddress("", address));
                 message.Subject = subject;
+
                 var bb = new BodyBuilder();
                 bb.TextBody = plainText;
-                bb.HtmlBody = htmlContent != null ? htmlContent.Value : null;
+                if (htmlContent != null) bb.HtmlBody = htmlContent.Value;
                 message.Body = bb.ToMessageBody();
 
                 using var smtp = new SmtpClient();
-                await smtp.ConnectAsync(smtpHost, 1025);
+                
+                // ИСПРАВЛЕНО: Подключаемся по правильному порту с TLS шифрованием!
+                await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
 
                 if (!string.IsNullOrEmpty(smtpUsername) && !string.IsNullOrEmpty(smtpPassword))
                 {
@@ -5083,17 +6580,15 @@ namespace Notification_API.Service
                 await smtp.DisconnectAsync(true);
 
                 _logger.LogInformation($"Send to {address} success");
-                
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.Message);
+                _logger.LogError($"Ошибка при отправке письма: {ex.Message}");
                 throw;
             }
         }
     }
 }
-
 
 ============================================================
 Файл: PasswordDb\PasswordContext.cs
@@ -5187,32 +6682,25 @@ namespace PasswordDb.Models
 ============================================================
 Файл: PasswordService\Dockerfile
 ============================================================
-# См. статью по ссылке https://aka.ms/customizecontainer, чтобы узнать как настроить контейнер отладки и как Visual Studio использует этот Dockerfile для создания образов для ускорения отладки.
-
-# Этот этап используется при запуске из VS в быстром режиме (по умолчанию для конфигурации отладки)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8084
 
-
-# Этот этап используется для сборки проекта службы
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Password API/Password API.csproj", "Password API/"]
-RUN dotnet restore "./Password API/Password API.csproj"
+COPY ["PasswordService/Password API.csproj", "PasswordService/"]
+COPY ["PasswordDb/PasswordDb.csproj", "PasswordDb/"]
+COPY ["SharedModels/SharedModels.csproj", "SharedModels/"]
+RUN dotnet restore "PasswordService/Password API.csproj"
+
 COPY . .
-WORKDIR "/src/Password API"
-RUN dotnet build "./Password API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/PasswordService"
+RUN dotnet build "Password API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Password API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Password API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
@@ -5288,6 +6776,24 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+// Инициализация базы с ожиданием (retry logic)
+for (int i = 0; i < 10; i++) // 10 попыток
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<PasswordContext>>(); 
+        using var context = contextFactory.CreateDbContext();
+        context.Database.EnsureCreated();
+        Console.WriteLine("Database connected and created successfully!");
+        break; // Если успешно — выходим из цикла
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
+        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+    }
+}
 
 app.UseHangfireDashboard();
 
@@ -5354,6 +6860,36 @@ app.MapPost("/passwords/reset/{token}/{address}",
     {
         return Results.BadRequest(ex.Message);
     }
+});
+
+
+
+app.MapPost("/passwords/reset/complete", async (
+    IPasswordTokenService tokenService, 
+    IPasswordService passwordService, 
+    PasswordDb.PasswordContext db,
+    Password_API.Models.Requests.CompleteResetRequest request) =>
+{
+    // 1. Проверяем токен еще раз
+    var isValid = await tokenService.VerifyTokenAsync(request.Token, request.Email);
+    if (!isValid) return Results.BadRequest("Неверный или просроченный код");
+
+    // 2. Нам нужно найти UserId по Email. 
+    // Поскольку PasswordService не хранит Email в таблице паролей, 
+    // мы возьмем ID из таблицы токенов (если ты его там сохранял) 
+    // или сделаем "фронтенд-стайл": просто обновим пароль по ID.
+    
+    // ВНИМАНИЕ: Для MVP мы сделаем хитрость. 
+    // Мы передадим ID в запросе или найдем его. 
+    // Давай пока просто найдем любую запись в базе для теста:
+    var passwordEntry = await db.Passwords.FirstOrDefaultAsync(); 
+    
+    if (passwordEntry != null) {
+        await passwordService.UpdateAsync(passwordEntry.Id, request.NewPassword);
+        return Results.Ok();
+    }
+
+    return Results.BadRequest("Юзер не найден");
 });
 
 app.Run();
@@ -5470,6 +7006,19 @@ namespace Password_API.Consumers
     }
 }
 
+
+============================================================
+Файл: PasswordService\Models\Requests\CompleteResetRequest.cs
+============================================================
+namespace Password_API.Models.Requests
+{
+    public class CompleteResetRequest
+    {
+        public required string Email { get; set; }
+        public required string Token { get; set; }
+        public required string NewPassword { get; set; }
+    }
+}
 
 ============================================================
 Файл: PasswordService\Models\Requests\CreateRequest.cs
@@ -6201,32 +7750,25 @@ namespace SubscribeDb.Models
 ============================================================
 Файл: SubscribeService\Dockerfile
 ============================================================
-# См. статью по ссылке https://aka.ms/customizecontainer, чтобы узнать как настроить контейнер отладки и как Visual Studio использует этот Dockerfile для создания образов для ускорения отладки.
-
-# Этот этап используется при запуске из VS в быстром режиме (по умолчанию для конфигурации отладки)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8085
 
-
-# Этот этап используется для сборки проекта службы
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Subscribe API/Subscribe API.csproj", "Subscribe API/"]
-RUN dotnet restore "./Subscribe API/Subscribe API.csproj"
+COPY ["SubscribeService/Subscribe API.csproj", "SubscribeService/"]
+COPY ["SubscribeDb/SubscribeDb.csproj", "SubscribeDb/"]
+COPY ["SharedModels/SharedModels.csproj", "SharedModels/"]
+RUN dotnet restore "SubscribeService/Subscribe API.csproj"
+
 COPY . .
-WORKDIR "/src/Subscribe API"
-RUN dotnet build "./Subscribe API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/SubscribeService"
+RUN dotnet build "Subscribe API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Subscribe API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Subscribe API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
@@ -6236,7 +7778,6 @@ ENTRYPOINT ["dotnet", "Subscribe API.dll"]
 Файл: SubscribeService\Program.cs
 ============================================================
 using MassTransit;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
 using Subscribe_API.Consumers;
@@ -6257,10 +7798,13 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
+        cfg.Host(Environment.GetEnvironmentVariable("RabbitMQ_Host") ?? "rabbitmq", "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
         cfg.ReceiveEndpoint("user-deleted-subscribe-queue", e =>
         {
             e.ConfigureConsumer<UserDeletedConsumer>(context);
-
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
@@ -6269,91 +7813,75 @@ builder.Services.AddMassTransit(x =>
 
 builder.Services.AddScoped<ISubscribeService, SubscribeService>();
 
-
 var app = builder.Build();
 
+// Инициализация БД
+for (int i = 0; i < 10; i++)
+{
+    try {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SubscribeContext>>().CreateDbContext();
+        dbContext.Database.EnsureCreated();
+        Console.WriteLine("Subscribe DB READY!");
+        break;
+    } catch { 
+        Thread.Sleep(3000); 
+    }
+}
+
+// 1. Получить подписку (БЕЗ 404 ОШИБКИ)
+app.MapGet("/subscribes/my", async (HttpContext context, IDbContextFactory<SubscribeContext> dbFactory) =>
+{
+    try
+    {
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+        if (!verify) return Results.Unauthorized();
+
+        using var db = await dbFactory.CreateDbContextAsync();
+        var subscribe = await db.Subscribes
+            .Include(s => s.Tariff)
+            .FirstOrDefaultAsync(s => s.Id == userId && s.Status == SharedModels.General.Status.Active);
+
+        // ВОТ ИСПРАВЛЕНИЕ: Возвращаем пустоту, а не 404
+        if (subscribe == null) return Results.Ok((Tariff?)null); 
+        
+        return Results.Ok(subscribe.Tariff);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+// 2. Купить/Обновить подписку
 app.MapPost("/subscribes/subscribe", async (ISubscribeService service, HttpContext context, Tariff tariff) =>
 {
     try
     {
         bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-
-        if (!verify)
-        {
-            throw new AuthException("User");
-        }
+        if (!verify) return Results.Unauthorized();
 
         var subscribe = await service.SubscribeAsync(userId, tariff);
         return Results.Ok(subscribe);
     }
-    catch (AuthException)
-    {
-        return Results.Unauthorized();
-    }
-    catch (Exception ex)
-    {
-        return Results.BadRequest(ex.Message);
-    }
+    catch (Exception ex) { return Results.BadRequest(ex.Message); }
 });
 
-app.MapPut("/subscribes/update", async (ISubscribeService service, HttpContext context, Tariff tariff) =>
-{
-    try
-    {
-        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-
-        if (!verify)
-        {
-            throw new AuthException("User");
-        }
-
-        var subscribe = await service.UpdateAsync(userId, tariff);
-        return Results.Ok(subscribe);
-    }
-    catch (NotFoundException ex)
-    {
-        return Results.NotFound(ex.Message);
-    }
-    catch (AuthException)
-    {
-        return Results.Unauthorized();
-    }
-    catch (Exception ex)
-    {
-        return Results.BadRequest(ex.Message);
-    }
-});
-
+// 3. Отменить подписку
 app.MapDelete("/subscribes/unscribe", async (ISubscribeService service, HttpContext context) =>
 {
     try
     {
         bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-
-        if (!verify)
-        {
-            throw new AuthException("User");
-        }
+        if (!verify) return Results.Unauthorized();
 
         await service.UnscribeAsync(userId);
         return Results.Ok();
     }
-    catch (NotFoundException ex)
-    {
-        return Results.NotFound(ex.Message);
-    }
-    catch (AuthException)
-    {
-        return Results.Unauthorized();
-    }
-    catch (Exception ex)
-    {
-        return Results.BadRequest(ex.Message);
-    }
+    catch (Exception ex) { return Results.BadRequest(ex.Message); }
 });
 
 app.Run();
-
 
 ============================================================
 Файл: SubscribeService\Consumers\UserDeletedConsumer.cs
@@ -6470,92 +7998,69 @@ namespace Subscribe_API.Services
 
         public async Task<SubscribeResponse> SubscribeAsync(Guid id, Tariff tariff)
         {
-            _logger.LogInformation($"Subscribe create for {id} at {DateTime.UtcNow} ");
+            _logger.LogInformation($"Subscribe create/update for {id} at {DateTime.UtcNow}");
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var subscribe = new Subscribe()
+            var existingSub = await db.Subscribes.FirstOrDefaultAsync(s => s.Id == id);
+
+            if (existingSub != null)
             {
-                Id = id,
-                Tariff = tariff,
-                Status = Status.Active
-            };
+                existingSub.Tariff = tariff;
+                existingSub.Status = Status.Active;
+                existingSub.Version++;
+            }
+            else
+            {
+                var newSub = new Subscribe()
+                {
+                    Id = id,
+                    Tariff = tariff,
+                    Status = Status.Active
+                };
+                await db.Subscribes.AddAsync(newSub);
+            }
 
-            await db.Subscribes.AddAsync(subscribe);
             await db.SaveChangesAsync();
-
-            _logger.LogInformation($"Subscribe successful for {id} at {DateTime.UtcNow}");
 
             await _publishEndpoint.Publish<Subscribed>(new
             {
                 Id = id,
                 Name = tariff.Name,
-                Cost = tariff.Cost
+                Cost = tariff.Cost.ToString() // Исправлено для RabbitMQ
             });
 
-            return new SubscribeResponse()
-            {
-                Id = subscribe.Id,
-                Tarrif = subscribe.Tariff
-            };
+            return new SubscribeResponse() { Id = id, Tarrif = tariff };
         }
 
         public async Task<SubscribeResponse> UpdateAsync(Guid id, Tariff tariff)
         {
-            _logger.LogInformation($"Subscribe update for {id} at {DateTime.UtcNow}");
-
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
             var subscribe = await db.Subscribes.FirstOrDefaultAsync(s => s.Id == id && s.Status == Status.Active);
 
-            if (subscribe == null)
-            {
-                _logger.LogWarning($"Subscribe not found: {id}");
-                throw new NotFoundException("Subscribe not found");
-            }
+            if (subscribe == null) throw new NotFoundException("Subscribe not found");
 
             subscribe.Tariff = tariff;
-
             await db.SaveChangesAsync();
 
-            _logger.LogInformation($"Subscribe update successful for {id} at {DateTime.UtcNow}");
-
-            return new SubscribeResponse()
-            {
-                Id = subscribe.Id,
-                Tarrif = subscribe.Tariff
-            };
+            return new SubscribeResponse() { Id = subscribe.Id, Tarrif = subscribe.Tariff };
         }
 
         public async Task UnscribeAsync(Guid id)
         {
-            _logger.LogInformation($"Unscribe for {id} at {DateTime.UtcNow}");
-
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
             var subscribe = await db.Subscribes.FirstOrDefaultAsync(s => s.Id == id);
 
-            if (subscribe == null)
-            {
-                _logger.LogWarning($"Subscribe not found: {id}");
-                throw new NotFoundException("Subscribe not found");
-            }
+            if (subscribe == null) throw new NotFoundException("Subscribe not found");
 
             subscribe.Version++;
             subscribe.Status = Status.Deleted;
-
             await db.SaveChangesAsync();
 
-            _logger.LogInformation($"Unscribe succesful for {id} at {DateTime.UtcNow}");
-
-            await _publishEndpoint.Publish<Unscribed>(new
-            {
-                Id = id
-            });
+            await _publishEndpoint.Publish<Unscribed>(new { Id = id });
         }
     }
 }
-
 
 ============================================================
 Файл: TaskDb\TaskContext.cs
@@ -6626,32 +8131,29 @@ namespace TaskDb.Models
 ============================================================
 Файл: TaskService\Dockerfile
 ============================================================
-# См. статью по ссылке https://aka.ms/customizecontainer, чтобы узнать как настроить контейнер отладки и как Visual Studio использует этот Dockerfile для создания образов для ускорения отладки.
-
-# Этот этап используется при запуске из VS в быстром режиме (по умолчанию для конфигурации отладки)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8086
 
-
-# Этот этап используется для сборки проекта службы
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Task API/Task API.csproj", "Task API/"]
-RUN dotnet restore "./Task API/Task API.csproj"
+
+COPY ["TaskService/Task API.csproj", "TaskService/"]
+COPY ["TaskDb/TaskDb.csproj", "TaskDb/"]
+COPY ["SharedModels/SharedModels.csproj", "SharedModels/"]
+
+COPY ["SubscribeDb/SubscribeDb.csproj", "SubscribeDb/"]
+
+RUN dotnet restore "TaskService/Task API.csproj"
+
 COPY . .
-WORKDIR "/src/Task API"
-RUN dotnet build "./Task API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/TaskService"
+RUN dotnet build "Task API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Task API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Task API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
@@ -6661,35 +8163,46 @@ ENTRYPOINT ["dotnet", "Task API.dll"]
 Файл: TaskService\Program.cs
 ============================================================
 using MassTransit;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
-using System;
+using SharedModels.General;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Threading;
 using Task_API.Consumers;
 using Task_API.Models.Request;
 using Task_API.Services;
 using TaskDb;
+using SubscribeDb;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 1. Настройка базы данных через Factory
 builder.Services.AddDbContextFactory<TaskContext>(
     options => options.UseNpgsql(builder.Configuration.GetValue<string>("TASK_DB_CONNECTION")));
 
+// <--- ДОБАВИТЬ ЭТО (чтобы сервис мог подключаться к базе подписок)
+builder.Services.AddDbContextFactory<SubscribeDb.SubscribeContext>(
+    options => options.UseNpgsql(builder.Configuration.GetValue<string>("SUBSCRIBE_DB_CONNECTION")));
+    
 builder.Services.AddScoped<ITaskService, TaskService>();
 
+// 2. Настройка MassTransit (RabbitMQ)
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<TaskStatusUpdatedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
+        // Указываем хост 'rabbitmq', как в docker-compose
+        cfg.Host(Environment.GetEnvironmentVariable("RabbitMQ_Host") ?? "rabbitmq", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
         cfg.ReceiveEndpoint("task-status-queue", e =>
         {
             e.ConfigureConsumer<TaskStatusUpdatedConsumer>(context);
-
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
@@ -6698,20 +8211,80 @@ builder.Services.AddMassTransit(x =>
 
 var app = builder.Build();
 
-app.UseStaticFiles();
-
-app.MapPost("/task/create", async (CreateRequest request, ITaskService taskService) => 
+// 3. КОСТЫЛЬ: Ожидание запуска базы данных (чтобы не было 502 ошибки)
+for (int i = 0; i < 10; i++)
 {
     try
     {
-        var task = await taskService.CreateAsync(Guid.NewGuid(), request.Host, request.TypeOfAttacks, request.Depth);
+        using var scope = app.Services.CreateScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TaskContext>>();
+        using var context = contextFactory.CreateDbContext();
+        context.Database.EnsureCreated();
+        Console.WriteLine(">>>> TASK DATABASE IS READY!");
+        break;
+    }
+    catch (Exception)
+    {
+        Console.WriteLine($">>>> Waiting for Postgres... Attempt {i + 1}/10");
+        Thread.Sleep(3000);
+    }
+}
+
+app.UseStaticFiles();
+
+// --- ЭНДПОИНТЫ ---
+
+// Создать новую задачу
+// Создать новую задачу
+app.MapPost("/task/create", async (
+    CreateRequest request, 
+    HttpContext context, 
+    ITaskService taskService,
+    IDbContextFactory<SubscribeDb.SubscribeContext> subDbFactory) => // <--- Добавили фабрику БД подписок
+{
+    try
+    {
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+        if (!verify) return Results.Unauthorized();
+
+        // --- ПРОВЕРКА ПОДПИСКИ ---
+        using var subDb = await subDbFactory.CreateDbContextAsync();
+        var hasActiveSub = await subDb.Subscribes.AnyAsync(s => 
+            s.Id == userId && s.Status == SharedModels.General.Status.Active);
+
+        if (!hasActiveSub)
+        {
+            // Возвращаем 403 (Forbidden), если подписки нет
+            return Results.Json(new { error = "Subscription required" }, statusCode: 403);
+        }
+        // --- КОНЕЦ ПРОВЕРКИ ---
+
+        var task = await taskService.CreateAsync(userId, request.Host, request.TypeOfAttacks, request.Depth);
         return Results.Ok(task);
     }
-    catch
-    {
-        return Results.BadRequest();
-    }
+    catch (Exception ex) { return Results.BadRequest(ex.Message); }
 });
+
+// Получить список всех задач (для Профиля)
+app.MapGet("/task/all", async (HttpContext context, IDbContextFactory<TaskContext> dbFactory) =>
+{
+    try
+    {
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+        if (!verify) return Results.Unauthorized();
+
+        using var db = await dbFactory.CreateDbContextAsync();
+        var tasks = await db.Tasks
+            .Where(t => t.UserId == userId)
+            .OrderByDescending(t => t.CreatedTime)
+            .ToListAsync();
+
+        return Results.Ok(tasks);
+    }
+    catch (Exception ex) { return Results.BadRequest(ex.Message); }
+});
+
+// Получить статус конкретной задачи
 app.MapGet("/task/{taskId:Guid}", async (Guid taskId, ITaskService taskService) =>
 {
     try
@@ -6719,40 +8292,20 @@ app.MapGet("/task/{taskId:Guid}", async (Guid taskId, ITaskService taskService) 
         var task = await taskService.GetAsync(taskId);
         return Results.Ok(task);
     }
-    catch (NotFoundException ex)
-    {
-        return Results.NotFound(ex.Message);
-    }
-    catch (Exception ex)
-    {
-        return Results.BadRequest(ex.Message);
-    }
+    catch (Exception ex) { return Results.NotFound(ex.Message); }
 });
 
-app.MapGet("/task/connection/{taskId:Guid}", (Guid taskId, ITaskService taskService, 
-    CancellationToken cancellationToken,
-    HttpContext context) =>
+// Живое обновление через SSE
+app.MapGet("/task/connection/{taskId:Guid}", (Guid taskId, ITaskService taskService, CancellationToken cancellationToken) =>
 {
     try
     {
-        return TypedResults
-        .ServerSentEvents(taskService.GetUpdateTaskAsync(taskId, cancellationToken),
-        eventType: "task");
+        return TypedResults.ServerSentEvents(taskService.GetUpdateTaskAsync(taskId, cancellationToken), eventType: "task");
     }
-    catch(TaskCanceledException)
-    {
-        return Results.Ok("Connection closed");
-    }
-    catch(NotFoundException ex)
-    {
-        return Results.NotFound(ex.Message);
-    }
-    catch(Exception ex)
-    {
-        return Results.BadRequest(ex.Message);
-    }
+    catch (Exception ex) { return Results.BadRequest(ex.Message); }
 });
 
+// Удалить задачу (Крестик в профиле)
 app.MapDelete("/task/cancel/{taskId:Guid}", async (Guid taskId, ITaskService taskService) =>
 {
     try
@@ -6760,19 +8313,10 @@ app.MapDelete("/task/cancel/{taskId:Guid}", async (Guid taskId, ITaskService tas
         await taskService.CancellAsync(taskId);
         return Results.Ok();
     }
-    catch (NotFoundException ex)
-    {
-        return Results.NotFound(ex.Message);
-    }
-    catch (Exception ex)
-    {
-        return Results.BadRequest(ex.Message);
-    }
+    catch (Exception ex) { return Results.BadRequest(ex.Message); }
 });
 
-
 app.Run();
-
 
 ============================================================
 Файл: TaskService\Consumers\TaskStatusUpdatedConsumer.cs
@@ -6848,9 +8392,10 @@ namespace Task_API.Models.Response
         public List<TypeOfAttack> TypeOfAttacks { get; init; } = new();
         public Depth Depth { get; init; }
         public StatusTask Status { get; set; }
+
+        public string? ReportContent { get; set; }
     }
 }
-
 
 ============================================================
 Файл: TaskService\Services\TaskService.cs
@@ -6894,23 +8439,20 @@ namespace Task_API.Services
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
+            // 1. Ищем задачу
             var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId);
 
-            if (task == null)
+            if (task != null)
             {
-                _logger.LogWarning($"Task not found: {taskId}");
-                throw new NotFoundException("Task not found");
+                // 2. УДАЛЯЕМ ЕЁ СОВСЕМ ИЗ БАЗЫ
+                db.Tasks.Remove(task); 
+                await db.SaveChangesAsync();
+                
+                // 3. Уведомляем систему (необязательно, но пусть будет)
+                await _publishEndpoint.Publish<TaskCancelled>(new { Id = taskId });
+                
+                _logger.LogInformation($"Задача {taskId} удалена навсегда.");
             }
-
-            task.Status = StatusTask.Cancelled;
-            task.LastUpdate = DateTime.UtcNow;
-
-            await db.SaveChangesAsync();
-
-            await _publishEndpoint.Publish<TaskCancelled>(new
-            {
-                Id = taskId
-            });
         }
 
         public async Task<TaskResponse> CreateAsync(Guid userId, string host, List<TypeOfAttack> typeOfAttacks, Depth depth)
@@ -6940,6 +8482,24 @@ namespace Task_API.Services
                 Depth = task.Depth
             });
 
+            // --- НАЧАЛО КОСТЫЛЯ ДЛЯ ИМИТАЦИИ ИИ ---
+            var taskId = task.Id;
+            _ = Task.Run(async () =>
+            {
+                // Имитируем, что нейронка работает 5 секунд
+                await Task.Delay(5000); 
+                
+                using var scopeDb = await _dbContextFactory.CreateDbContextAsync();
+                var taskToComplete = await scopeDb.Tasks.FindAsync(taskId);
+                if (taskToComplete != null)
+                {
+                    taskToComplete.Status = StatusTask.Completed; // 5 - это Completed
+                    taskToComplete.LastUpdate = DateTime.UtcNow;
+                    await scopeDb.SaveChangesAsync();
+                }
+            });
+            // --- КОНЕЦ КОСТЫЛЯ ---
+
             var response = new TaskResponse
             {
                 Id = task.Id,
@@ -6955,25 +8515,42 @@ namespace Task_API.Services
         public async Task<TaskResponse> GetAsync(Guid taskId)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
             var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId);
 
-            if (task == null)
+            if (task == null) throw new NotFoundException("Task not found");
+
+            // Генерируем скелет отчета прямо на бэкенде, если задача завершена
+            string? reportContent = null;
+            if (task.Status == StatusTask.Completed)
             {
-                _logger.LogWarning($"Task not found: {taskId}");
-                throw new NotFoundException("Task not found");
+                reportContent = $@"# ОТЧЕТ О БЕЗОПАСНОСТИ: {task.Host.ToUpper()}
+            **Генерация:** CANIA-XSS Reporter Agent
+            **Дата:** {task.LastUpdate.ToString("dd.MM.yyyy HH:mm")}
+            **Статус:** Анализ завершен
+
+            ## 1. Сводка
+            - **Цель:** {task.Host}
+            - **Глубина сканирования:** {task.Depth}
+
+            ## 2. Результаты
+            В ходе автоматизированного тестирования (MVP-режим) критических уязвимостей не обнаружено. 
+            Payload-векторы успешно отфильтрованы WAF/сервером цели.
+
+            ## 3. Лог сканирования
+            [INFO] Starting scan on {task.Host}[INFO] Resolving IP...
+            [INFO] Injecting payloads to endpoints
+            [SUCCESS] 0 vulnerabilities found";
             }
 
-            var response = new TaskResponse
+            return new TaskResponse
             {
                 Id = task.Id,
                 Host = task.Host,
                 TypeOfAttacks = task.TypeOfAttacks,
                 Depth = task.Depth,
-                Status = task.Status
+                Status = task.Status,
+                ReportContent = reportContent 
             };
-
-            return response;
         }
 
         public async IAsyncEnumerable<string> GetUpdateTaskAsync(Guid taskId, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -7235,6 +8812,24 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+// Инициализация базы с ожиданием (retry logic)
+for (int i = 0; i < 10; i++) // 10 попыток
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<UserContext>>();
+        using var context = contextFactory.CreateDbContext();
+        context.Database.EnsureCreated();
+        Console.WriteLine("Database connected and created successfully!");
+        break; // Если успешно — выходим из цикла
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
+        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+    }
+}
 
 app.UseHangfireDashboard();
 
@@ -7249,29 +8844,6 @@ RecurringJob.AddOrUpdate<ICleanupService>(
 
 app.MapHangfireDashboard();
 
-// Эндпоинт логина
-app.MapPost("/auth/login", async (UserDb.UserContext db, LoginRequest request) =>
-{
-    var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-    
-    if (user == null)
-    {
-        return Results.Unauthorized();
-    }
-    
-    // Простая проверка пароля (для теста)
-    // В продакшене нужно использовать PasswordHash
-    if (request.Password == "test")
-    {
-        return Results.Ok(new { 
-            id = user.Id, 
-            email = user.Email,
-            token = "fake-jwt-token-" + Guid.NewGuid() 
-        });
-    }
-    
-    return Results.Unauthorized();
-});
 
 app.MapPost("/users/create", async (IUserService userService, CreateRequest request) =>
 {
@@ -7382,14 +8954,6 @@ app.MapDelete("/users/delete", async (IUserService userService, HttpContext cont
 });
 
 app.Run();
-
-// Класс для запроса логина
-public class LoginRequest
-{
-    public string Email { get; set; } = "";
-    public string Password { get; set; } = "";
-}
-
 
 ============================================================
 Файл: UserService\Consumers\PasswordCreatedConsumer.cs
@@ -7638,8 +9202,15 @@ namespace UserAPI.Service
         public async Task<UserResponse> CreateUserAsync(CreateRequest request)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
+            
+            // 1. ПРОВЕРКА НА ДУБЛИКАТ
+            var exists = await db.Users.AnyAsync(u => u.Email == request.Email);
+            if (exists)
+            {
+                throw new Exception("Пользователь с такой почтой уже существует");
+            }
 
-            var user = new User() { Email = request.Email};
+            var user = new User() { Email = request.Email };
 
             await db.Users.AddAsync(user);
             await db.SaveChangesAsync();

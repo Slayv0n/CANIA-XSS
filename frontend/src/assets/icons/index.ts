@@ -22,3 +22,5 @@ export * from './FeedbackIcon'
 export * from './Light'
 export * from './Mail'
 export * from './Password'
+
+export * from './ArrowUpRight'
