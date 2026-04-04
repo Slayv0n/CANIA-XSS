@@ -5,10 +5,11 @@ import { api, TaskItem } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { CloseIcon , Download, ArrowUpRight} from '../assets/icons';
+import { useLanguage } from '../context/LanguageContext';
 
 
 export function Profile() {
-  // 1. Состояние для списка отчетов
+  const { t } = useLanguage();
   const [reports, setReports] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<any>(null);
@@ -17,8 +18,17 @@ export function Profile() {
 
   const { userEmail } = useAuth();
 
+  // Маппинг названия тарифа с бэкенда на локализованный ключ
+  const getLocalizedPlanName = (name: string): string => {
+    const lower = name.toLowerCase();
+    if (lower.includes('1 month') || lower.includes('1 месяц')) return t('profile.planMonth1');
+    if (lower.includes('6 month') || lower.includes('6 месяц')) return t('profile.planMonth6');
+    if (lower.includes('year') || lower.includes('год')) return t('profile.planYear1');
+    return name; // fallback — показать как есть
+  };
+
   const handleDownload = (e: React.MouseEvent, host: string) => {
-    e.stopPropagation(); // Чтобы не открывался сам отчет
+    e.stopPropagation();
     const reportText = `ОТЧЕТ CANIA-XSS\nЦель: ${host}\nСтатус: Уязвимостей не найдено (MVP)\nДата: ${new Date().toLocaleString()}`;
     const blob = new Blob([reportText], { type: 'text/plain' });
     const link = document.createElement('a');
@@ -42,11 +52,10 @@ export function Profile() {
       setSubscription(null);
     } catch (err) {
       console.error(err);
-      alert("Не удалось отменить подписку");
+      alert(t('profile.subCancelError'));
     }
   };
 
-  // 2. Загружаем данные при входе на страницу
   useEffect(() => {
     api.getMyTasks()
       .then((data) => {
@@ -71,15 +80,15 @@ export function Profile() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:py-20 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            
+
             <div className="md:col-span-2 flex flex-col">
                 <h1 className="text-3xl font-bold uppercase text-main-text mb-8">
-                    Ваши отчеты
+                    {t('profile.title')}
                 </h1>
-                
+
                 <div className="flex flex-col gap-4">
                     {loading ? (
-                        <p className="text-desc-text animate-pulse">Загрузка отчетов...</p>
+                        <p className="text-desc-text animate-pulse">{t('profile.loading')}</p>
                     ) : reports.length > 0 ? (
                         reports.map((report) => (
                             <button
@@ -87,39 +96,33 @@ export function Profile() {
                                 onClick={() => navigate(`/scanner/${report.id}`)}
                                 className="w-full flex justify-between items-center p-6 bg-card-bg border border-card-border rounded-xl hover:border-brand-red transition-colors duration-300 group cursor-pointer"
                             >
-                                {/* ЛЕВАЯ ЧАСТЬ: Текст */}
                                 <div className="flex flex-col items-start gap-1 text-left">
                                     <span className="text-main-text font-medium uppercase text-sm">
-                                        Отчет по сайту: {report.host}
+                                        {t('profile.reportPrefix')} {report.host}
                                     </span>
                                     <span className={`text-[10px] uppercase font-bold ${report.status === 5 ? 'text-green-500' : 'text-brand-red'}`}>
-                                        {report.status === 5 ? "Готов" : "В процессе"}
+                                        {report.status === 5 ? t('scanner.ready') : t('scanner.inProcess')}
                                     </span>
                                 </div>
 
-                                {/* ПРАВАЯ ЧАСТЬ: Крестик и Стрелка вместе */}
-                                <div className="flex items-center gap-8"> 
-                                    {/* Кнопка удаления */}
+                                <div className="flex items-center gap-8">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleDelete(report.id);
                                         }}
                                         className="hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
-                                        aria-label="Удалить отчет"
-                                        title="Удалить отчет"
+                                        aria-label={t('profile.deleteReport')}
+                                        title={t('profile.deleteReport')}
                                     >
                                         <CloseIcon />
                                     </button>
 
-                                    
-
-                                    {/* КНОПКА СКАЧАТЬ */}
                                     <button
                                         onClick={(e) => handleDownload(e, report.host)}
                                         className="hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
-                                        aria-label="Скачать отчет"
-                                        title="Скачать отчет"
+                                        aria-label={t('profile.downloadReport')}
+                                        title={t('profile.downloadReport')}
                                     >
                                         <Download />
                                     </button>
@@ -130,7 +133,7 @@ export function Profile() {
                         ))
                     ) : (
                         <div className="p-10 border border-dashed border-card-border rounded-xl text-center">
-                            <p className="text-desc-text">У вас пока нет созданных отчетов.</p>
+                            <p className="text-desc-text">{t('profile.noReports')}</p>
                         </div>
                     )}
                 </div>
@@ -138,72 +141,68 @@ export function Profile() {
 
             <div className="md:col-span-1 flex flex-col">
                 <div className="bg-card-bg border border-card-border rounded-xl p-8 min-h-125">
-                    
+
                     <h2 className="text-2xl font-bold uppercase text-main-text mb-12">
-                        Подписка
+                        {t('profile.subTitle')}
                     </h2>
 
                     {subscription && (
-                            <button 
+                            <button
                                 onClick={handleCancelSub}
                                 style={{ marginTop: '30px', color: 'gray', fontSize: '12px', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                             >
-                                [DEV] Сбросить подписку
+                                {t('profile.devReset')}
                             </button>
                     )}
-                    
+
                     <div className="text-desc-text text-sm leading-relaxed flex flex-col gap-6">
-                        
-                        {/* Блок с аккаунтом */}
+
                         <div>
-                            <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Аккаунт</p>
+                            <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.account')}</p>
                             <p className="font-bold text-main-text truncate" title={userEmail || ''}>
-                                {userEmail || "Неизвестно"}
+                                {userEmail || t('profile.unknown')}
                             </p>
                         </div>
 
-                        {/* Блок с тарифом (Зависит от того, пришла ли подписка с бэка) */}
                         {subLoading ? (
-                            <p className="animate-pulse text-brand-red">Проверка статуса...</p>
+                            <p className="animate-pulse text-brand-red">{t('profile.checking')}</p>
                         ) : subscription ? (
-                            // ЕСЛИ ПОДПИСКА КУПЛЕНА:
                             <>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.currentTariff')}</p>
                                     <p className="font-bold text-brand-red text-xl uppercase">
-                                        {subscription.name} {/* Название тарифа с бэкенда */}
+                                        {getLocalizedPlanName(subscription.name)}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.status')}</p>
                                     <p className="text-green-500 font-bold uppercase tracking-wider">
-                                        Активен
+                                        {t('profile.active')}
                                     </p>
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-card-border">
                                     <p className="text-xs opacity-70">
-                                        Безлимитные проверки и приоритетная обработка отчетов включены.
+                                        {t('profile.unlimitedText')}
                                     </p>
                                 </div>
                             </>
                         ) : (
-                            // ЕСЛИ ПОДПИСКИ НЕТ (Базовый уровень):
                             <>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.currentTariff')}</p>
                                     <p className="font-bold text-main-text text-xl uppercase">
-                                        Базовый
+                                        {t('profile.basic')}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.status')}</p>
                                     <p className="text-desc-text font-bold uppercase tracking-wider">
-                                        Активен
+                                        {t('profile.active')}
                                     </p>
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-card-border">
                                     <p className="text-xs opacity-50 mt-2">
-                                        Оформите подписку в разделе "Тарифы" для снятия ограничений.
+                                        {t('pricing.noSubText')}
                                     </p>
                                 </div>
                             </>

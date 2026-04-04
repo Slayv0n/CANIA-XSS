@@ -34,11 +34,11 @@ export default function Header() {
   return (
     <header className="h-20 border-b border-light-red flex items-center justify-between px-10 relative z-50 header-root">
 
-      <button 
-        onClick={() => navigate('/')} 
+      <button
+        onClick={() => navigate('/')}
         className="flex items-center cursor-pointer text-main-text hover:opacity-80 transition-opacity rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
-        aria-label="На главную страницу" 
-        title="На главную страницу"
+        aria-label={t('header.home')}
+        title={t('header.home')}
       >
         <LogoFull className="w-28 md:w-36 h-auto" />
       </button>
@@ -74,7 +74,7 @@ export default function Header() {
         <button
             onClick={() => setLoginModal(true)}
             className="bg-brand-red pl-6.5 pr-8 py-3 rounded-2xl text-sm font-bold text-white hover:bg-red-800 cursor-pointer flex items-center gap-2 "
-            aria-label="Войти в аккаунт"
+            aria-label={t('header.login')}
         >
             <UserLoginIcon />
              {t('header.login')}
@@ -84,7 +84,7 @@ export default function Header() {
           <button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 transition-colors duration-300 cursor-pointer flex items-center gap-2"
-              aria-label="Войти в профиль"
+              aria-label={t('profileMenu.profile')}
               aria-expanded={isProfileMenuOpen}
           >
               <UserProfileIcon />
@@ -105,40 +105,40 @@ export default function Header() {
                 setIsProfileMenuOpen(false);
               }}
               className='pt-4 cursor-pointer hover:text-brand-red text-lg truncate w-full'
-              title={userEmail || 'Профиль'}
+              title={userEmail || t('profileMenu.profile')}
               style={{ transition: 'none' }}
             >
-              {userEmail || 'Профиль'}
+              {userEmail || t('profileMenu.profile')}
             </h3>
 
             <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
               {theme === 'dark' ? (
                 <>
-                  <Light /> Светлая тема
+                  <Light /> {t('profileMenu.themeLight')}
                 </>
               ) : (
                 <>
-                  <Dark /> Тёмная тема
+                  <Dark /> {t('profileMenu.themeDark')}
                 </>
               )}
             </button>
 
             <button
-              onClick={() => { openSettingsModal('password'); setIsProfileMenuOpen(false); }}  
+              onClick={() => { openSettingsModal('password'); setIsProfileMenuOpen(false); }}
               className='flex place-items-start gap-2 cursor-pointer'>
-              <Password /> Смена пароля
+              <Password /> {t('profileMenu.changePassword')}
             </button>
 
-            <button 
-              onClick={() => { openSettingsModal('email'); setIsProfileMenuOpen(false); }} 
+            <button
+              onClick={() => { openSettingsModal('email'); setIsProfileMenuOpen(false); }}
               className='flex place-items-center gap-2 cursor-pointer'>
-              <Mail /> Смена почты
+              <Mail /> {t('profileMenu.changeEmail')}
             </button>
 
-            <button 
-              onClick={() => setFeedbackModal(true)} 
+            <button
+              onClick={() => setFeedbackModal(true)}
               className='flex place-items-center gap-2 cursor-pointer'>
-              <FeedbackIcon /> Отправить отзыв
+              <FeedbackIcon /> {t('profileMenu.feedback')}
             </button>
 
             <button
@@ -150,7 +150,7 @@ export default function Header() {
               className='pb-4 flex place-items-center gap-2 cursor-pointer'
               style={{ transition: 'none' }}
             >
-              <Exit /> Выход
+              <Exit /> {t('profileMenu.logout')}
             </button>
           </div>
         </div>

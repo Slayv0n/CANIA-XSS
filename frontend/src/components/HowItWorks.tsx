@@ -1,23 +1,23 @@
 import {FirstVector, SecondVector} from '../assets/icons/index';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function HowItWorks() {
+  const { t } = useLanguage();
+
   const steps = [
     {
-      title: "Задайте цели проверки",
-      text: `Вставьте URL вашего сайта. Выберите уровень сканирования (быстрый/глубокий) и
-      выберите тип атаки (например, DOM-based, reflected, stored).`,
+      title: t('howItWorks.step1Title'),
+      text: t('howItWorks.step1Text'),
       marginClass: "md:mt-0"
     },
     {
-      title: "Запустите поиск уязвимостей",
-      text: `Наша AI-система эмулирует поведение злоумышленника, отправляя тысячи безопасных тестовых
-      запросов. Алгоритм анализирует ответы сервера в реальном времени, выявляя даже скрытые векторы атак.`,
+      title: t('howItWorks.step2Title'),
+      text: t('howItWorks.step2Text'),
       marginClass: "md:mt-32"
     },
     {
-      title: "Изучите результаты аудита",
-      text: `Система формирует структурированный отчет с классификацией найденных проблем по уровню риска
-      (Critical, High, Medium). Для каждой уязвимости предоставляется доказательство концепции (PoC) и шаги по устранению.`,
+      title: t('howItWorks.step3Title'),
+      text: t('howItWorks.step3Text'),
       marginClass: "md:mt-64"
     }
   ];
@@ -27,13 +27,13 @@ export default function HowItWorks() {
       <div className="max-w-7xl mx-auto">
 
         <h2 className="text-4xl md:text-6xl font-bold uppercase mb-8 text-center text-main-text">
-          Как работает CANIA?
+          {t('howItWorks.title')}
         </h2>
-        <h3 className='text-center mb-20'>Автоматизированный поиск уязвимостей с помощью ИИ: от настройки до готового отчета.</h3>
+        <h3 className='text-center mb-20'>{t('howItWorks.subtitle')}</h3>
 
         {/* Контейнер с relative для позиционирования векторов */}
         <div className="relative">
-          
+
           {/* Сетка с колонками */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {steps.map((step, index) => (

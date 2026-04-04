@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot } from '../assets/icons';
 import { api, setAccessToken, setRefreshToken, RegisterRequest, LoginRequest } from '../api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface LoginCardProps {
     onClose: () => void;
@@ -11,6 +12,7 @@ type AuthMode = 'login' | 'register' | 'forgot_email' | 'forgot_timer' | 'new_pa
 
 export default function LoginCard({ onClose }: LoginCardProps) {
     const { login } = useAuth();
+    const { t } = useLanguage();
     const [authMode, setAuthMode] = useState<AuthMode>('login');
 
     // Состояния полей
@@ -95,8 +97,8 @@ export default function LoginCard({ onClose }: LoginCardProps) {
             }
 
             if (authMode === 'new_password' && isNewPasswordValid) {
-                await api.completeReset(email, resetToken, password); 
-                alert("Пароль успешно изменен! Теперь войдите.");
+                await api.completeReset(email, resetToken, password);
+                alert(t('auth.passwordSuccess'));
                 setAuthMode('login');
             }
         } catch (err) {
@@ -111,9 +113,9 @@ export default function LoginCard({ onClose }: LoginCardProps) {
             <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
-                <button 
-                    onClick={onClose} 
-                    aria-label="Закрыть окно" 
+                <button
+                    onClick={onClose}
+                    aria-label={t('auth.ariaClose')}
                     className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors duration-300 z-20 cursor-pointer">
                     <CloseIcon />
                 </button>
@@ -123,7 +125,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {(authMode === 'login' || authMode === 'register') && (
                         <>
                             <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">
-                                {authMode === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ'}
+                                {authMode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
                             </h1>
 
                             {error && (
@@ -134,14 +136,14 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
                             <div className="flex flex-col gap-5">
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.email')}</label>
+                                    <input type="email" placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
 
                                 <div className="flex flex-col gap-2 relative">
-                                    <label className="text-gray-400 text-sm pl-1">Пароль</label>
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.password')}</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
+                                        <input type={showPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
                                             {showPassword ? (
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -154,32 +156,32 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
                                 {authMode === 'register' && (
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                        <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                        <label className="text-gray-400 text-sm pl-1">{t('auth.confirmPassword')}</label>
+                                        <input type="password" placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 )}
 
                                 {authMode === 'login' ? (
                                     <div className="flex justify-end">
                                         <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white transition-colors duration-300 cursor-pointer">
-                                            Забыли пароль?
+                                            {t('auth.forgotPassword')}
                                         </button>
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2 mt-2">
                                         <input type="checkbox" id="policy" checked={agreePolicy} onChange={(e) => setAgreePolicy(e.target.checked)} className="w-4 h-4 rounded border-gray-600 bg-input-bg text-brand-red focus:ring-0 cursor-pointer" />
                                         <label htmlFor="policy" className="text-xs text-gray-400 cursor-pointer">
-                                            Согласен с <a href="#" className="underline hover:text-white">политикой конфиденциальности</a>
+                                            {t('auth.policy')} <a href="#" className="underline hover:text-white">{t('auth.policyLink')}</a>
                                         </label>
                                     </div>
                                 )}
 
-                                <button 
-                                    type="submit" 
-                                    disabled={loading || (authMode === 'login' ? !isLoginValid : !isRegisterValid)} 
+                                <button
+                                    type="submit"
+                                    disabled={loading || (authMode === 'login' ? !isLoginValid : !isRegisterValid)}
                                     className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${
-                                        (authMode === 'login' ? isLoginValid : isRegisterValid) 
-                                            ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' 
+                                        (authMode === 'login' ? isLoginValid : isRegisterValid)
+                                            ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10'
                                             : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'
                                     }`}
                                 >
@@ -189,32 +191,32 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                                             </svg>
-                                            Загрузка...
+                                            {t('auth.loading')}
                                         </span>
                                     ) : (
-                                        authMode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ'
+                                        authMode === 'login' ? t('auth.loginBtn') : t('auth.registerBtn')
                                     )}
                                 </button>
                             </div>
 
                             <div className="text-center text-sm mt-5">
-                                <span className="text-gray-400">{authMode === 'login' ? 'Нет аккаунта? ' : 'Уже есть аккаунт? '}</span>
+                                <span className="text-gray-400">{authMode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}</span>
                                 <button type="button" onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-brand-red font-bold hover:underline ml-1 cursor-pointer">
-                                    {authMode === 'login' ? 'Зарегистрироваться' : 'Войти'}
+                                    {authMode === 'login' ? t('auth.registerBtn') : t('auth.loginBtn')}
                                 </button>
                             </div>
 
                             <div className="relative my-6">
                                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-                                <div className="relative flex justify-center text-sm"><span className="px-3 bg-main-bg text-gray-500">Или</span></div>
+                                <div className="relative flex justify-center text-sm"><span className="px-3 bg-main-bg text-gray-500">{t('auth.or')}</span></div>
                             </div>
 
                             <div className="flex flex-col gap-3">
                                 <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
-                                    <GoogleIcon className="w-5 h-5" /> Продолжить с Google
+                                    <GoogleIcon className="w-5 h-5" /> {t('auth.google')}
                                 </button>
                                 <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
-                                    <GithubIcon className="w-5 h-5 text-white" /> Продолжить с GitHub
+                                    <GithubIcon className="w-5 h-5 text-white" /> {t('auth.github')}
                                 </button>
                             </div>
                         </>
@@ -223,18 +225,18 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {/* забыли почту */}
                     {authMode === 'forgot_email' && (
                         <>
-                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">ВОССТАНОВЛЕНИЕ ПАРОЛЯ</h1>
+                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.restoreTitle')}</h1>
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.email')}</label>
+                                    <input type="email" placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!email} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${email ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                    ПРОДОЛЖИТЬ
+                                    {t('auth.continueBtn')}
                                 </button>
                             </div>
                             <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white transition-colors duration-300 text-sm cursor-pointer">
-                                ← Назад ко входу
+                                {t('auth.backToLogin')}
                             </button>
                         </>
                     )}
@@ -242,22 +244,22 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {/* ЭКРАН ВВОДА КОДА */}
                     {authMode === 'forgot_timer' && (
                         <div className="flex flex-col gap-6 text-center animate-fade-in">
-                            <h1 className="text-3xl font-bold uppercase tracking-wide">ВВОД КОДА</h1>
-                            
+                            <h1 className="text-3xl font-bold uppercase tracking-wide">{t('auth.codeTitle')}</h1>
+
                             <p className="text-gray-400 text-sm leading-relaxed">
-                                Мы отправили код для сброса пароля на <br/>
+                                {t('auth.codeSentTo')} <br/>
                                 <span className="text-white font-bold">{email}</span>
                             </p>
 
                             {/* ИНПУТ ДЛЯ КОДА */}
                             <div className="flex flex-col gap-2 text-left mt-2">
-                                <label className="text-gray-400 text-sm pl-1">Код из письма</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="Вставьте код..." 
-                                    value={resetToken} 
-                                    onChange={(e) => setResetToken(e.target.value)} 
-                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" 
+                                <label className="text-gray-400 text-sm pl-1">{t('auth.codeLabel')}</label>
+                                <input
+                                    type="text"
+                                    placeholder={t('auth.codePlaceholder')}
+                                    value={resetToken}
+                                    onChange={(e) => setResetToken(e.target.value)}
+                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors"
                                 />
                             </div>
 
@@ -268,31 +270,31 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                         {formatTime(timer)}
                                     </div>
                                 ) : (
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={async () => {
                                             setTimer(60);
                                             await api.resetPasswordRequest(email);
-                                        }} 
+                                        }}
                                         className="text-brand-red hover:text-white font-bold text-sm transition-colors cursor-pointer uppercase tracking-wider"
                                     >
-                                        Отправить код ещё раз
+                                        {t('auth.resendCode')}
                                     </button>
                                 )}
                             </div>
 
                             {/* КНОПКА ПОДТВЕРЖДЕНИЯ */}
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onClick={handleSubmit}
-                                disabled={!resetToken || loading} 
+                                disabled={!resetToken || loading}
                                 className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${resetToken ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}
                             >
-                                {loading ? 'ПРОВЕРКА...' : 'ПОДТВЕРДИТЬ'}
+                                {loading ? t('auth.checkingCode') : t('auth.confirmBtn')}
                             </button>
 
                             <button type="button" onClick={() => setAuthMode('login')} className="mt-2 text-gray-500 hover:text-white text-sm transition-colors cursor-pointer">
-                                Вернуться ко входу
+                                {t('auth.returnToLogin')}
                             </button>
                         </div>
                     )}
@@ -300,20 +302,20 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {/* новый пароль */}
                     {authMode === 'new_password' && (
                         <>
-                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">НОВЫЙ ПАРОЛЬ</h1>
+                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.savePasswordTitle')}</h1>
                             <div className="flex flex-col gap-5">
                                 <div className="flex flex-col gap-2 relative">
-                                    <label className="text-gray-400 text-sm pl-1">Новый пароль</label>
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.newPasswordTitle')}</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
+                                        <input type={showPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                    <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.confirmPassword')}</label>
+                                    <input type="password" placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!isNewPasswordValid} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isNewPasswordValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                    СОХРАНИТЬ
+                                    {t('auth.saveBtn')}
                                 </button>
                             </div>
                         </>

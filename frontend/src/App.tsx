@@ -5,7 +5,7 @@ import { useUI } from './context/UIContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { UIProvider } from './context/UIContext';
-import { LanguageProvider } from './context/LanguageContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 
 
 import BackgroundDecor from './components/BackgroundDecor';
@@ -26,6 +26,15 @@ const Profile = React.lazy(() => import('./pages/Profile').then(module => ({ def
 const Scanner = React.lazy(() => import('./pages/Scanner').then(module => ({ default: module.Scanner })));
 
 import SettingsModal from './components/SettingsModal';
+
+function LoadingFallback() {
+  const { t } = useLanguage();
+  return (
+    <div className="flex h-screen items-center justify-center text-brand-red animate-pulse font-bold uppercase">
+      {t('common.loading')}
+    </div>
+  );
+}
 
 function AppRoutes() {
   const { isAuth, notification, setNotification } = useAuth();
@@ -100,7 +109,7 @@ function AppRoutes() {
   return (
     <div className="h-screen w-full bg-main-bg overflow-hidden relative">
       <div id="scroll-container" className="fixed inset-0 overflow-y-auto z-10 custom-scrollbar animate-fade-in">
-        <Suspense fallback={<div className="flex h-screen items-center justify-center text-brand-red animate-pulse font-bold uppercase">Загрузка модуля...</div>}>
+        <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route 

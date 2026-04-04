@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface FAQItem {
   question: string;
@@ -6,13 +7,13 @@ interface FAQItem {
 }
 
 export default function FAQ() {
-  // Указываем TS, что тут будет массив чисел: <number[]>
+  const { t } = useLanguage();
   const [openIndexes, setOpenIndexes] = React.useState<number[]>([]);
 
   const faqItems: FAQItem[] = [
-    { question: "КАК ЭТО РАБОТАЕТ?", answer: "Lorem ipsum dolor sit amet consectetur..." },
-    { question: "ЭТО БЕЗОПАСНО?", answer: "Commodo lorem ultrices id ultrices diam eget..." },
-    { question: "СКОЛЬКО СТОИТ?", answer: "A duis nam sit id. Nullam sollicitudин." }
+    { question: t('faq.q1'), answer: t('faq.a1') },
+    { question: t('faq.q2'), answer: t('faq.a2') },
+    { question: t('faq.q3'), answer: t('faq.a3') }
   ];
 
   const toggleIndex = (index: number) => {
@@ -24,7 +25,7 @@ export default function FAQ() {
   return (
     <section className="py-24 px-6 border-b border-b-light-red">
         <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl font-bold uppercase mb-12 text-center text-main-text">FAQ</h2>
+        <h2 className="text-4xl font-bold uppercase mb-12 text-center text-main-text">{t('faq.title')}</h2>
         <div className="flex flex-col">
             {faqItems.map((item, index) => {
               const isOpen = openIndexes.includes(index);

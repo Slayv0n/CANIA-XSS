@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { GlowSpot } from '../assets/icons';
 import { api } from '../api';
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 
 interface Plan {
@@ -23,63 +24,64 @@ interface PricesProps {
 }
 
 export default function Prices({ isModal = false, onClose }: PricesProps) {
+  const { t } = useLanguage();
   const { updateSubscriptionStatus } = useAuth();
   const { setPricesModal } = useUI();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleBuy = async (plan: Plan) => {
-    setLoadingPlan(plan.id); // Включаем крутилку на конкретной кнопке
+    setLoadingPlan(plan.id);
     try {
         const tariffData = {
             name: plan.name,
             description: plan.desc,
-            cost: parseInt(plan.price.replace(/\D/g, '')) || 0 
+            cost: parseInt(plan.price.replace(/\D/g, '')) || 0
         };
 
         await api.buySubscription(tariffData);
         alert("Оплата прошла успешно!");
-        await updateSubscriptionStatus(); // Обновляем статус подписки в контексте
-        if (onClose) onClose(); // Закрываем модалку
+        await updateSubscriptionStatus();
+        if (onClose) onClose();
     } catch (err) {
         alert("Ошибка при оплате");
     } finally {
         setLoadingPlan(null);
     }
   };
-  
+
   const plans: Plan[] = [
     {
       id: '1-month',
-      name: '1 месяц',
-      desc: 'Для тестов, разовых проверок',
+      name: t('pricing.month1'),
+      desc: t('pricing.month1Desc'),
       price: '44 900 ₽',
       oldPrice: null,
       pricePerMonth: null,
       period: '/месяц',
       isPopular: false,
-      features:['Безграничное количество запросов', 'Приоритетная обработка', 'Храним все отчеты']
+      features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     },
     {
       id: '6-months',
-      name: '6 месяцев',
-      desc: 'Для регулярного использования',
+      name: t('pricing.month6'),
+      desc: t('pricing.month6Desc'),
       price: '199 000 ₽',
       oldPrice: '-70 400 ₽',
       pricePerMonth: '33 166 ₽',
       period: '/месяц',
       isPopular: true,
-      features:['Безграничное количество запросов', 'Приоритетная обработка', 'Храним все отчеты']
+      features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     },
     {
       id: '1-year',
-      name: 'Год',
-      desc: 'Для команд, максимальная выгода',
+      name: t('pricing.year1'),
+      desc: t('pricing.year1Desc'),
       price: '349 000 ₽',
       oldPrice: '-189 800 ₽',
       pricePerMonth: '29 080 ₽',
       period: '/месяц',
       isPopular: false,
-      features:['Безграничное количество запросов', 'Приоритетная обработка', 'Храним все отчеты']
+      features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     }
   ];
 
@@ -91,27 +93,26 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
   const Content = (
     <div className="max-w-7xl mx-auto">
       <h2 className="text-4xl md:text-5xl font-bold uppercase mb-16 text-center text-main-text">
-        Тарифы
+        {t('pricing.title')}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {plans.map((plan) => (
           <div key={plan.id} className="relative group h-full flex flex-col justify-end">
-            
+
             {plan.isPopular && (
               <GlowSpot className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 pointer-events-none z-0 light:opacity-60 light:group-hover:opacity-100 transition-opacity duration-500 ease-out" />
             )}
-            
-            {/* ТУТ ГЛАВНОЕ: transition-all duration-500 ease-out добавлены прямо в className */}
+
             <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 h-full min-h-145 origin-bottom group-hover:scale-105 group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)] transition-all duration-500 ease-out">
-              
+
               {plan.isPopular && (
                 <div className="absolute top-0 right-0 bg-brand-red text-white text-xs font-bold uppercase px-6 py-2 rounded-tr-4xl rounded-bl-2xl">
-                  Самый популярный
+                  {t('pricing.popular')}
                 </div>
               )}
               <h3 className="text-brand-red text-xl font-bold mb-2">{plan.name}</h3>
               <p className="text-desc-text text-sm mb-8">{plan.desc}</p>
-              
+
               <div className="mb-10">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-4xl font-bold text-main-text leading-none">{plan.price}</span>
@@ -125,21 +126,21 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
                   </div>
                 )}
               </div>
-              
-              <button 
+
+              <button
                   onClick={() => handleBuy(plan)}
                   disabled={loadingPlan === plan.id}
                   className={`w-full py-4 rounded-full font-bold uppercase tracking-wider mb-10 transition-colors duration-300 cursor-pointer ${
-                      plan.isPopular 
-                      ? 'bg-brand-red text-white hover:bg-red-700' 
+                      plan.isPopular
+                      ? 'bg-brand-red text-white hover:bg-red-700'
                       : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'
                   }`}
               >
-                  {loadingPlan === plan.id ? "ОБРАБОТКА ОПЛАТЫ..." : "ВЫБРАТЬ"}
+                  {loadingPlan === plan.id ? t('pricing.processing') : t('pricing.select')}
               </button>
-              
+
               <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors duration-500"></div>
-              
+
               <ul className="flex flex-col gap-4 mt-auto">
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-desc-text">

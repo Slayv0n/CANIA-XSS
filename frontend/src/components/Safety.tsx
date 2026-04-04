@@ -1,29 +1,27 @@
 import { Forward } from '../assets/icons';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SafetyProps {
   onTryClick: () => void;
 }
 
 export default function Safety({ onTryClick }: SafetyProps) {
+  const { t } = useLanguage();
+
   const safetyItems = [
     {
-      title: "Безопасность для вас",
-      text: `Все сканирования выполняются в изолированной среде. Мы не сохраняем ваши данные, не передаём их третьим лицам и не используем для обучения моделей.
-      После завершения аудита все временные файлы удаляются автоматически.`,
-      spanClass: "md:col-start-1 md:col-span-2" 
+      title: t('safety.yourSafetyTitle'),
+      text: t('safety.yourSafetyText'),
+      spanClass: "md:col-start-1 md:col-span-2"
     },
     {
-      title: "Безопасность для цели",
-      text: `Наши тестовые запросы не наносят вреда системе. 
-      Они имитируют реальные атаки, но не эксплуатируют уязвимости — только обнаруживают их. 
-      Вы можете остановить сканирование в любой момент.`,
+      title: t('safety.targetSafetyTitle'),
+      text: t('safety.targetSafetyText'),
       spanClass: "md:col-start-2 md:col-span-2"
     },
     {
-      title: "Прозрачность и контроль",
-      text: `Перед запуском вы выбираете типы атак, глубину сканирования и целевые параметры. 
-      В отчёте — подробное описание каждой найденной уязвимости с 
-      рекомендациями по исправлению. Никакой магии — только прозрачные результаты.`,
+      title: t('safety.transparencyTitle'),
+      text: t('safety.transparencyText'),
       spanClass: "md:col-start-1 md:col-span-2"
     }
   ];
@@ -32,7 +30,7 @@ export default function Safety({ onTryClick }: SafetyProps) {
     <section className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-6xl font-bold uppercase mb-24 text-center text-main-text">
-          КАК МЫ ГАРАНТИРУЕМ БЕЗОПАСНОСТЬ?
+          {t('safety.title')}
         </h2>
         <div className="flex flex-col">
           {safetyItems.map((item, index) => (
@@ -53,7 +51,7 @@ export default function Safety({ onTryClick }: SafetyProps) {
             onClick={onTryClick}
             className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer group"
           >
-            Запустить аудит <Forward />
+            {t('safety.tryBtn')} <Forward />
           </button>
         </div>
       </div>
