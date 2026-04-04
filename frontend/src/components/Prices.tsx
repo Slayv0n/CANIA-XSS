@@ -14,6 +14,7 @@ interface Plan {
   oldPrice: string | null;
   pricePerMonth: string | null;
   period: string;
+  costNumeric?: number;
   isPopular: boolean;
   features: string[];
 }
@@ -35,15 +36,15 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
         const tariffData = {
             name: plan.name,
             description: plan.desc,
-            cost: parseInt(plan.price.replace(/\D/g, '')) || 0
+            cost: plan.costNumeric || 0
         };
 
         await api.buySubscription(tariffData);
-        alert("Оплата прошла успешно!");
+        alert(t('pricing.paymentSuccess'));
         await updateSubscriptionStatus();
         if (onClose) onClose();
     } catch (err) {
-        alert("Ошибка при оплате");
+        alert(t('pricing.paymentError'));
     } finally {
         setLoadingPlan(null);
     }
@@ -54,10 +55,11 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
       id: '1-month',
       name: t('pricing.month1'),
       desc: t('pricing.month1Desc'),
-      price: '44 900 ₽',
-      oldPrice: null,
+      price: t('pricing.priceMonth1'),
+      oldPrice: t('pricing.oldPriceMonth1') || null,
       pricePerMonth: null,
-      period: '/месяц',
+      period: t('pricing.periodMonth'),
+      costNumeric: parseInt(t('pricing.priceMonth1').replace(/\D/g, '')) || 0,
       isPopular: false,
       features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     },
@@ -65,10 +67,11 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
       id: '6-months',
       name: t('pricing.month6'),
       desc: t('pricing.month6Desc'),
-      price: '199 000 ₽',
-      oldPrice: '-70 400 ₽',
-      pricePerMonth: '33 166 ₽',
-      period: '/месяц',
+      price: t('pricing.priceMonth6'),
+      oldPrice: t('pricing.oldPriceMonth6'),
+      pricePerMonth: t('pricing.pricePerMonth6'),
+      period: t('pricing.periodMonth'),
+      costNumeric: parseInt(t('pricing.priceMonth6').replace(/\D/g, '')) || 0,
       isPopular: true,
       features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     },
@@ -76,10 +79,11 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
       id: '1-year',
       name: t('pricing.year1'),
       desc: t('pricing.year1Desc'),
-      price: '349 000 ₽',
-      oldPrice: '-189 800 ₽',
-      pricePerMonth: '29 080 ₽',
-      period: '/месяц',
+      price: t('pricing.priceYear1'),
+      oldPrice: t('pricing.oldPriceYear1'),
+      pricePerMonth: t('pricing.pricePerMonthYear1'),
+      period: t('pricing.periodYear'),
+      costNumeric: parseInt(t('pricing.priceYear1').replace(/\D/g, '')) || 0,
       isPopular: false,
       features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     }
