@@ -81,6 +81,19 @@ function AppRoutes() {
     };
   }, [isNotificationClosing, setNotification]);
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLoginModal(false);
+        setPricesModal(false);
+        setFeedbackModal(false);
+        closeSettingsModal();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [setLoginModal, setPricesModal, setFeedbackModal, closeSettingsModal]);
+
   const LandingPage = () => {
     const handleTryIt = () => {
       if (isAuth) navigate('/profile');

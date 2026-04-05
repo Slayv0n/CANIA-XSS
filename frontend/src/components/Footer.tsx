@@ -41,14 +41,16 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     
                     <div className="flex flex-col gap-6 items-center md:items-start">
-                        <div
+                        <button
                             onClick={handleLogoClick}
+                            aria-label={t('footer.home')} 
+                            title={t('footer.home')}
                             className={`text-main-text hover:opacity-80 cursor-pointer transition-transform ${
                                 isBouncing ? 'scale-95' : 'scale-100'
                             }`}
                         >
                             <LogoFooter className="w-52.75 h-auto" />
-                        </div>
+                        </button>
                         <p className="text-desc-text text-sm leading-relaxed max-w-sm text-center md:text-left">
                             {t('footer.desc')}
                         </p>

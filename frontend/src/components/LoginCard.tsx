@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef} from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useAuth } from '../context/AuthContext';
-import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot } from '../assets/icons';
+import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot, EyeOn, EyeOff } from '../assets/icons';
 import { api, setAccessToken, setRefreshToken, RegisterRequest, LoginRequest } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import { Spinner } from '../assets/icons/Spinner';
 
 interface LoginCardProps {
     onClose: () => void;
@@ -11,6 +13,9 @@ interface LoginCardProps {
 type AuthMode = 'login' | 'register' | 'forgot_email' | 'forgot_timer' | 'new_password';
 
 export default function LoginCard({ onClose }: LoginCardProps) {
+    const modalRef = useRef<HTMLDivElement>(null);
+    useFocusTrap(modalRef, true);
+
     const { login } = useAuth();
     const { t } = useLanguage();
     const [authMode, setAuthMode] = useState<AuthMode>('login');
@@ -110,7 +115,11 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
     return (
         <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
+            <div 
+                ref={modalRef}
+                role='dialog'
+                aria-modal="true"
+                className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
                 <button
@@ -145,11 +154,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                     <div className="relative">
                                         <input type={showPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
-                                            {showPassword ? (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                            ) : (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                            )}
+                                            {showPassword ? <EyeOn className='transition-colors duration-300'/> : <EyeOff className='transition-colors duration-300'/>}
                                         </button>
                                     </div>
                                 </div>
@@ -187,10 +192,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 >
                                     {loading ? (
                                         <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                                            </svg>
+                                            <Spinner className="w-5 h-5" />
                                             {t('auth.loading')}
                                         </span>
                                     ) : (

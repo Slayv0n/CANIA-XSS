@@ -88,11 +88,36 @@ export function Profile() {
 
                 <div className="flex flex-col gap-4">
                     {loading ? (
-                        <p className="text-desc-text animate-pulse">{t('profile.loading')}</p>
+                        // СКЕЛЕТОНЫ ЗАГРУЗКИ
+                        <div className="flex flex-col gap-4">
+                            {[1, 2, 3].map((skeleton) => (
+                                <div 
+                                    key={skeleton} 
+                                    className="w-full h-22.5 bg-card-border/30 rounded-xl animate-pulse flex justify-between items-center p-6"
+                                >
+                                    <div className="flex flex-col gap-3 w-1/2">
+                                        <div className="h-4 bg-card-border/50 rounded w-3/4"></div>
+                                        <div className="h-3 bg-card-border/50 rounded w-1/4"></div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 bg-card-border/50 rounded-full"></div>
+                                        <div className="w-10 h-10 bg-card-border/50 rounded-full"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     ) : reports.length > 0 ? (
                         reports.map((report) => (
-                            <button
+                            <div
                                 key={report.id}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        navigate(`/scanner/${report.id}`);
+                                    }
+                                }}
                                 onClick={() => navigate(`/scanner/${report.id}`)}
                                 className="w-full flex justify-between items-center p-6 bg-card-bg border border-card-border rounded-xl hover:border-brand-red transition-colors duration-300 group cursor-pointer"
                             >
@@ -129,7 +154,7 @@ export function Profile() {
 
                                     <ArrowUpRight className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors duration-300"/>
                                 </div>
-                            </button>
+                            </div>
                         ))
                     ) : (
                         <div className="p-10 border border-dashed border-card-border rounded-xl text-center">

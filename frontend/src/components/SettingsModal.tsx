@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CloseIcon, GlowSpot } from '../assets/icons';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface SettingsModalProps {
     mode: 'password' | 'email';
@@ -10,6 +11,9 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
+    const modalRef = useRef<HTMLDivElement>(null);
+    useFocusTrap(modalRef, true);
+
     const { userEmail, logout } = useAuth();
     const { t } = useLanguage();
 
@@ -71,7 +75,7 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
 
     return (
         <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
+            <div ref={modalRef} className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
                 <button

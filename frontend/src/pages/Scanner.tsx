@@ -1,17 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Download } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
-import ReactMarkdown from 'react-markdown';
+// import ReactMarkdown from 'react-markdown';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
 export function Scanner() {
+  const ReactMarkdown = React.lazy(() => import('react-markdown'));
   const { t } = useLanguage();
   const { hasSubscription } = useAuth();
   const { taskId } = useParams<{ taskId: string }>();
@@ -181,7 +183,7 @@ export function Scanner() {
                     <button
                         onClick={startScan}
                         disabled={!hasSubscription || scanStatus === 'scanning'}
-                        className={`px-10 py-4 font-bold uppercase rounded-sm flex items-center justify-center gap-2 transition-all
+                        className={`px-10 py-4 font-bold uppercase rounded-sm flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red focus-visible:ring-offset-1 focus-visible:ring-offset-main-bg
                             ${!hasSubscription ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-brand-red hover:bg-red-700 cursor-pointer'}`}
                     >
                         {scanStatus === 'scanning' ? t('scanner.scanningBtn') : t('scanner.auditBtn')} <span className="text-xl">→</span>
@@ -276,21 +278,24 @@ export function Scanner() {
                                 className="max-w-4xl mx-auto font-mono text-desc-text leading-relaxed"
                                 style={{ fontSize: `${zoom}%` }}
                             >
-                                <ReactMarkdown
-                                    children={reportText.replace(/^[ \t]+/gm, '')}
-                                    components={{
-                                        h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-white mb-6 border-b border-white/10 pb-4 uppercase tracking-wide" {...props} />,
-                                        h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-white mt-10 mb-4" {...props} />,
-                                        p: ({node, ...props}) => {
-                                            const text = String(props.children);
-                                            const isLog = text.includes('[INFO]') || text.includes('[SUCCESS]');
-                                            return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-gray-300'}`} {...props} />;
-                                        },
-                                        ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-brand-red text-[1em]" {...props} />,
-                                        li: ({node, ...props}) => <li className="text-gray-300" {...props} />,
-                                        strong: ({node, ...props}) => <strong className="text-brand-red font-bold" {...props} />,
-                                    }}
-                                />
+                                {/* НАДО ЧЕРЕЗ ЛОКАЛЬ БУДЕТ СДЕЛАТЬ ЗАГРУЗКУ */}
+                                <Suspense fallback={<div>{t('common.loading')}</div>}>
+                                    <ReactMarkdown
+                                        children={reportText.replace(/^[ \t]+/gm, '')}
+                                        components={{
+                                            h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-white mb-6 border-b border-white/10 pb-4 uppercase tracking-wide" {...props} />,
+                                            h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-white mt-10 mb-4" {...props} />,
+                                            p: ({node, ...props}) => {
+                                                const text = String(props.children);
+                                                const isLog = text.includes('[INFO]') || text.includes('[SUCCESS]');
+                                                return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-gray-300'}`} {...props} />;
+                                            },
+                                            ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-brand-red text-[1em]" {...props} />,
+                                            li: ({node, ...props}) => <li className="text-gray-300" {...props} />,
+                                            strong: ({node, ...props}) => <strong className="text-brand-red font-bold" {...props} />,
+                                        }}
+                                    />
+                                </Suspense>
                             </div>
 
                         </div>

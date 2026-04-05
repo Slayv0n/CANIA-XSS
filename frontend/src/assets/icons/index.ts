@@ -24,3 +24,7 @@ export * from './Mail'
 export * from './Password'
 
 export * from './ArrowUpRight'
+export * from './ArrowUp'
+
+export * from './EyeOff'
+export * from './EyeOn'

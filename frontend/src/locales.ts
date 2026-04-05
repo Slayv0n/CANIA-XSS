@@ -16,7 +16,8 @@ export const translations: any = {
       versionEn: "Версия на английском",
       versionRu: "Version in Russian",
       copyright: "© 2026 CANIA-XSS-UI. Все права защищены",
-      desc: "Cyber Autonomic Network Intelligence Agent для поиска, верификации и документирования уязвимостей."
+      desc: "Cyber Autonomic Network Intelligence Agent для поиска, верификации и документирования уязвимостей.",
+      home: "На главную страницу",
     },
     profileMenu: {
       email: "почта@example.com",
@@ -258,7 +259,8 @@ export const translations: any = {
       versionEn: "Версия на английском",
       versionRu: "Version in Russian",
       copyright: "© 2026 CANIA-XSS-UI. All rights reserved",
-      desc: "Cyber Autonomic Network Intelligence Agent for finding, verifying, and documenting vulnerabilities."
+      desc: "Cyber Autonomic Network Intelligence Agent for finding, verifying, and documenting vulnerabilities.",
+      home: "Go to homepage",
     },
     profileMenu: {
       email: "email@example.com",

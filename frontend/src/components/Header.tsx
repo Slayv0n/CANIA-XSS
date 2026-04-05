@@ -93,23 +93,22 @@ export default function Header() {
           <div
             className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-500 origin-top ${
               isProfileMenuOpen
-                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100'
-                : 'opacity-0 pointer-events-none -translate-y-4 scale-95'
+                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100 visible'
+                : 'opacity-0 pointer-events-none -translate-y-4 scale-95 invisible'
             }`}
-            style={{ transitionProperty: 'opacity, transform, scale' }}
+            style={{ transitionProperty: 'opacity, transform, scale, visibility' }}
           >
             {/* надо будет что то с invisible сделать, плавного перехода нет */}
-            <h3
+            <button
               onClick={() => {
                 navigate('/profile');
                 setIsProfileMenuOpen(false);
               }}
-              className='pt-4 cursor-pointer hover:text-brand-red text-lg truncate w-full'
+              className='mt-4 transition-all duration-300 cursor-pointer hover:text-brand-red text-lg truncate w-full '
               title={userEmail || t('profileMenu.profile')}
-              style={{ transition: 'none' }}
             >
               {userEmail || t('profileMenu.profile')}
-            </h3>
+            </button>
 
             <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
               {theme === 'dark' ? (
@@ -147,7 +146,7 @@ export default function Header() {
                 navigate('/');
                 setIsProfileMenuOpen(false);
               }}
-              className='pb-4 flex place-items-center gap-2 cursor-pointer'
+              className='mb-4 flex place-items-center gap-2 cursor-pointer'
               style={{ transition: 'none' }}
             >
               <Exit /> {t('profileMenu.logout')}

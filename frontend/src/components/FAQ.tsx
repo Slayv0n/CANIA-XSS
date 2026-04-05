@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { ArrowUp } from '../assets/icons';
 
 interface FAQItem {
   question: string;
@@ -36,11 +37,7 @@ export default function FAQ() {
                         className="w-full py-8 flex justify-between items-center text-left text-main-text hover:text-brand-red transition-colors duration-300 group cursor-pointer"
                     >
                         <span className="text-xl font-bold uppercase">{item.question}</span>
-                        <span className={`text-3xl ml-4 transition-transform! duration-500 ${isOpen ? 'rotate-180' : ''}`}>
-                            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4 10L14 20L24 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                        </span>
+                        <ArrowUp className={`w-7 h-7 ml-4 transition-transform! duration-500 ${isOpen ? 'rotate-180' : ''}`}/>
                     </button>
                     <div
                         className={`grid transition-all! duration-500 ease-in-out ${
