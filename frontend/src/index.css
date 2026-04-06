@@ -18,6 +18,8 @@
   --font-mono: "Roboto Mono", monospace;
 }
 
+@custom-variant light (&:where(.light, .light *));
+
 :root {
   color-scheme: dark;
 }

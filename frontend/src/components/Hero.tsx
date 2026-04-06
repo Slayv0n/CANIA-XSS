@@ -26,9 +26,22 @@ export default function Hero({ onTryClick }: HeroProps) {
 
       <button
         onClick={onTryClick}
-        className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer group"
+        className="
+          bg-brand-red border-brand-red text-white
+          dark:hover:bg-light-red
+
+          light:bg-light-red light:border-light-red
+          light:hover:bg-[#C31C1A]
+
+
+          **:text-white
+
+          px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2
+          transition-all duration-300 cursor-pointer group
+        "
       >
-        {t('hero.button')} <Forward />
+        {t('hero.button')} 
+        <Forward className='text-white'/>
       </button>
     </main>
   );

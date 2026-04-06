@@ -6,6 +6,7 @@ import CustomSelect from '../components/CustomSelect';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 // import ReactMarkdown from 'react-markdown';
+const ReactMarkdown = React.lazy(() => import('react-markdown'));
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,7 +14,6 @@ import { useLanguage } from '../context/LanguageContext';
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
 export function Scanner() {
-  const ReactMarkdown = React.lazy(() => import('react-markdown'));
   const { t } = useLanguage();
   const { hasSubscription } = useAuth();
   const { taskId } = useParams<{ taskId: string }>();
@@ -152,7 +152,7 @@ export function Scanner() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-12 relative z-10 flex flex-col">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-12 relative z-20 flex flex-col mb-40">
 
         {scanStatus !== 'ready' && (
             <div className="animate-fade-in">
@@ -239,29 +239,29 @@ export function Scanner() {
                     </h2>
                     <button
                         onClick={handleDownload}
-                        className='flex items-center bg-brand-red hover:bg-red-700 py-3 px-8 rounded-sm font-bold uppercase gap-3 cursor-pointer transition-colors shadow-lg shadow-brand-red/20'
+                        className='flex items-center bg-brand-red hover:bg-light-red duration-300 py-3 px-8 rounded-3xl font-bold uppercase gap-3 cursor-pointer transition-colors shadow-lg shadow-brand-red/20'
                     >
-                        {t('scanner.download')} <Download />
+                        {t('scanner.download')} <Download className='h-6 w-6'/>
                     </button>
 
                 </section>
 
-                <div
-                    ref={reportRef}
-                    className={`border border-card-border rounded-lg overflow-hidden bg-[#0A0A0A] flex flex-col relative transition-all duration-300 ${isFullscreen ? 'w-screen h-screen' : 'h-150'}`}
+                <div 
+                    ref={reportRef} 
+                    className={`border border-card-border rounded-lg overflow-hidden bg-main-bg flex flex-col relative transition-all duration-300 ${isFullscreen ? 'w-screen h-screen' : 'h-150'}`}
                 >
 
-                    <div className="flex justify-between items-center bg-[#151515] px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text shrink-0 z-20">
+                    <div className="flex justify-between items-center bg-card-bg px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text shrink-0 z-20">
                         <div className="flex-1 italic">*report_{scannedHost}.md*</div>
-
-                        <div className="flex items-center gap-4 bg-black/50 px-4 py-1 rounded-full border border-card-border">
+                        
+                        <div className="flex items-center gap-4 bg-main-bg px-4 py-1 rounded-full border border-card-border">
                             <button onClick={() => setZoom(z => Math.max(z - 10, 50))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">—</button>
                             <span className="text-main-text min-w-11.25 text-center select-none">{zoom}%</span>
                             <button onClick={() => setZoom(z => Math.min(z + 10, 200))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">+</button>
                         </div>
-
+                        
                         <div className="flex-1 flex justify-end">
-                            <button onClick={toggleFullscreen} className="hover:text-white cursor-pointer p-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
+                            <button onClick={toggleFullscreen} className="hover:text-brand-red text-desc-text cursor-pointer p-2 bg-main-bg rounded-md border border-transparent hover:border-card-border transition-colors">
                                 {isFullscreen ? (
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" /></svg>
                                 ) : (
@@ -274,27 +274,27 @@ export function Scanner() {
                     <div className="flex-1 relative min-h-0 bg-main-bg">
                         <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 md:p-12 z-10">
 
-                            <div
+                            <div 
                                 className="max-w-4xl mx-auto font-mono text-desc-text leading-relaxed"
                                 style={{ fontSize: `${zoom}%` }}
-                            >
+                            >                               
                                 {/* НАДО ЧЕРЕЗ ЛОКАЛЬ БУДЕТ СДЕЛАТЬ ЗАГРУЗКУ */}
                                 <Suspense fallback={<div>{t('common.loading')}</div>}>
                                     <ReactMarkdown
-                                        children={reportText.replace(/^[ \t]+/gm, '')}
-                                        components={{
-                                            h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-white mb-6 border-b border-white/10 pb-4 uppercase tracking-wide" {...props} />,
-                                            h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-white mt-10 mb-4" {...props} />,
-                                            p: ({node, ...props}) => {
-                                                const text = String(props.children);
-                                                const isLog = text.includes('[INFO]') || text.includes('[SUCCESS]');
-                                                return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-gray-300'}`} {...props} />;
-                                            },
-                                            ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-brand-red text-[1em]" {...props} />,
-                                            li: ({node, ...props}) => <li className="text-gray-300" {...props} />,
-                                            strong: ({node, ...props}) => <strong className="text-brand-red font-bold" {...props} />,
-                                        }}
-                                    />
+                                    children={reportText.replace(/^[ \t]+/gm, '')} 
+                                    components={{
+                                        h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-main-text mb-6 border-b border-card-border pb-4 uppercase tracking-wide" {...props} />,
+                                        h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-main-text mt-10 mb-4" {...props} />,
+                                        p: ({node, ...props}) => {
+                                            const text = String(props.children);
+                                            const isLog = text.includes('[INFO]') || text.includes('[SUCCESS]');
+                                            return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-desc-text'}`} {...props} />;
+                                        },
+                                        ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-brand-red text-[1em]" {...props} />,
+                                        li: ({node, ...props}) => <li className="text-desc-text" {...props} />,
+                                        strong: ({node, ...props}) => <strong className="text-brand-red font-bold" {...props} />,
+                                    }}
+                                />
                                 </Suspense>
                             </div>
 

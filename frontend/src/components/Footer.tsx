@@ -100,9 +100,9 @@ export default function Footer() {
                 </div>
 
                 <div className="border-t border-light-red pt-8">
-                    <span className="text-brand-red text-xs font-mono uppercase tracking-wider">
+                    <p className="text-brand-red text-xs font-mono uppercase tracking-wider text-center md:text-left">
                         {t('footer.copyright')}
-                    </span>
+                    </p>
                 </div>
             </div>
         </footer>
