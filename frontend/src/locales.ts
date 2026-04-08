@@ -231,6 +231,7 @@ export const translations: any = {
       saving: "СОХРАНЕНИЕ...",
       passwordSuccess: "Пароль успешно изменен! Пожалуйста, войдите заново.",
       emailSuccess: "Почта успешно изменена! Пожалуйста, войдите заново.",
+      invalidVerificationCode: "Неверный код подтверждения!",
       wrongPassword: "Неверный текущий пароль!",
       saveError: "Ошибка при сохранении новых данных",
       close: "Закрыть"
@@ -474,6 +475,7 @@ export const translations: any = {
       saving: "SAVING...",
       passwordSuccess: "Password changed successfully! Please log in again.",
       emailSuccess: "Email changed successfully! Please log in again.",
+      invalidVerificationCode: "Invalid verification code!",
       wrongPassword: "Incorrect current password!",
       saveError: "Error saving new data",
       close: "Close"

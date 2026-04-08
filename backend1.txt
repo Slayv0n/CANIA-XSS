@@ -41,13 +41,19 @@
 - frontend\vite.config.js
 - frontend\src\App.tsx
 - frontend\src\index.css
+- frontend\src\locales.ts
 - frontend\src\main.tsx
+- frontend\src\vite-env.d.ts
 - frontend\src\api\index.ts
 - frontend\src\assets\icons\Ai.tsx
+- frontend\src\assets\icons\ArrowUp.tsx
+- frontend\src\assets\icons\ArrowUpRight.tsx
 - frontend\src\assets\icons\CloseIcon.tsx
 - frontend\src\assets\icons\Dark.tsx
 - frontend\src\assets\icons\Download.tsx
 - frontend\src\assets\icons\Exit.tsx
+- frontend\src\assets\icons\EyeOff.tsx
+- frontend\src\assets\icons\EyeOn.tsx
 - frontend\src\assets\icons\FeedbackIcon.tsx
 - frontend\src\assets\icons\File.tsx
 - frontend\src\assets\icons\FirstVector.tsx
@@ -65,6 +71,7 @@
 - frontend\src\assets\icons\Search.tsx
 - frontend\src\assets\icons\SecondVector.tsx
 - frontend\src\assets\icons\Shield.tsx
+- frontend\src\assets\icons\Spinner.tsx
 - frontend\src\assets\icons\UserLoginIcon.tsx
 - frontend\src\assets\icons\UserProfileIcon.tsx
 - frontend\src\components\BackgroundDecor.tsx
@@ -82,8 +89,10 @@
 - frontend\src\components\SettingsModal.tsx
 - frontend\src\context\AppContext.tsx
 - frontend\src\context\AuthContext.tsx
+- frontend\src\context\LanguageContext.tsx
 - frontend\src\context\ThemeContext.tsx
 - frontend\src\context\UIContext.tsx
+- frontend\src\hooks\useFocusTrap.ts
 - frontend\src\pages\NotFound.tsx
 - frontend\src\pages\Profile.tsx
 - frontend\src\pages\Scanner.tsx
@@ -2273,13 +2282,19 @@ export default defineConfig([
 Файл: frontend\index.html
 ============================================================
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600&family=REM:wght@600&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
     <meta charset="UTF-8" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- по какой то причине очень долго грузится сайт когда подключены шрифты, поэтому пока отключаю их, а потом уже буду разбираться с этим -->
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600&family=REM:wght@600&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet"> -->
+
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cania-xss-ui</title>
+    <title>CANIA — Web Security Audit</title>
   </head>
   <body>
     <div id="root"></div>
@@ -2426,13 +2441,15 @@ export default defineConfig({
 ============================================================
 Файл: frontend\src\App.tsx
 ============================================================
-import { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState, Suspense } from 'react';
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useUI } from './context/UIContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { UIProvider } from './context/UIContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
+
 
 import BackgroundDecor from './components/BackgroundDecor';
 import Header from './components/Header';
@@ -2446,9 +2463,21 @@ import Footer from './components/Footer';
 import LoginCard from './components/LoginCard';
 import Feedback from './components/Feedback';
 import NotFound from './pages/NotFound';
-import { Profile } from './pages/Profile';
-import { Scanner } from './pages/Scanner';
+// import { Profile } from './pages/Profile';
+const Profile = React.lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
+// import { Scanner } from './pages/Scanner';
+const Scanner = React.lazy(() => import('./pages/Scanner').then(module => ({ default: module.Scanner })));
+
 import SettingsModal from './components/SettingsModal';
+
+function LoadingFallback() {
+  const { t } = useLanguage();
+  return (
+    <div className="flex h-screen items-center justify-center text-brand-red animate-pulse font-bold uppercase">
+      {t('common.loading')}
+    </div>
+  );
+}
 
 function AppRoutes() {
   const { isAuth, notification, setNotification } = useAuth();
@@ -2495,6 +2524,19 @@ function AppRoutes() {
     };
   }, [isNotificationClosing, setNotification]);
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLoginModal(false);
+        setPricesModal(false);
+        setFeedbackModal(false);
+        closeSettingsModal();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [setLoginModal, setPricesModal, setFeedbackModal, closeSettingsModal]);
+
   const LandingPage = () => {
     const handleTryIt = () => {
       if (isAuth) navigate('/profile');
@@ -2522,19 +2564,21 @@ function AppRoutes() {
 
   return (
     <div className="h-screen w-full bg-main-bg overflow-hidden relative">
-      <div id="scroll-container" className="fixed inset-0 overflow-y-auto z-10 custom-scrollbar animate-fade-in"> 
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route 
-            path="/profile" 
-            element={isAuth ? <Profile /> : <Navigate to="/" replace />} 
-          />
-          <Route 
-            path="/scanner/:taskId?" 
-            element={isAuth ? <Scanner /> : <Navigate to="/" replace />} 
-          />
-          <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
-        </Routes>
+      <div id="scroll-container" className="fixed inset-0 overflow-y-auto z-10 custom-scrollbar animate-fade-in">
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route 
+              path="/profile" 
+              element={isAuth ? <Profile /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/scanner/:taskId?" 
+              element={isAuth ? <Scanner /> : <Navigate to="/" replace />} 
+            />
+            <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
+          </Routes>
+        </Suspense> 
       </div>
 
       {isLoginModalOpen && <LoginCard onClose={() => setLoginModal(false)} />}
@@ -2557,11 +2601,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <UIProvider>
-          <AppRoutes />
-        </UIProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <UIProvider>
+            <AppRoutes />
+          </UIProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }
@@ -2589,6 +2635,8 @@ export default function App() {
   --font-body: "Raleway", sans-serif;
   --font-mono: "Roboto Mono", monospace;
 }
+
+@custom-variant light (&:where(.light, .light *));
 
 :root {
   color-scheme: dark;
@@ -2666,6 +2714,501 @@ export default function App() {
 }
 
 ============================================================
+Файл: frontend\src\locales.ts
+============================================================
+export const translations: any = {
+  ru: {
+    header: {
+      features: "Функционал",
+      tariffs: "Тарифы",
+      login: "Вход",
+      home: "На главную страницу",
+      navMain: "Навигация",
+      contact: "Связаться",
+      versionEn: "Версия на английском",
+      versionRu: "Version in Russian",
+    },
+    footer: {
+      navigation: "Навигация",
+      contact: "Связаться",
+      versionEn: "Версия на английском",
+      versionRu: "Version in Russian",
+      copyright: "© 2026 CANIA-XSS-UI. Все права защищены",
+      desc: "Cyber Autonomic Network Intelligence Agent для поиска, верификации и документирования уязвимостей.",
+      home: "На главную страницу",
+    },
+    profileMenu: {
+      email: "почта@example.com",
+      themeDark: "Тёмная тема",
+      themeLight: "Светлая тема",
+      changePassword: "Смена пароля",
+      changeEmail: "Смена почты",
+      feedback: "Отправить отзыв",
+      logout: "Выход",
+      profile: "Профиль"
+    },
+    hero: {
+      subtitle: "• SYSTEM V1.0 ONLINE",
+      title1: "Cania",
+      title2: "Web Security Audit",
+      desc: "CANIA (Cyber Autonomic Network Intelligence Agent) использует микросервисы и искусственный интеллект для поиска, верификации и документирования широкого спектра веб-уязвимостей.",
+      button: "Попробовать"
+    },
+    features: {
+      title: "Что это такое?",
+      tryBtn: "Попробовать бесплатно",
+      universalTitle: "Универсальный сканер уязвимостей",
+      universalText: "CANIA — это автоматизированный инструмент для аудита безопасности веб-приложений. Он заменяет часы ручного тестирования минутами работы умного алгоритма.",
+      threatsTitle: "Широкий спектр угроз",
+      threatsText: "Мы не ограничиваемся только XSS. Система ищет SQL-инъекции, CSRF, IDOR, проблемы конфигурации и другие уязвимости из списка OWASP Top 10.",
+      aiTitle: "Powered by AI",
+      aiText: "Использует машинное обучение для эмуляции реальных атак хакеров. Алгоритм адаптируется под структуру вашего сайта, находя скрытые дыры, которые пропускают обычные сканеры.",
+      reportTitle: "Понятный отчет",
+      reportText: "На выходе вы получаете структурированный PDF/JSON отчет с уровнем риска, примерами эксплуатации и готовыми рекомендациями по исправлению кода для разработчиков"
+    },
+    howItWorks: {
+      title: "Как работает CANIA?",
+      subtitle: "Автоматизированный поиск уязвимостей с помощью ИИ: от настройки до готового отчета.",
+      step1Title: "Задайте цели проверки",
+      step1Text: "Вставьте URL вашего сайта. Выберите уровень сканирования (быстрый/глубокий) и выберите тип атаки (например, DOM-based, reflected, stored).",
+      step2Title: "Запустите поиск уязвимостей",
+      step2Text: "Наша AI-система эмулирует поведение злоумышленника, отправляя тысячи безопасных тестовых запросов. Алгоритм анализирует ответы сервера в реальном времени, выявляя даже скрытые векторы атак.",
+      step3Title: "Изучите результаты аудита",
+      step3Text: "Система формирует структурированный отчет с классификацией найденных проблем по уровню риска (Critical, High, Medium). Для каждой уязвимости предоставляется доказательство концепции (PoC) и шаги по устранению."
+    },
+    safety: {
+      title: "КАК МЫ ГАРАНТИРУЕМ БЕЗОПАСНОСТЬ?",
+      tryBtn: "Запустить аудит",
+      yourSafetyTitle: "Безопасность для вас",
+      yourSafetyText: "Все сканирования выполняются в изолированной среде. Мы не сохраняем ваши данные, не передаём их третьим лицам и не используем для обучения моделей. После завершения аудита все временные файлы удаляются автоматически.",
+      targetSafetyTitle: "Безопасность для цели",
+      targetSafetyText: "Наши тестовые запросы не наносят вреда системе. Они имитируют реальные атаки, но не эксплуатируют уязвимости — только обнаруживают их. Вы можете остановить сканирование в любой момент.",
+      transparencyTitle: "Прозрачность и контроль",
+      transparencyText: "Перед запуском вы выбираете типы атак, глубину сканирования и целевые параметры. В отчёте — подробное описание каждой найденной уязвимости с рекомендациями по исправлению. Никакой магии — только прозрачные результаты."
+    },
+    pricing: {
+      title: "Тарифы",
+      popular: "Самый популярный",
+      select: "ВЫБРАТЬ",
+      processing: "ОБРАБОТКА ОПЛАТЫ...",
+      month1: "1 месяц",
+      month1Desc: "Для тестов, разовых проверок",
+      month6: "6 месяцев",
+      month6Desc: "Для регулярного использования",
+      year1: "Год",
+      year1Desc: "Для команд, максимальная выгода",
+      unlimitedRequests: "Безграничное количество запросов",
+      priorityProcessing: "Приоритетная обработка",
+      storeReports: "Храним все отчеты",
+      noSubText: "Оформите подписку в разделе \"Тарифы\" для снятия ограничений.",
+      paymentSuccess: "Оплата прошла успешно!",
+      paymentError: "Ошибка при оплате",
+      priceMonth1: "44 900 ₽",
+      priceMonth6: "199 000 ₽",
+      priceYear1: "349 000 ₽",
+      oldPriceMonth1: "",
+      oldPriceMonth6: "-70 400 ₽",
+      oldPriceYear1: "-189 800 ₽",
+      pricePerMonth6: "33 166 ₽",
+      pricePerMonthYear1: "29 080 ₽",
+      periodMonth: "/месяц",
+      periodYear: "/год"
+    },
+    faq: {
+      title: "FAQ",
+      q1: "КАК ЭТО РАБОТАЕТ?",
+      a1: "Lorem ipsum dolor sit amet consectetur...",
+      q2: "ЭТО БЕЗОПАСНО?",
+      a2: "Commodo lorem ultrices id ultrices diam eget...",
+      q3: "СКОЛЬКО СТОИТ?",
+      a3: "A duis nam sit id. Nullam sollicitudин."
+    },
+    scanner: {
+      title: "Проверьте ваш сайт на уязвимости",
+      warning: "Мы не несем ответственности за использование инструмента в противоправных целях",
+      placeholder: "EXAMPLE.COM",
+      auditBtn: "Запустить аудит",
+      scanningBtn: "Сканирование...",
+      noSub: "Для использования сканера необходимо выбрать тариф",
+      newScan: "Новый скан",
+      reportTitle: "Отчет по сайту",
+      download: "Скачать",
+      ready: "Готов",
+      inProcess: "В процессе",
+      loadingReports: "Загрузка отчетов...",
+      deleteReport: "Удалить отчет",
+      downloadReport: "Скачать отчет",
+      scanText1: "Проверяем код",
+      scanText2: "ищем уязвимости",
+      scanText3: "проверка может занять несколько минут",
+      attackType: "Тип атаки",
+      depth: "Глубина атаки",
+      errorNoUrl: "Введите URL сайта!",
+      errorNoOptions: "Выберите тип атаки и глубину!",
+      errorInvalidUrl: "Введите корректный URL (например, example.com)!",
+      errorNotAuth: "Вы не авторизованы!",
+      reportEmpty: "Отчет пуст или еще генерируется",
+      reportEmptyShort: "Отчет пуст",
+      loadError: "Не удалось загрузить отчет",
+      scanError: "Не удалось запустить сканирование",
+      xss: "XSS",
+      sql: "SQL Injections",
+      csrf: "CSRF",
+      idor: "IDOR",
+      allTypes: "Все типы",
+      low: "Низкая",
+      medium: "Средняя",
+      high: "Высокая"
+    },
+    profile: {
+      title: "Ваши отчеты",
+      noReports: "У вас пока нет созданных отчетов.",
+      loading: "Загрузка отчетов...",
+      subTitle: "Подписка",
+      account: "Аккаунт",
+      currentTariff: "Текущий тариф",
+      status: "Статус",
+      active: "Активен",
+      basic: "Базовый",
+      unknown: "Неизвестно",
+      checking: "Проверка статуса...",
+      limitText: "Лимит: 3 проверки в день.",
+      unlimitedText: "Безлимитные проверки и приоритетная обработка отчетов включены.",
+      devReset: "[DEV] Сбросить подписку",
+      subCancelError: "Не удалось отменить подписку",
+      reportPrefix: "Отчет по сайту:",
+      planMonth1: "1 месяц",
+      planMonth6: "6 месяцев",
+      planYear1: "Год"
+    },
+    auth: {
+      login: "Вход",
+      register: "Регистрация",
+      loginTitle: "ВХОД",
+      registerTitle: "РЕГИСТРАЦИЯ",
+      email: "Почта",
+      password: "Пароль",
+      confirmPassword: "Повторите пароль",
+      forgotPassword: "Забыли пароль?",
+      noAccount: "Нет аккаунта?",
+      hasAccount: "Уже есть аккаунт?",
+      registerBtn: "Зарегистрироваться",
+      loginBtn: "Войти",
+      policy: "Согласен с",
+      policyLink: "политикой конфиденциальности",
+      or: "Или",
+      google: "Продолжить с Google",
+      github: "Продолжить с GitHub",
+      backToLogin: "← Назад ко входу",
+      restoreTitle: "Восстановление пароля",
+      codeTitle: "ВВОД КОДА",
+      newPasswordTitle: "Новый пароль",
+      savePasswordTitle: "НОВЫЙ ПАРОЛЬ",
+      confirmBtn: "Подтвердить",
+      saveBtn: "Сохранить",
+      continueBtn: "Продолжить",
+      loading: "Загрузка...",
+      verifying: "ПРОВЕРКА...",
+      saving: "СОХРАНЕНИЕ...",
+      checkingCode: "ПРОВЕРКА...",
+      returnToLogin: "Вернуться ко входу",
+      resendCode: "Отправить код ещё раз",
+      codeSentTo: "Мы отправили код для сброса пароля на",
+      codePlaceholder: "Вставьте код...",
+      emailPlaceholder: "example@mail.com",
+      passwordPlaceholder: "••••••••",
+      newPasswordPlaceholder: "Новый пароль...",
+      codeLabel: "Код из письма",
+      close: "Закрыть",
+      ariaClose: "Закрыть окно",
+      passwordSuccess: "Пароль успешно изменен! Теперь войдите.",
+      passwordError: "Неверный текущий пароль!",
+      saveError: "Ошибка при сохранении новых данных",
+      newEmailLabel: "Новая почта",
+      newEmailPlaceholder: "new@example.com",
+      codeHint: "(Для теста введите 0000)",
+      codeSentHint: "Мы отправили код подтверждения на"
+    },
+    feedback: {
+      title: "Напишите свое мнение о сайте",
+      placeholder: "Ваш отзыв...",
+      submit: "Отправить",
+      close: "Закрыть"
+    },
+    settings: {
+      titlePassword: "СМЕНА ПАРОЛЯ",
+      titleEmail: "СМЕНА ПОЧТЫ",
+      newPassword: "НОВЫЙ ПАРОЛЬ",
+      currentPasswordLabel: "Текущий пароль",
+      newPasswordLabel: "Новый пароль",
+      repeatPasswordLabel: "Повторите пароль",
+      continueBtn: "ПРОДОЛЖИТЬ",
+      saveBtn: "СОХРАНИТЬ",
+      confirmBtn: "ПОДТВЕРДИТЬ",
+      loading: "ПРОВЕРКА...",
+      saving: "СОХРАНЕНИЕ...",
+      passwordSuccess: "Пароль успешно изменен! Пожалуйста, войдите заново.",
+      emailSuccess: "Почта успешно изменена! Пожалуйста, войдите заново.",
+      wrongPassword: "Неверный текущий пароль!",
+      saveError: "Ошибка при сохранении новых данных",
+      close: "Закрыть"
+    },
+    common: {
+      loading: "Загрузка модуля...",
+      cancel: "Отмена",
+      delete: "Удалить",
+      unknown: "Неизвестно"
+    }
+  },
+  en: {
+    header: {
+      features: "Features",
+      tariffs: "Pricing",
+      login: "Login",
+      home: "Go to homepage",
+      navMain: "Navigation",
+      contact: "Contact",
+      versionEn: "Версия на английском",
+      versionRu: "Version in Russian",
+    },
+    footer: {
+      navigation: "Navigation",
+      contact: "Contact",
+      versionEn: "Версия на английском",
+      versionRu: "Version in Russian",
+      copyright: "© 2026 CANIA-XSS-UI. All rights reserved",
+      desc: "Cyber Autonomic Network Intelligence Agent for finding, verifying, and documenting vulnerabilities.",
+      home: "Go to homepage",
+    },
+    profileMenu: {
+      email: "email@example.com",
+      themeDark: "Dark Mode",
+      themeLight: "Light Mode",
+      changePassword: "Change Password",
+      changeEmail: "Change Email",
+      feedback: "Send Feedback",
+      logout: "Logout",
+      profile: "Profile"
+    },
+    hero: {
+      subtitle: "• SYSTEM V1.0 ONLINE",
+      title1: "Cania",
+      title2: "Web Security Audit",
+      desc: "CANIA (Cyber Autonomic Network Intelligence Agent) uses microservices and AI to find, verify, and document a wide range of web vulnerabilities.",
+      button: "Get Started"
+    },
+    features: {
+      title: "What is it?",
+      tryBtn: "Try for free",
+      universalTitle: "Universal Vulnerability Scanner",
+      universalText: "CANIA is an automated web application security auditing tool. It replaces hours of manual testing with minutes of smart algorithm work.",
+      threatsTitle: "Wide Range of Threats",
+      threatsText: "We don't limit ourselves to just XSS. The system searches for SQL injections, CSRF, IDOR, configuration issues, and other vulnerabilities from the OWASP Top 10.",
+      aiTitle: "Powered by AI",
+      aiText: "Uses machine learning to emulate real hacker attacks. The algorithm adapts to your site's structure, finding hidden holes that regular scanners miss.",
+      reportTitle: "Clear Report",
+      reportText: "You receive a structured PDF/JSON report with risk levels, exploitation examples, and ready-to-use code fix recommendations for developers"
+    },
+    howItWorks: {
+      title: "How does CANIA work?",
+      subtitle: "Automated vulnerability search using AI: from setup to ready-made report.",
+      step1Title: "Set scan targets",
+      step1Text: "Enter your website URL. Choose scan level (quick/deep) and attack type (e.g., DOM-based, reflected, stored).",
+      step2Title: "Launch vulnerability search",
+      step2Text: "Our AI system emulates attacker behavior, sending thousands of safe test requests. The algorithm analyzes server responses in real time, identifying even hidden attack vectors.",
+      step3Title: "Review audit results",
+      step3Text: "The system generates a structured report classifying found issues by risk level (Critical, High, Medium). Each vulnerability includes a proof of concept (PoC) and remediation steps."
+    },
+    safety: {
+      title: "HOW DO WE ENSURE SAFETY?",
+      tryBtn: "Launch Audit",
+      yourSafetyTitle: "Safety for you",
+      yourSafetyText: "All scans are performed in an isolated environment. We don't store your data, don't share it with third parties, and don't use it for model training. After the audit completes, all temporary files are automatically deleted.",
+      targetSafetyTitle: "Safety for the target",
+      targetSafetyText: "Our test requests don't harm the system. They simulate real attacks but don't exploit vulnerabilities — only detect them. You can stop scanning at any time.",
+      transparencyTitle: "Transparency and control",
+      transparencyText: "Before launching, you choose attack types, scan depth, and target parameters. The report includes a detailed description of each found vulnerability with remediation recommendations. No magic — just transparent results."
+    },
+    pricing: {
+      title: "Pricing",
+      popular: "Most Popular",
+      select: "SELECT",
+      processing: "PROCESSING PAYMENT...",
+      month1: "1 month",
+      month1Desc: "For testing, one-time checks",
+      month6: "6 months",
+      month6Desc: "For regular use",
+      year1: "Year",
+      year1Desc: "For teams, maximum value",
+      unlimitedRequests: "Unlimited requests",
+      priorityProcessing: "Priority processing",
+      storeReports: "We store all reports",
+      noSubText: "Get a subscription in the \"Pricing\" section to remove limits.",
+      paymentSuccess: "Payment successful!",
+      paymentError: "Payment error",
+      priceMonth1: "$560",
+      priceMonth6: "$2,490",
+      priceYear1: "$4,360",
+      oldPriceMonth1: "",
+      oldPriceMonth6: "-$880",
+      oldPriceYear1: "-$2,370",
+      pricePerMonth6: "$415",
+      pricePerMonthYear1: "$363",
+      periodMonth: "/month",
+      periodYear: "/year"
+    },
+    faq: {
+      title: "FAQ",
+      q1: "HOW DOES IT WORK?",
+      a1: "Lorem ipsum dolor sit amet consectetur...",
+      q2: "IS IT SAFE?",
+      a2: "Commodo lorem ultrices id ultrices diam eget...",
+      q3: "HOW MUCH DOES IT COST?",
+      a3: "A duis nam sit id. Nullam sollicitudin."
+    },
+    scanner: {
+      title: "Check your website for vulnerabilities",
+      warning: "We are not responsible for the use of the tool for illegal purposes",
+      placeholder: "EXAMPLE.COM",
+      auditBtn: "Launch Audit",
+      scanningBtn: "Scanning...",
+      noSub: "You need a subscription to use the scanner",
+      newScan: "New Scan",
+      reportTitle: "Report for",
+      download: "Download",
+      ready: "Ready",
+      inProcess: "Processing",
+      loadingReports: "Loading reports...",
+      deleteReport: "Delete report",
+      downloadReport: "Download report",
+      scanText1: "Checking code",
+      scanText2: "searching for vulnerabilities",
+      scanText3: "scan may take a few minutes",
+      attackType: "Attack type",
+      depth: "Scan depth",
+      errorNoUrl: "Enter a website URL!",
+      errorNoOptions: "Select attack type and depth!",
+      errorInvalidUrl: "Enter a valid URL (e.g., example.com)!",
+      errorNotAuth: "You are not authorized!",
+      reportEmpty: "Report is empty or still generating",
+      reportEmptyShort: "Report is empty",
+      loadError: "Failed to load report",
+      scanError: "Failed to start scan",
+      xss: "XSS",
+      sql: "SQL Injections",
+      csrf: "CSRF",
+      idor: "IDOR",
+      allTypes: "All types",
+      low: "Low",
+      medium: "Medium",
+      high: "High"
+    },
+    profile: {
+      title: "Your Reports",
+      noReports: "You have no reports yet.",
+      loading: "Loading reports...",
+      subTitle: "Subscription",
+      account: "Account",
+      currentTariff: "Current Plan",
+      status: "Status",
+      active: "Active",
+      basic: "Basic",
+      unknown: "Unknown",
+      checking: "Checking status...",
+      limitText: "Limit: 3 checks per day.",
+      unlimitedText: "Unlimited checks and priority report processing are enabled.",
+      devReset: "[DEV] Reset Subscription",
+      subCancelError: "Failed to cancel subscription",
+      reportPrefix: "Report for:",
+      planMonth1: "1 month",
+      planMonth6: "6 months",
+      planYear1: "Year"
+    },
+    auth: {
+      login: "Login",
+      register: "Register",
+      loginTitle: "LOGIN",
+      registerTitle: "REGISTER",
+      email: "Email",
+      password: "Password",
+      confirmPassword: "Confirm Password",
+      forgotPassword: "Forgot password?",
+      noAccount: "Don't have an account?",
+      hasAccount: "Already have an account?",
+      registerBtn: "Register",
+      loginBtn: "Login",
+      policy: "I agree to the",
+      policyLink: "privacy policy",
+      or: "Or",
+      google: "Continue with Google",
+      github: "Continue with GitHub",
+      backToLogin: "← Back to login",
+      restoreTitle: "Password Recovery",
+      codeTitle: "ENTER CODE",
+      newPasswordTitle: "New Password",
+      savePasswordTitle: "NEW PASSWORD",
+      confirmBtn: "Confirm",
+      saveBtn: "Save",
+      continueBtn: "Continue",
+      loading: "Loading...",
+      verifying: "VERIFYING...",
+      saving: "SAVING...",
+      checkingCode: "CHECKING...",
+      returnToLogin: "Return to login",
+      resendCode: "Resend code",
+      codeSentTo: "We sent a password reset code to",
+      codePlaceholder: "Enter code...",
+      emailPlaceholder: "example@mail.com",
+      passwordPlaceholder: "••••••••",
+      newPasswordPlaceholder: "New password...",
+      codeLabel: "Code from email",
+      close: "Close",
+      ariaClose: "Close window",
+      passwordSuccess: "Password changed successfully! Now log in.",
+      passwordError: "Incorrect current password!",
+      saveError: "Error saving new data",
+      newEmailLabel: "New email",
+      newEmailPlaceholder: "new@example.com",
+      codeHint: "(For testing, enter 0000)",
+      codeSentHint: "We sent a confirmation code to"
+    },
+    feedback: {
+      title: "Share your opinion about the site",
+      placeholder: "Your feedback...",
+      submit: "Submit",
+      close: "Close"
+    },
+    settings: {
+      titlePassword: "CHANGE PASSWORD",
+      titleEmail: "CHANGE EMAIL",
+      newPassword: "NEW PASSWORD",
+      currentPasswordLabel: "Current password",
+      newPasswordLabel: "New password",
+      repeatPasswordLabel: "Repeat password",
+      continueBtn: "CONTINUE",
+      saveBtn: "SAVE",
+      confirmBtn: "CONFIRM",
+      loading: "CHECKING...",
+      saving: "SAVING...",
+      passwordSuccess: "Password changed successfully! Please log in again.",
+      emailSuccess: "Email changed successfully! Please log in again.",
+      wrongPassword: "Incorrect current password!",
+      saveError: "Error saving new data",
+      close: "Close"
+    },
+    common: {
+      loading: "Loading module...",
+      cancel: "Cancel",
+      delete: "Delete",
+      unknown: "Unknown"
+    }
+  }
+};
+
+export type Language = 'ru' | 'en';
+
+
+============================================================
 Файл: frontend\src\main.tsx
 ============================================================
 import { StrictMode } from 'react'
@@ -2681,6 +3224,12 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+============================================================
+Файл: frontend\src\vite-env.d.ts
+============================================================
+/// <reference types="vite/client" />
+// Это говорит TypeScript: «Я работаю в Vite, тут импортировать CSS — это нормально, не ругайся».
 
 ============================================================
 Файл: frontend\src\api\index.ts
@@ -3012,6 +3561,8 @@ export const api = {
   },
 };
 
+
+
 ============================================================
 Файл: frontend\src\assets\icons\Ai.tsx
 ============================================================
@@ -3030,6 +3581,33 @@ export const Ai = ({ className = "w-5 h-5" }) => {
         <path d="M15.5 19H14V20.5C14 21.33 14.67 22 15.5 22C16.33 22 17 21.33 17 20.5C17 19.67 16.33 19 15.5 19Z" stroke={currentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M10 9.5C10 8.67 9.33 8 8.5 8H3.5C2.67 8 2 8.67 2 9.5C2 10.33 2.67 11 3.5 11H8.5C9.33 11 10 10.33 10 9.5Z" stroke={currentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2C7.67 2 7 2.67 7 3.5C7 4.33 7.67 5 8.5 5Z" stroke={currentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    )
+}
+
+
+============================================================
+Файл: frontend\src\assets\icons\ArrowUp.tsx
+============================================================
+interface ArrowUpProps {
+    className?: string;
+}
+export const ArrowUp = ({ className = 'w-6 h-6' }: ArrowUpProps ) => {
+    return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    )
+}
+
+============================================================
+Файл: frontend\src\assets\icons\ArrowUpRight.tsx
+============================================================
+export const ArrowUpRight = ({ className }: { className?: string }) => {
+    // #E9E9E9 дефолтное значение stroke
+    return (
+        <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 5H23M23 5L5 23M23 5V23" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
     )
 }
@@ -3066,10 +3644,11 @@ export const Dark = () => {
 ============================================================
 Файл: frontend\src\assets\icons\Download.tsx
 ============================================================
-export function Download() {
+export const Download = ({ className }: { className?: string }) => {
   return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24.5 17.5V22.1667C24.5 22.7855 24.2542 23.379 23.8166 23.8166C23.379 24.2542 22.7855 24.5 22.1667 24.5H5.83333C5.21449 24.5 4.621 24.2542 4.18342 23.8166C3.74583 23.379 3.5 22.7855 3.5 22.1667V17.5M8.16667 11.6667L14 17.5M14 17.5L19.8333 11.6667M14 17.5V3.5" stroke="#E9E9E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24.5 17.5V22.1667C24.5 22.7855 24.2542 23.379 23.8166 23.8166C23.379 24.2542 22.7855 24.5 22.1667 24.5H5.83333C5.21449 24.5 4.621 24.2542 4.18342 23.8166C3.74583 23.379 3.5 22.7855 3.5 22.1667V17.5M8.16667 11.6667L14 17.5M14 17.5L19.8333 11.6667M14 17.5V3.5" 
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )};
 
@@ -3089,6 +3668,56 @@ export const Exit = () => {
         </svg>
     )
 }
+
+
+============================================================
+Файл: frontend\src\assets\icons\EyeOff.tsx
+============================================================
+export const EyeOff = ({ className }: { className?: string }) => {
+    // #757575 дефолтный цвет stroke
+    return (
+        <svg className={className} width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g clipPath="url(#clip0_166_1359)">
+        <path d="M0.833008 10C0.833008 10 4.16634 3.33337 9.99968 3.33337C15.833 3.33337 19.1663 10 19.1663 10C19.1663 10 15.833 16.6667 9.99968 16.6667C4.16634 16.6667 0.833008 10 0.833008 10Z" 
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9.99968 12.5C11.3804 12.5 12.4997 11.3808 12.4997 10C12.4997 8.61933 11.3804 7.50004 9.99968 7.50004C8.61896 7.50004 7.49968 8.61933 7.49968 10C7.49968 11.3808 8.61896 12.5 9.99968 12.5Z" 
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </g>
+        <defs>
+        <clipPath id="clip0_166_1359">
+        <rect width="20" height="20" fill="white"/>
+        </clipPath>
+        </defs>
+        </svg>
+    )
+}
+
+
+
+
+============================================================
+Файл: frontend\src\assets\icons\EyeOn.tsx
+============================================================
+interface EyeOnProps {
+    className?: string;
+}
+export const EyeOn = ({ className }: EyeOnProps ) => {
+    // #757575 дефолтный цвет stroke
+    return (
+        <svg className={className} width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clipPath="url(#clip0_166_1358)">
+            <path d="M14.9497 14.95C13.5252 16.0359 11.7906 16.6374 9.99968 16.6667C4.16634 16.6667 0.833008 10 0.833008 10C1.86958 8.06829 3.30729 6.38055 5.04968 5.05004M8.24968 3.53337C8.82329 3.39911 9.41056 3.33199 9.99968 3.33337C15.833 3.33337 19.1663 10 19.1663 10C18.6605 10.9464 18.0572 11.8373 17.3663 12.6584M11.7663 11.7667C11.5375 12.0123 11.2615 12.2093 10.9548 12.346C10.6481 12.4826 10.3171 12.5561 9.98142 12.562C9.64574 12.5679 9.31231 12.5062 9.00102 12.3805C8.68972 12.2547 8.40694 12.0676 8.16955 11.8302C7.93215 11.5928 7.745 11.31 7.61927 10.9987C7.49353 10.6874 7.43178 10.354 7.4377 10.0183C7.44363 9.68262 7.5171 9.35158 7.65374 9.04492C7.79038 8.73825 7.98739 8.46225 8.23301 8.23338M0.833008 0.833374L19.1663 19.1667" 
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </g>
+            <defs>
+            <clipPath id="clip0_166_1358">
+            <rect width="20" height="20" fill="white"/>
+            </clipPath>
+            </defs>
+        </svg>
+    )
+}
+
 
 
 ============================================================
@@ -3138,14 +3767,15 @@ export const FirstVector = ({ className = "w-5 h-5" }) => (
 ============================================================
 Файл: frontend\src\assets\icons\Forward.tsx
 ============================================================
-import { useTheme } from '../../context/ThemeContext';
+// import { useTheme } from '../../context/ThemeContext';
 
 export const Forward = ({ className = "w-5 h-5" }) => {
-    const { theme } = useTheme();
-    return  (
+    // const { theme } = useTheme();
+    // stroke={theme === 'light' ? '#4E4E4E' : '#D3D3D3'}
+    return (
         <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14.1495 3L25.1494 14M25.1494 14L14.1495 25M25.1494 14H3.14941" 
-        stroke={theme === 'light' ? '#4E4E4E' : '#D3D3D3'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M14.1495 3L25.1494 14M25.1494 14L14.1495 25M25.1494 14H3.14941"
+        stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
 )}
 
@@ -3153,8 +3783,6 @@ export const Forward = ({ className = "w-5 h-5" }) => {
 ============================================================
 Файл: frontend\src\assets\icons\GithubIcon.tsx
 ============================================================
-import React from 'react';
-
 interface IconProps {
     className?: string;
 }
@@ -3236,6 +3864,12 @@ export * from './FeedbackIcon'
 export * from './Light'
 export * from './Mail'
 export * from './Password'
+
+export * from './ArrowUpRight'
+export * from './ArrowUp'
+
+export * from './EyeOff'
+export * from './EyeOn'
 
 ============================================================
 Файл: frontend\src\assets\icons\Light.tsx
@@ -3404,6 +4038,16 @@ export const Shield = ({ className = "w-5 h-5" }) => {
 
 
 ============================================================
+Файл: frontend\src\assets\icons\Spinner.tsx
+============================================================
+export const Spinner = ({ className = "w-5 h-5" }: { className?: string }) => (
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+    </svg>
+);
+
+============================================================
 Файл: frontend\src\assets\icons\UserLoginIcon.tsx
 ============================================================
 export const UserLoginIcon = ({ className = "w-5 h-5" }) => (
@@ -3469,7 +4113,7 @@ export default function BackgroundDecor() {
 Файл: frontend\src\components\CustomSelect.tsx
 ============================================================
 import { useState, useRef, useEffect } from 'react';
-
+import { ArrowUp } from '../assets/icons';
 // Компонент нашего кастомного селекта
 export default function CustomSelect({ 
   value, 
@@ -3498,38 +4142,35 @@ export default function CustomSelect({
 
   return (
     <div className="relative flex flex-col gap-2" ref={ref}>
-      <div
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`bg-card-bg border p-4 rounded-sm text-desc-text outline-none cursor-pointer flex justify-between items-center ${
+        className={`bg-card-bg border p-4 rounded-sm text-desc-text outline-none cursor-pointer flex justify-between items-center focus:ring focus:ring-brand-red ${
           isOpen ? 'border-brand-red' : 'border-card-border hover:border-white/20'
         }`}
       >
         <span className={value ? 'text-main-text' : 'text-desc-text'}>
           {value || placeholder}
         </span>
+
         {/* Галочка, которая переворачивается при открытии */}
-        <svg 
-          className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
+        <ArrowUp className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        
+      </button>
 
       {/* Выпадающий список */}
       {isOpen && (
         <div className="absolute top-[105%] left-0 w-full bg-main-bg border border-card-border rounded-sm shadow-xl z-50 overflow-hidden animate-fade-in">
           {options.map((option) => (
-            <div
+            <button
               key={option}
               onClick={() => {
                 onChange(option);
                 setIsOpen(false);
               }}
-              className="px-4 py-3 cursor-pointer text-main-text hover:bg-card-border hover:transition-colors"
+              className="px-4 py-3 cursor-pointer text-main-text hover:bg-card-border hover:transition-colors flex w-full"
             >
               {option}
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -3541,6 +4182,8 @@ export default function CustomSelect({
 Файл: frontend\src\components\FAQ.tsx
 ============================================================
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
+import { ArrowUp } from '../assets/icons';
 
 interface FAQItem {
   question: string;
@@ -3548,13 +4191,13 @@ interface FAQItem {
 }
 
 export default function FAQ() {
-  // Указываем TS, что тут будет массив чисел: <number[]>
+  const { t } = useLanguage();
   const [openIndexes, setOpenIndexes] = React.useState<number[]>([]);
 
   const faqItems: FAQItem[] = [
-    { question: "КАК ЭТО РАБОТАЕТ?", answer: "Lorem ipsum dolor sit amet consectetur..." },
-    { question: "ЭТО БЕЗОПАСНО?", answer: "Commodo lorem ultrices id ultrices diam eget..." },
-    { question: "СКОЛЬКО СТОИТ?", answer: "A duis nam sit id. Nullam sollicitudин." }
+    { question: t('faq.q1'), answer: t('faq.a1') },
+    { question: t('faq.q2'), answer: t('faq.a2') },
+    { question: t('faq.q3'), answer: t('faq.a3') }
   ];
 
   const toggleIndex = (index: number) => {
@@ -3566,7 +4209,7 @@ export default function FAQ() {
   return (
     <section className="py-24 px-6 border-b border-b-light-red">
         <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl font-bold uppercase mb-12 text-center text-main-text">FAQ</h2>
+        <h2 className="text-4xl font-bold uppercase mb-12 text-center text-main-text">{t('faq.title')}</h2>
         <div className="flex flex-col">
             {faqItems.map((item, index) => {
               const isOpen = openIndexes.includes(index);
@@ -3577,11 +4220,7 @@ export default function FAQ() {
                         className="w-full py-8 flex justify-between items-center text-left text-main-text hover:text-brand-red transition-colors duration-300 group cursor-pointer"
                     >
                         <span className="text-xl font-bold uppercase">{item.question}</span>
-                        <span className={`text-3xl ml-4 transition-transform! duration-500 ${isOpen ? 'rotate-180' : ''}`}>
-                            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4 10L14 20L24 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                        </span>
+                        <ArrowUp className={`w-7 h-7 ml-4 transition-transform! duration-500 ${isOpen ? 'rotate-180' : ''}`}/>
                     </button>
                     <div
                         className={`grid transition-all! duration-500 ease-in-out ${
@@ -3603,11 +4242,13 @@ export default function FAQ() {
   );
 }
 
+
 ============================================================
 Файл: frontend\src\components\Features.tsx
 ============================================================
 import React from 'react';
 import { Forward, Ai, File, Search, Shield } from '../assets/icons';
+import { useLanguage } from '../context/LanguageContext';
 
 interface FeaturesProps {
   onTryClick: () => void;
@@ -3622,35 +4263,33 @@ interface FeatureItem {
 }
 
 export default function Features({ onTryClick }: FeaturesProps) {
+  const { t } = useLanguage();
+
   const features: FeatureItem[] = [
     {
-      title: "Универсальный сканер уязвимостей",
-      text: `CANIA — это автоматизированный инструмент для аудита безопасности веб-приложений.
-      Он заменяет часы ручного тестирования минутами работы умного алгоритма.`,
+      title: t('features.universalTitle'),
+      text: t('features.universalText'),
       icon: <Search className="h-8 w-8 mb-4" />,
       iconsClasses: "flex flex-row-reverse",
       containerClasses: "flex flex-col h-full justify-between",
     },
     {
-      title: "Широкий спектр угроз",
-      text: `Мы не ограничиваемся только XSS. Система ищет SQL-инъекции, CSRF, IDOR, проблемы конфигурации
-      и другие уязвимости из списка OWASP Top 10.`,
+      title: t('features.threatsTitle'),
+      text: t('features.threatsText'),
       icon: <Shield className="h-8 w-8 text-brand-red mb-4" />,
       iconsClasses: "flex flex-row-reverse justify-between",
       containerClasses: "flex flex-col-reverse h-full justify-between",
     },
     {
-      title: "Powered by AI",
-      text: `Использует машинное обучение для эмуляции реальных атак хакеров.
-      Алгоритм адаптируется под структуру вашего сайта, находя скрытые дыры, которые пропускают обычные сканеры.`,
+      title: t('features.aiTitle'),
+      text: t('features.aiText'),
       icon: <Ai className="h-8 w-8 text-brand-red mb-4" />,
       iconsClasses: "flex flex-row-reverse justify-between",
       containerClasses: "flex flex-col h-full justify-between",
     },
     {
-      title: "Понятный отчет",
-      text: `На выходе вы получаете структурированный PDF/JSON отчет с уровнем риска,
-      примерами эксплуатации и готовыми рекомендациями по исправлению кода для разработчиков`,
+      title: t('features.reportTitle'),
+      text: t('features.reportText'),
       icon: <File className="h-8 w-8 text-brand-red mb-4" />,
       iconsClasses: "flex flex-row-reverse justify-between",
       containerClasses: "flex flex-col-reverse h-full justify-between",
@@ -3661,11 +4300,11 @@ export default function Features({ onTryClick }: FeaturesProps) {
     <section className="bg-transparent py-20 px-6">
       <div className="max-w-7xl mx-auto flex flex-col items-center">
         <h2 className="text-4xl md:text-5xl font-bold uppercase mb-6 text-center text-main-text">
-          Что это такое?
+          {t('features.title')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-16 auto-rows-[1fr]">
           {features.map((item, index) => {
-            let gridClasses = "md:col-span-1"; 
+            let gridClasses = "md:col-span-1";
             if (index === 0) gridClasses = "md:row-span-2";
             else if (index === 3) gridClasses = "md:col-span-2";
 
@@ -3687,7 +4326,7 @@ export default function Features({ onTryClick }: FeaturesProps) {
               onClick={onTryClick}
               className="bg-transparent border-brand-red border-2 text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer"
             >
-              <span className="flex gap-2 place-items-center text-lg">Попробовать бесплатно <Forward className='h-6'/> </span>
+              <span className="flex gap-2 place-items-center text-lg">{t('features.tryBtn')} <Forward className='h-6'/> </span>
             </button>
         </div>
       </div>
@@ -3695,11 +4334,13 @@ export default function Features({ onTryClick }: FeaturesProps) {
   );
 }
 
+
 ============================================================
 Файл: frontend\src\components\Feedback.tsx
 ============================================================
 import React, { useState } from "react";
 import { CloseIcon, GlowSpot } from "../assets/icons";
+import { useLanguage } from "../context/LanguageContext";
 
 interface FeedbackProps {
     isOpen: boolean;
@@ -3707,6 +4348,7 @@ interface FeedbackProps {
 }
 
 export default function Feedback({ isOpen, onClose }: FeedbackProps) {
+    const { t } = useLanguage();
     const [feedbackText, setFeedbackText] = useState("");
 
     const handleSubmit = () => {
@@ -3723,28 +4365,32 @@ export default function Feedback({ isOpen, onClose }: FeedbackProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="bg-main-bg border border-card-border rounded-lg py-10 px-14 w-full max-w-3xl mx-4 shadow-2xl relative overflow-hidden">
                 <GlowSpot className="absolute bottom-[-50%] left-1/2 -translate-x-1/2 w-400 h-100 opacity-50" />
-                <button onClick={onClose} className="absolute right-4 top-4 text-desc-text hover:text-main-text cursor-pointer">
+                <button
+                    onClick={onClose}
+                    aria-label={t('feedback.close')}
+                    className="absolute right-4 top-4 text-desc-text hover:text-main-text cursor-pointer">
                     <CloseIcon />
                 </button>
-                <h1 className="text-desc-text text-2xl mb-4">Напишите свое мнение о сайте</h1>
+                <h1 className="text-desc-text text-2xl mb-4">{t('feedback.title')}</h1>
                 <textarea
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
-                    placeholder="Ваш отзыв..."
+                    placeholder={t('feedback.placeholder')}
                     rows={8}
                     className="w-full bg-input-bg border border-input-border rounded-md px-4 py-3 text-main-text outline-none focus:border-brand-red"
                 />
                 <div className="flex justify-end mt-4">
-                    <button onClick={handleSubmit} disabled={!feedbackText.trim()} 
+                    <button onClick={handleSubmit} disabled={!feedbackText.trim()}
                     className="bg-brand-red hover:bg-brand-red/80 disabled:bg-gray-600 px-6 py-2 rounded-3xl text-white cursor-pointer"
-                    aria-label="Отправить отзыв">
-                        Отправить
+                    aria-label={t('feedback.submit')}>
+                        {t('feedback.submit')}
                     </button>
                 </div>
             </div>
         </div>
     );
 }
+
 
 ============================================================
 Файл: frontend\src\components\Footer.tsx
@@ -3755,8 +4401,11 @@ import { useAuth } from "../context/AuthContext";
 import { useUI } from "../context/UIContext";
 import { useTheme } from "../context/ThemeContext";
 import { GlowSpot, LogoFooter } from "../assets/icons";
+import { useLanguage } from '../context/LanguageContext';
+
 
 export default function Footer() {
+    const { t, toggleLanguage, lang } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -3789,22 +4438,24 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     
                     <div className="flex flex-col gap-6 items-center md:items-start">
-                        <div
+                        <button
                             onClick={handleLogoClick}
+                            aria-label={t('footer.home')} 
+                            title={t('footer.home')}
                             className={`text-main-text hover:opacity-80 cursor-pointer transition-transform ${
                                 isBouncing ? 'scale-95' : 'scale-100'
                             }`}
                         >
                             <LogoFooter className="w-52.75 h-auto" />
-                        </div>
+                        </button>
                         <p className="text-desc-text text-sm leading-relaxed max-w-sm text-center md:text-left">
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati et esse aperiam mollitia fuga.
+                            {t('footer.desc')}
                         </p>
                     </div>
                     <div className="flex flex-col md:place-items-end gap-4">
                         
                         <nav className="flex flex-col gap-3 text-desc-text text-sm uppercase font-medium p-1 items-center md:items-start">
-                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">Навигация</h4>
+                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">{t('footer.navigation')}</h4>
                             <button
                                 className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                                 onClick={() => {
@@ -3812,31 +4463,31 @@ export default function Footer() {
                                     else setLoginModal(true);
                                 }}
                             >
-                                Функционал
+                                {t('header.features')}
                             </button>
                             <button
-                                onClick={handlePricesClick}
+                                onClick={handlePricesClick} 
                                 className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
-                                Тарифы
+                                {t('header.tariffs')}
                             </button>
                             <button onClick={toggleTheme} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase cursor-pointer">
-                                {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+                                {theme === 'dark' ? t('profileMenu.themeLight') : t('profileMenu.themeDark')}
                             </button>
-                            <button className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase">
-                                Версия на английском
+                            <button onClick={toggleLanguage} className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left uppercase">
+                                {lang === 'ru' ? t('footer.versionEn') : t('footer.versionRu')}
                             </button>
                             <button
                                 onClick={() => setFeedbackModal(true)}
                                 className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm text-left cursor-pointer uppercase"
                             >
-                                Оставить отзыв
+                                {t('profileMenu.feedback')}
                             </button>
                         </nav>
                     </div>
 
                     <div className="flex flex-col gap-4 items-center md:items-start">
-                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">Связаться:</h4>
+                        <h4 className="font-bold uppercase text-main-text mb-2 p-1">{t('footer.contact')}:</h4>
                         <div className="flex flex-col gap-3 text-desc-text text-sm font-medium items-center md:items-start">
                             <a href="tel:+79911230322" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">+7 (991) 123-03-22</a>
                             <a href="mailto:CANIAPENTEST@GMAIL.COM" className="hover:bg-brand-gray transition-colors duration-300 p-1 rounded-sm">CANIAPENTEST@GMAIL.COM</a>
@@ -3846,9 +4497,9 @@ export default function Footer() {
                 </div>
 
                 <div className="border-t border-light-red pt-8">
-                    <span className="text-brand-red text-xs font-mono uppercase tracking-wider">
-                        © 2026 CANIA-XSS-UI. Все права защищены
-                    </span>
+                    <p className="text-brand-red text-xs font-mono uppercase tracking-wider text-center md:text-left">
+                        {t('footer.copyright')}
+                    </p>
                 </div>
             </div>
         </footer>
@@ -3862,149 +4513,209 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { LogoFull, UserLoginIcon, UserProfileIcon, Dark, Light, Password, Mail, FeedbackIcon, Exit } from '../assets/icons';
 import { useState, useRef, useEffect } from 'react';
+
 export default function Header() {
+  const { t, toggleLanguage, lang } = useLanguage();
   const navigate = useNavigate();
-  const { isAuth, logout, userEmail } = useAuth(); // <--- ДОБАВЬ userEmail
+  const { isAuth, logout, userEmail } = useAuth();
   const { setLoginModal, handlePricesClick, setFeedbackModal, openSettingsModal } = useUI();
   const { theme, toggleTheme } = useTheme();
+  
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
+  
+  // 1. Создаем ссылку на ВСЮ шапку
+  const headerRef = useRef<HTMLElement>(null);
 
-  // Закрываем меню при клике вне его
+  // 2. Закрываем ВСЕ меню при клике вне шапки
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      // Если клик был НЕ внутри headerRef — закрываем оба меню
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
+        setIsMobileMenuOpen(false);
       }
     };
 
-    if (isProfileMenuOpen) {
+    // Слушаем клики, только если хоть одно меню открыто
+    if (isProfileMenuOpen || isMobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isProfileMenuOpen]);
+  },[isProfileMenuOpen, isMobileMenuOpen]);
+
+  // 3. Умные переключатели (Взаимоисключение)
+  const toggleProfileMenu = () => {
+    setIsProfileMenuOpen(!isProfileMenuOpen);
+    if (!isProfileMenuOpen) setIsMobileMenuOpen(false); // Если открываем профиль - закрываем бургер
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+    if (!isMobileMenuOpen) setIsProfileMenuOpen(false); // Если открываем бургер - закрываем профиль
+  };
 
   return (
-    <header className="h-20 border-b border-light-red flex items-center justify-between px-10 relative z-50 header-root">
-      
-      <div 
-        onClick={() => navigate('/')} 
-        className="flex items-center cursor-pointer text-main-text hover:opacity-80 transition-opacity"
+    // ВАЖНО: Вешаем headerRef на сам тег header
+    <header ref={headerRef} className="h-20 border-b border-light-red flex items-center justify-between px-6 md:px-10 relative z-50 header-root bg-main-bg">
+
+      <button
+        onClick={() => navigate('/')}
+        className="flex items-center cursor-pointer text-main-text hover:opacity-80 transition-opacity rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+        aria-label={t('header.home')}
+        title={t('header.home')}
       >
         <LogoFull className="w-28 md:w-36 h-auto" />
-      </div>
+      </button>
 
+      {/* ДЕСКТОПНОЕ МЕНЮ */}
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-desc-text">
         <button
           onClick={() => {
               if(isAuth) navigate('/scanner');
               else setLoginModal(true);
           }}
-          className='p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer'
+          className='p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red'
           >
-          Функционал
+          {t('header.features')}
         </button>
         <button
           onClick={handlePricesClick}
-          className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer"
+          className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
         >
-          Тарифы
+          {t('header.tariffs')}
         </button>
 
         <div className="h-4 w-px bg-card-border"></div>
-        <a href="#" className="p-1 hover:bg-brand-gray transition-colors duration-300 rounded-sm">EN</a>
+        <button 
+          onClick={toggleLanguage} 
+          className="cursor-pointer p-1 font-bold hover:text-brand-red transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red rounded"
+        >
+          {lang === 'ru' ? 'EN' : 'RU'}
+        </button>
       </nav>
 
-      {!isAuth ? (
-        <button
-            onClick={() => setLoginModal(true)}
-            className="bg-brand-red pl-6.5 pr-8 py-3 rounded-2xl text-sm font-bold text-white hover:bg-red-800 cursor-pointer flex items-center gap-2 "
-            aria-label="Войти в аккаунт"
-        >
-            <UserLoginIcon />
-            Вход
-        </button>
-      ) : (
-        <div ref={menuRef} className="relative">
-          <button
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 transition-colors duration-300 cursor-pointer flex items-center gap-2"
-              aria-label="Войти в профиль"
-              aria-expanded={isProfileMenuOpen}
+      {/* ПРАВАЯ ЧАСТЬ */}
+      <div className="flex items-center gap-4">
+          
+          {!isAuth ? (
+            <button
+                onClick={() => setLoginModal(true)}
+                className="bg-brand-red pl-6.5 pr-8 py-3 rounded-2xl text-sm font-bold text-white hover:bg-red-800 cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red focus-visible:ring-offset-2 focus-visible:ring-offset-main-bg"
+                aria-label={t('header.login')}
+            >
+                <UserLoginIcon />
+                 {t('header.login')}
+            </button>
+          ) : (
+            <div className="relative">
+              <button
+                  onClick={toggleProfileMenu} // ИСПОЛЬЗУЕМ НОВУЮ ФУНКЦИЮ
+                  className="bg-transparent border-2 border-brand-red p-4 rounded-full text-sm font-bold text-white hover:bg-red-800 transition-colors duration-300 cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red focus-visible:ring-offset-2 focus-visible:ring-offset-main-bg"
+                  aria-label={t('profileMenu.profile')}
+                  aria-expanded={isProfileMenuOpen}
+              >
+                  <UserProfileIcon />
+              </button>
+
+              {/* Выпадающее меню профиля */}
+              <div
+                className={`absolute min-w-[240px] h-auto py-4 bg-main-bg border border-card-border shadow-2xl top-17 right-0 rounded-2xl flex flex-col items-start gap-1 px-4 transition-all duration-300 ease-out origin-top-right z-[100] ${
+                  isProfileMenuOpen
+                    ? 'opacity-100 pointer-events-auto translate-y-0 scale-100 visible'
+                    : 'opacity-0 pointer-events-none -translate-y-4 scale-95 invisible'
+                }`}
+              >
+                {/* Email с подчеркиванием */}
+                <button
+                  onClick={() => { navigate('/profile'); setIsProfileMenuOpen(false); }}
+                  className='pb-4 mb-2 border-b border-card-border transition-colors duration-300 cursor-pointer hover:text-brand-red text-main-text text-base truncate w-full text-left focus-visible:outline-none focus-visible:text-brand-red'
+                  title={userEmail || t('profileMenu.profile')}
+                >
+                  {userEmail || t('profileMenu.profile')}
+                </button>
+
+                <button onClick={toggleTheme} className='w-full py-2.5 flex items-center gap-3 cursor-pointer text-main-text hover:text-brand-red transition-colors focus-visible:outline-none focus-visible:text-brand-red'>
+                  {theme === 'dark' ? <><Light /> {t('profileMenu.themeLight')}</> : <><Dark /> {t('profileMenu.themeDark')}</>}
+                </button>
+
+                <button onClick={() => { openSettingsModal('password'); setIsProfileMenuOpen(false); }} className='w-full py-2.5 flex items-center gap-3 cursor-pointer text-main-text hover:text-brand-red transition-colors focus-visible:outline-none focus-visible:text-brand-red'>
+                  <Password /> {t('profileMenu.changePassword')}
+                </button>
+
+                <button onClick={() => { openSettingsModal('email'); setIsProfileMenuOpen(false); }} className='w-full py-2.5 flex items-center gap-3 cursor-pointer text-main-text hover:text-brand-red transition-colors focus-visible:outline-none focus-visible:text-brand-red'>
+                  <Mail /> {t('profileMenu.changeEmail')}
+                </button>
+
+                <button onClick={() => { setFeedbackModal(true); setIsProfileMenuOpen(false); }} className='w-full py-2.5 flex items-center gap-3 cursor-pointer text-main-text hover:text-brand-red transition-colors focus-visible:outline-none focus-visible:text-brand-red'>
+                  <FeedbackIcon /> {t('profileMenu.feedback')}
+                </button>
+
+                {/* Выход с подчеркиванием сверху */}
+                <button onClick={() => { logout(); navigate('/'); setIsProfileMenuOpen(false); }} className='w-full pt-4 mt-2 border-t border-card-border flex items-center gap-3 cursor-pointer text-main-text hover:text-brand-red transition-colors focus-visible:outline-none focus-visible:text-brand-red'>
+                  <Exit /> {t('profileMenu.logout')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* КНОПКА БУРГЕРА (Видна только на телефонах: md:hidden) */}
+          <button 
+              onClick={toggleMobileMenu} // ИСПОЛЬЗУЕМ НОВУЮ ФУНКЦИЮ
+              className="md:hidden p-2 text-desc-text hover:text-brand-red transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+              aria-label="Меню"
           >
-              <UserProfileIcon />
+              {isMobileMenuOpen ? (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              ) : (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              )}
           </button>
 
-          <div
-            className={`absolute w-50 h-60 bg-brand-gray top-16 -left-30 rounded-2xl flex flex-col items-start justify-between px-4 transition-all duration-500 origin-top ${
-              isProfileMenuOpen
-                ? 'opacity-100 pointer-events-auto translate-y-0 scale-100'
-                : 'opacity-0 pointer-events-none -translate-y-4 scale-95'
-            }`}
-            style={{ transitionProperty: 'opacity, transform, scale' }}
-          >
-            {/* надо будет что то с invisible сделать, плавного перехода нет */}
-            <h3
-              onClick={() => {
-                navigate('/profile');
-                setIsProfileMenuOpen(false);
-              }}
-              className='pt-4 cursor-pointer hover:text-brand-red text-lg truncate w-full'
-              title={userEmail || 'Профиль'}
-              style={{ transition: 'none' }}
-            >
-              {userEmail || 'Профиль'}
-            </h3>
+      </div>
 
-            <button  onClick={toggleTheme} className='flex place-items-center gap-2 cursor-pointer' style={{ transition: 'none' }}>
-              {theme === 'dark' ? (
-                <>
-                  <Light /> Светлая тема
-                </>
-              ) : (
-                <>
-                  <Dark /> Тёмная тема
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => { openSettingsModal('password'); setIsProfileMenuOpen(false); }}  
-              className='flex place-items-start gap-2 cursor-pointer'>
-              <Password /> Смена пароля
-            </button>
-
-            <button 
-              onClick={() => { openSettingsModal('email'); setIsProfileMenuOpen(false); }} 
-              className='flex place-items-center gap-2 cursor-pointer'>
-              <Mail /> Смена почты
-            </button>
-
-            <button 
-              onClick={() => setFeedbackModal(true)} 
-              className='flex place-items-center gap-2 cursor-pointer'>
-              <FeedbackIcon /> Отправить отзыв
-            </button>
-
-            <button
-              onClick={() => {
-                logout();
-                navigate('/');
-                setIsProfileMenuOpen(false);
-              }}
-              className='pb-4 flex place-items-center gap-2 cursor-pointer'
-              style={{ transition: 'none' }}
-            >
-              <Exit /> Выход
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ВЫПАДАЮЩЕЕ МЕНЮ ДЛЯ МОБИЛОК */}
+      <div 
+        className={`absolute top-20 left-0 w-full bg-main-bg border-b border-light-red flex flex-col items-center gap-6 py-6 md:hidden z-40 transition-all duration-300 origin-top shadow-xl ${
+            isMobileMenuOpen ? 'opacity-100 scale-y-100 visible' : 'opacity-0 scale-y-95 invisible'
+        }`}
+        style={{ transitionProperty: 'opacity, transform, visibility' }}
+      >
+        <button
+          onClick={() => {
+              setIsMobileMenuOpen(false);
+              if(isAuth) navigate('/scanner');
+              else setLoginModal(true);
+          }}
+          className='p-2 hover:text-brand-red transition-colors duration-300 uppercase font-bold text-sm text-desc-text focus-visible:outline-none focus-visible:text-brand-red'
+        >
+          {t('header.features')}
+        </button>
+        <button
+          onClick={() => {
+              setIsMobileMenuOpen(false);
+              handlePricesClick();
+          }}
+          className="p-2 hover:text-brand-red transition-colors duration-300 uppercase font-bold text-sm text-desc-text focus-visible:outline-none focus-visible:text-brand-red"
+        >
+          {t('header.tariffs')}
+        </button>
+        <button 
+          onClick={() => {
+              setIsMobileMenuOpen(false);
+              toggleLanguage();
+          }} 
+          className="p-2 text-brand-red font-bold uppercase transition-colors focus-vi{/* Выпадающее меню профиля */}sible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red rounded"
+        >
+          {lang === 'ru' ? 'EN' : 'RU'}
+        </button>
+      </div>
 
     </header>
   );
@@ -4014,35 +4725,49 @@ export default function Header() {
 Файл: frontend\src\components\Hero.tsx
 ============================================================
 import { Forward } from '../assets/icons';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HeroProps {
   onTryClick: () => void;
 }
 
 export default function Hero({ onTryClick }: HeroProps) {
+  const { t } = useLanguage();
   return (
     <main className="flex flex-col items-center mt-32 px-4 text-center relative z-10">
       <span className="text-brand-red text-xs font-bold tracking-[0.4em] mb-6 uppercase opacity-80">
-        • SYSTEM V1.0 ONLINE
+        {t('hero.subtitle')}
       </span>
 
       <h1 className="text-5xl md:text-8xl font-black max-w-5xl leading-[1.05] uppercase mb-10 tracking-tighter text-main-text">
-        Cania <br /> 
+        {t('hero.title1')} <br /> 
         <span className="text-brand-red drop-shadow-[0_0_50px_rgba(195,28,26,0.4)]">
-          Web Security Audit
+          {t('hero.title2')}
         </span> 
       </h1>
 
       <p className="text-desc-text max-w-xl text-base md:text-lg leading-relaxed mb-12 opacity-70">
-        CANIA (Cyber Autonomic Network Intelligence Agent) использует микросервисы и искусственный интеллект для 
-        поиска, верификации и документирования широкого спектра веб-уязвимостей — от XSS и SQL-инъекций до CSRF и IDOR.
+        {t('hero.desc')}
       </p>
 
       <button
         onClick={onTryClick}
-        className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer group"
+        className="
+          bg-brand-red border-brand-red text-white
+          dark:hover:bg-light-red
+
+          light:bg-light-red light:border-light-red
+          light:hover:bg-[#C31C1A]
+
+
+          **:text-white
+
+          px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2
+          transition-all duration-300 cursor-pointer group
+        "
       >
-        Попробовать <Forward />
+        {t('hero.button')} 
+        <Forward className='text-white'/>
       </button>
     </main>
   );
@@ -4052,25 +4777,25 @@ export default function Hero({ onTryClick }: HeroProps) {
 Файл: frontend\src\components\HowItWorks.tsx
 ============================================================
 import {FirstVector, SecondVector} from '../assets/icons/index';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function HowItWorks() {
+  const { t } = useLanguage();
+
   const steps = [
     {
-      title: "Задайте цели проверки",
-      text: `Вставьте URL вашего сайта. Выберите уровень сканирования (быстрый/глубокий) и
-      выберите тип атаки (например, DOM-based, reflected, stored).`,
+      title: t('howItWorks.step1Title'),
+      text: t('howItWorks.step1Text'),
       marginClass: "md:mt-0"
     },
     {
-      title: "Запустите поиск уязвимостей",
-      text: `Наша AI-система эмулирует поведение злоумышленника, отправляя тысячи безопасных тестовых
-      запросов. Алгоритм анализирует ответы сервера в реальном времени, выявляя даже скрытые векторы атак.`,
+      title: t('howItWorks.step2Title'),
+      text: t('howItWorks.step2Text'),
       marginClass: "md:mt-32"
     },
     {
-      title: "Изучите результаты аудита",
-      text: `Система формирует структурированный отчет с классификацией найденных проблем по уровню риска
-      (Critical, High, Medium). Для каждой уязвимости предоставляется доказательство концепции (PoC) и шаги по устранению.`,
+      title: t('howItWorks.step3Title'),
+      text: t('howItWorks.step3Text'),
       marginClass: "md:mt-64"
     }
   ];
@@ -4080,13 +4805,13 @@ export default function HowItWorks() {
       <div className="max-w-7xl mx-auto">
 
         <h2 className="text-4xl md:text-6xl font-bold uppercase mb-8 text-center text-main-text">
-          Как работает CANIA?
+          {t('howItWorks.title')}
         </h2>
-        <h3 className='text-center mb-20'>Автоматизированный поиск уязвимостей с помощью ИИ: от настройки до готового отчета.</h3>
+        <h3 className='text-center mb-20'>{t('howItWorks.subtitle')}</h3>
 
         {/* Контейнер с relative для позиционирования векторов */}
         <div className="relative">
-          
+
           {/* Сетка с колонками */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {steps.map((step, index) => (
@@ -4123,13 +4848,17 @@ export default function HowItWorks() {
   );
 }
 
+
 ============================================================
 Файл: frontend\src\components\LoginCard.tsx
 ============================================================
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef} from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useAuth } from '../context/AuthContext';
-import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot } from '../assets/icons';
+import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot, EyeOn, EyeOff } from '../assets/icons';
 import { api, setAccessToken, setRefreshToken, RegisterRequest, LoginRequest } from '../api';
+import { useLanguage } from '../context/LanguageContext';
+import { Spinner } from '../assets/icons/Spinner';
 
 interface LoginCardProps {
     onClose: () => void;
@@ -4138,7 +4867,11 @@ interface LoginCardProps {
 type AuthMode = 'login' | 'register' | 'forgot_email' | 'forgot_timer' | 'new_password';
 
 export default function LoginCard({ onClose }: LoginCardProps) {
+    const modalRef = useRef<HTMLDivElement>(null);
+    useFocusTrap(modalRef, true);
+
     const { login } = useAuth();
+    const { t } = useLanguage();
     const [authMode, setAuthMode] = useState<AuthMode>('login');
 
     // Состояния полей
@@ -4223,8 +4956,8 @@ export default function LoginCard({ onClose }: LoginCardProps) {
             }
 
             if (authMode === 'new_password' && isNewPasswordValid) {
-                await api.completeReset(email, resetToken, password); 
-                alert("Пароль успешно изменен! Теперь войдите.");
+                await api.completeReset(email, resetToken, password);
+                alert(t('auth.passwordSuccess'));
                 setAuthMode('login');
             }
         } catch (err) {
@@ -4236,10 +4969,17 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
     return (
         <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
+            <div 
+                ref={modalRef}
+                role='dialog'
+                aria-modal="true"
+                className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors duration-300 z-20 cursor-pointer">
+                <button
+                    onClick={onClose}
+                    aria-label={t('auth.ariaClose')}
+                    className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors duration-300 z-20 cursor-pointer">
                     <CloseIcon />
                 </button>
 
@@ -4248,7 +4988,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {(authMode === 'login' || authMode === 'register') && (
                         <>
                             <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">
-                                {authMode === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ'}
+                                {authMode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
                             </h1>
 
                             {error && (
@@ -4259,87 +4999,80 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
                             <div className="flex flex-col gap-5">
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.email')}</label>
+                                    <input type="email" placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
 
                                 <div className="flex flex-col gap-2 relative">
-                                    <label className="text-gray-400 text-sm pl-1">Пароль</label>
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.password')}</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
+                                        <input type={showPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
-                                            {showPassword ? (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                            ) : (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                            )}
+                                            {showPassword ? <EyeOn className='transition-colors duration-300'/> : <EyeOff className='transition-colors duration-300'/>}
                                         </button>
                                     </div>
                                 </div>
 
                                 {authMode === 'register' && (
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                        <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                        <label className="text-gray-400 text-sm pl-1">{t('auth.confirmPassword')}</label>
+                                        <input type="password" placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 )}
 
                                 {authMode === 'login' ? (
                                     <div className="flex justify-end">
                                         <button type="button" onClick={() => setAuthMode('forgot_email')} className="text-sm font-bold text-gray-400 hover:text-white transition-colors duration-300 cursor-pointer">
-                                            Забыли пароль?
+                                            {t('auth.forgotPassword')}
                                         </button>
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2 mt-2">
                                         <input type="checkbox" id="policy" checked={agreePolicy} onChange={(e) => setAgreePolicy(e.target.checked)} className="w-4 h-4 rounded border-gray-600 bg-input-bg text-brand-red focus:ring-0 cursor-pointer" />
                                         <label htmlFor="policy" className="text-xs text-gray-400 cursor-pointer">
-                                            Согласен с <a href="#" className="underline hover:text-white">политикой конфиденциальности</a>
+                                            {t('auth.policy')} <a href="#" className="underline hover:text-white">{t('auth.policyLink')}</a>
                                         </label>
                                     </div>
                                 )}
 
-                                <button 
-                                    type="submit" 
-                                    disabled={loading || (authMode === 'login' ? !isLoginValid : !isRegisterValid)} 
+                                <button
+                                    type="submit"
+                                    disabled={loading || (authMode === 'login' ? !isLoginValid : !isRegisterValid)}
                                     className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${
-                                        (authMode === 'login' ? isLoginValid : isRegisterValid) 
-                                            ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' 
+                                        (authMode === 'login' ? isLoginValid : isRegisterValid)
+                                            ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10'
                                             : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'
                                     }`}
                                 >
                                     {loading ? (
                                         <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                                            </svg>
-                                            Загрузка...
+                                            <Spinner className="w-5 h-5" />
+                                            {t('auth.loading')}
                                         </span>
                                     ) : (
-                                        authMode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ'
+                                        authMode === 'login' ? t('auth.loginBtn') : t('auth.registerBtn')
                                     )}
                                 </button>
                             </div>
 
                             <div className="text-center text-sm mt-5">
-                                <span className="text-gray-400">{authMode === 'login' ? 'Нет аккаунта? ' : 'Уже есть аккаунт? '}</span>
+                                <span className="text-gray-400">{authMode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}</span>
                                 <button type="button" onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-brand-red font-bold hover:underline ml-1 cursor-pointer">
-                                    {authMode === 'login' ? 'Зарегистрироваться' : 'Войти'}
+                                    {authMode === 'login' ? t('auth.registerBtn') : t('auth.loginBtn')}
                                 </button>
                             </div>
 
                             <div className="relative my-6">
                                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-                                <div className="relative flex justify-center text-sm"><span className="px-3 bg-main-bg text-gray-500">Или</span></div>
+                                <div className="relative flex justify-center text-sm"><span className="px-3 bg-main-bg text-gray-500">{t('auth.or')}</span></div>
                             </div>
 
                             <div className="flex flex-col gap-3">
                                 <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
-                                    <GoogleIcon className="w-5 h-5" /> Продолжить с Google
+                                    <GoogleIcon className="w-5 h-5" /> {t('auth.google')}
                                 </button>
                                 <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
-                                    <GithubIcon className="w-5 h-5 text-white" /> Продолжить с GitHub
+                                    <GithubIcon className="w-5 h-5 text-white" /> {t('auth.github')}
                                 </button>
                             </div>
                         </>
@@ -4348,18 +5081,18 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {/* забыли почту */}
                     {authMode === 'forgot_email' && (
                         <>
-                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">ВОССТАНОВЛЕНИЕ ПАРОЛЯ</h1>
+                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.restoreTitle')}</h1>
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Почта</label>
-                                    <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.email')}</label>
+                                    <input type="email" placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!email} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${email ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                    ПРОДОЛЖИТЬ
+                                    {t('auth.continueBtn')}
                                 </button>
                             </div>
                             <button type="button" onClick={() => setAuthMode('login')} className="mt-6 text-gray-400 hover:text-white transition-colors duration-300 text-sm cursor-pointer">
-                                ← Назад ко входу
+                                {t('auth.backToLogin')}
                             </button>
                         </>
                     )}
@@ -4367,22 +5100,22 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {/* ЭКРАН ВВОДА КОДА */}
                     {authMode === 'forgot_timer' && (
                         <div className="flex flex-col gap-6 text-center animate-fade-in">
-                            <h1 className="text-3xl font-bold uppercase tracking-wide">ВВОД КОДА</h1>
-                            
+                            <h1 className="text-3xl font-bold uppercase tracking-wide">{t('auth.codeTitle')}</h1>
+
                             <p className="text-gray-400 text-sm leading-relaxed">
-                                Мы отправили код для сброса пароля на <br/>
+                                {t('auth.codeSentTo')} <br/>
                                 <span className="text-white font-bold">{email}</span>
                             </p>
 
                             {/* ИНПУТ ДЛЯ КОДА */}
                             <div className="flex flex-col gap-2 text-left mt-2">
-                                <label className="text-gray-400 text-sm pl-1">Код из письма</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="Вставьте код..." 
-                                    value={resetToken} 
-                                    onChange={(e) => setResetToken(e.target.value)} 
-                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" 
+                                <label className="text-gray-400 text-sm pl-1">{t('auth.codeLabel')}</label>
+                                <input
+                                    type="text"
+                                    placeholder={t('auth.codePlaceholder')}
+                                    value={resetToken}
+                                    onChange={(e) => setResetToken(e.target.value)}
+                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors"
                                 />
                             </div>
 
@@ -4393,31 +5126,31 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                         {formatTime(timer)}
                                     </div>
                                 ) : (
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={async () => {
                                             setTimer(60);
                                             await api.resetPasswordRequest(email);
-                                        }} 
+                                        }}
                                         className="text-brand-red hover:text-white font-bold text-sm transition-colors cursor-pointer uppercase tracking-wider"
                                     >
-                                        Отправить код ещё раз
+                                        {t('auth.resendCode')}
                                     </button>
                                 )}
                             </div>
 
                             {/* КНОПКА ПОДТВЕРЖДЕНИЯ */}
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onClick={handleSubmit}
-                                disabled={!resetToken || loading} 
+                                disabled={!resetToken || loading}
                                 className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${resetToken ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}
                             >
-                                {loading ? 'ПРОВЕРКА...' : 'ПОДТВЕРДИТЬ'}
+                                {loading ? t('auth.checkingCode') : t('auth.confirmBtn')}
                             </button>
 
                             <button type="button" onClick={() => setAuthMode('login')} className="mt-2 text-gray-500 hover:text-white text-sm transition-colors cursor-pointer">
-                                Вернуться ко входу
+                                {t('auth.returnToLogin')}
                             </button>
                         </div>
                     )}
@@ -4425,20 +5158,20 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                     {/* новый пароль */}
                     {authMode === 'new_password' && (
                         <>
-                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">НОВЫЙ ПАРОЛЬ</h1>
+                            <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.savePasswordTitle')}</h1>
                             <div className="flex flex-col gap-5">
                                 <div className="flex flex-col gap-2 relative">
-                                    <label className="text-gray-400 text-sm pl-1">Новый пароль</label>
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.newPasswordTitle')}</label>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
+                                        <input type={showPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
-                                    <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                    <label className="text-gray-400 text-sm pl-1">{t('auth.confirmPassword')}</label>
+                                    <input type="password" placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
                                 </div>
                                 <button type="submit" disabled={!isNewPasswordValid} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isNewPasswordValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                    СОХРАНИТЬ
+                                    {t('auth.saveBtn')}
                                 </button>
                             </div>
                         </>
@@ -4458,6 +5191,7 @@ import { useAuth } from '../context/AuthContext';
 import { GlowSpot } from '../assets/icons';
 import { api } from '../api';
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 
 interface Plan {
@@ -4468,6 +5202,7 @@ interface Plan {
   oldPrice: string | null;
   pricePerMonth: string | null;
   period: string;
+  costNumeric?: number;
   isPopular: boolean;
   features: string[];
 }
@@ -4478,63 +5213,67 @@ interface PricesProps {
 }
 
 export default function Prices({ isModal = false, onClose }: PricesProps) {
+  const { t } = useLanguage();
   const { updateSubscriptionStatus } = useAuth();
   const { setPricesModal } = useUI();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleBuy = async (plan: Plan) => {
-    setLoadingPlan(plan.id); // Включаем крутилку на конкретной кнопке
+    setLoadingPlan(plan.id);
     try {
         const tariffData = {
             name: plan.name,
             description: plan.desc,
-            cost: parseInt(plan.price.replace(/\D/g, '')) || 0 
+            cost: plan.costNumeric || 0
         };
 
         await api.buySubscription(tariffData);
-        alert("Оплата прошла успешно!");
-        await updateSubscriptionStatus(); // Обновляем статус подписки в контексте
-        if (onClose) onClose(); // Закрываем модалку
+        alert(t('pricing.paymentSuccess'));
+        await updateSubscriptionStatus();
+        if (onClose) onClose();
     } catch (err) {
-        alert("Ошибка при оплате");
+        alert(t('pricing.paymentError'));
     } finally {
         setLoadingPlan(null);
     }
   };
-  
+
   const plans: Plan[] = [
     {
       id: '1-month',
-      name: '1 месяц',
-      desc: 'Для тестов, разовых проверок',
-      price: '44 900 ₽',
-      oldPrice: null,
+      name: t('pricing.month1'),
+      desc: t('pricing.month1Desc'),
+      price: t('pricing.priceMonth1'),
+      oldPrice: t('pricing.oldPriceMonth1') || null,
       pricePerMonth: null,
-      period: '/месяц',
+      period: t('pricing.periodMonth'),
+      costNumeric: parseInt(t('pricing.priceMonth1').replace(/\D/g, '')) || 0,
       isPopular: false,
-      features:['Безграничное количество запросов', 'Приоритетная обработка', 'Храним все отчеты']
+      features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     },
     {
       id: '6-months',
-      name: '6 месяцев',
-      desc: 'Для регулярного использования',
-      price: '199 000 ₽',
-      oldPrice: '-70 400 ₽',
-      pricePerMonth: '33 166 ₽',
-      period: '/месяц',
+      name: t('pricing.month6'),
+      desc: t('pricing.month6Desc'),
+      price: t('pricing.priceMonth6'),
+      oldPrice: t('pricing.oldPriceMonth6'),
+      pricePerMonth: t('pricing.pricePerMonth6'),
+      period: t('pricing.periodMonth'),
+      costNumeric: parseInt(t('pricing.priceMonth6').replace(/\D/g, '')) || 0,
       isPopular: true,
-      features:['Безграничное количество запросов', 'Приоритетная обработка', 'Храним все отчеты']
+      features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     },
     {
       id: '1-year',
-      name: 'Год',
-      desc: 'Для команд, максимальная выгода',
-      price: '349 000 ₽',
-      oldPrice: '-189 800 ₽',
-      pricePerMonth: '29 080 ₽',
-      period: '/месяц',
+      name: t('pricing.year1'),
+      desc: t('pricing.year1Desc'),
+      price: t('pricing.priceYear1'),
+      oldPrice: t('pricing.oldPriceYear1'),
+      pricePerMonth: t('pricing.pricePerMonthYear1'),
+      period: t('pricing.periodYear'),
+      costNumeric: parseInt(t('pricing.priceYear1').replace(/\D/g, '')) || 0,
       isPopular: false,
-      features:['Безграничное количество запросов', 'Приоритетная обработка', 'Храним все отчеты']
+      features: [t('pricing.unlimitedRequests'), t('pricing.priorityProcessing'), t('pricing.storeReports')]
     }
   ];
 
@@ -4546,27 +5285,26 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
   const Content = (
     <div className="max-w-7xl mx-auto">
       <h2 className="text-4xl md:text-5xl font-bold uppercase mb-16 text-center text-main-text">
-        Тарифы
+        {t('pricing.title')}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {plans.map((plan) => (
           <div key={plan.id} className="relative group h-full flex flex-col justify-end">
-            
+
             {plan.isPopular && (
               <GlowSpot className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[130%] opacity-40 group-hover:opacity-100 pointer-events-none z-0 light:opacity-60 light:group-hover:opacity-100 transition-opacity duration-500 ease-out" />
             )}
-            
-            {/* ТУТ ГЛАВНОЕ: transition-all duration-500 ease-out добавлены прямо в className */}
+
             <div className="bg-card-bg w-full border border-card-border group-hover:border-brand-red/60 rounded-4xl p-8 md:p-10 flex flex-col relative z-10 h-full min-h-145 origin-bottom group-hover:scale-105 group-hover:shadow-[0_0_60px_rgba(195,28,26,0.25)] transition-all duration-500 ease-out">
-              
+
               {plan.isPopular && (
                 <div className="absolute top-0 right-0 bg-brand-red text-white text-xs font-bold uppercase px-6 py-2 rounded-tr-4xl rounded-bl-2xl">
-                  Самый популярный
+                  {t('pricing.popular')}
                 </div>
               )}
               <h3 className="text-brand-red text-xl font-bold mb-2">{plan.name}</h3>
               <p className="text-desc-text text-sm mb-8">{plan.desc}</p>
-              
+
               <div className="mb-10">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-4xl font-bold text-main-text leading-none">{plan.price}</span>
@@ -4580,21 +5318,21 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
                   </div>
                 )}
               </div>
-              
-              <button 
+
+              <button
                   onClick={() => handleBuy(plan)}
                   disabled={loadingPlan === plan.id}
                   className={`w-full py-4 rounded-full font-bold uppercase tracking-wider mb-10 transition-colors duration-300 cursor-pointer ${
-                      plan.isPopular 
-                      ? 'bg-brand-red text-white hover:bg-red-700' 
+                      plan.isPopular
+                      ? 'bg-brand-red text-white hover:bg-red-700'
                       : 'bg-transparent border border-card-border text-main-text hover:border-brand-red hover:bg-brand-red/10'
                   }`}
               >
-                  {loadingPlan === plan.id ? "ОБРАБОТКА ОПЛАТЫ..." : "ВЫБРАТЬ"}
+                  {loadingPlan === plan.id ? t('pricing.processing') : t('pricing.select')}
               </button>
-              
+
               <div className="w-full border-t border-card-border group-hover:border-brand-red/50 mb-8 transition-colors duration-500"></div>
-              
+
               <ul className="flex flex-col gap-4 mt-auto">
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-desc-text">
@@ -4632,35 +5370,34 @@ export default function Prices({ isModal = false, onClose }: PricesProps) {
   );
 }
 
+
 ============================================================
 Файл: frontend\src\components\Safety.tsx
 ============================================================
 import { Forward } from '../assets/icons';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SafetyProps {
   onTryClick: () => void;
 }
 
 export default function Safety({ onTryClick }: SafetyProps) {
+  const { t } = useLanguage();
+
   const safetyItems = [
     {
-      title: "Безопасность для вас",
-      text: `Все сканирования выполняются в изолированной среде. Мы не сохраняем ваши данные, не передаём их третьим лицам и не используем для обучения моделей.
-      После завершения аудита все временные файлы удаляются автоматически.`,
-      spanClass: "md:col-start-1 md:col-span-2" 
+      title: t('safety.yourSafetyTitle'),
+      text: t('safety.yourSafetyText'),
+      spanClass: "md:col-start-1 md:col-span-2"
     },
     {
-      title: "Безопасность для цели",
-      text: `Наши тестовые запросы не наносят вреда системе. 
-      Они имитируют реальные атаки, но не эксплуатируют уязвимости — только обнаруживают их. 
-      Вы можете остановить сканирование в любой момент.`,
+      title: t('safety.targetSafetyTitle'),
+      text: t('safety.targetSafetyText'),
       spanClass: "md:col-start-2 md:col-span-2"
     },
     {
-      title: "Прозрачность и контроль",
-      text: `Перед запуском вы выбираете типы атак, глубину сканирования и целевые параметры. 
-      В отчёте — подробное описание каждой найденной уязвимости с 
-      рекомендациями по исправлению. Никакой магии — только прозрачные результаты.`,
+      title: t('safety.transparencyTitle'),
+      text: t('safety.transparencyText'),
       spanClass: "md:col-start-1 md:col-span-2"
     }
   ];
@@ -4669,7 +5406,7 @@ export default function Safety({ onTryClick }: SafetyProps) {
     <section className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-6xl font-bold uppercase mb-24 text-center text-main-text">
-          КАК МЫ ГАРАНТИРУЕМ БЕЗОПАСНОСТЬ?
+          {t('safety.title')}
         </h2>
         <div className="flex flex-col">
           {safetyItems.map((item, index) => (
@@ -4690,7 +5427,7 @@ export default function Safety({ onTryClick }: SafetyProps) {
             onClick={onTryClick}
             className="bg-transparent border-brand-red border text-main-text px-10 py-4 rounded-4xl font-bold uppercase flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300 cursor-pointer group"
           >
-            Запустить аудит <Forward />
+            {t('safety.tryBtn')} <Forward />
           </button>
         </div>
       </div>
@@ -4698,13 +5435,16 @@ export default function Safety({ onTryClick }: SafetyProps) {
   );
 }
 
+
 ============================================================
 Файл: frontend\src\components\SettingsModal.tsx
 ============================================================
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CloseIcon, GlowSpot } from '../assets/icons';
-import { api } from '../api'; // Импортируем API
-import { useAuth } from '../context/AuthContext'; // Импортируем контекст
+import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface SettingsModalProps {
     mode: 'password' | 'email';
@@ -4712,18 +5452,20 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
-    const { userEmail, logout } = useAuth(); // Достаем email юзера
+    const modalRef = useRef<HTMLDivElement>(null);
+    useFocusTrap(modalRef, true);
+
+    const { userEmail, logout } = useAuth();
+    const { t } = useLanguage();
 
     const [step, setStep] = useState<1 | 2 | 3>(1);
-    
-    // Состояния инпутов
+
     const [currentPassword, setCurrentPassword] = useState('');
     const[newPassword, setNewPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
     const [newEmail, setNewEmail] = useState('');
-    // Стейт для проверочного кода
     const[verificationCode, setVerificationCode] = useState('');
-    
+
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -4739,40 +5481,34 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
 
         try {
             if (step === 1) {
-                // ШАГ 1: Проверка пароля
                 if (!userEmail) throw new Error("Нет email");
                 await api.login({ email: userEmail, password: currentPassword });
                 setStep(2);
-            } 
+            }
             else if (step === 2) {
-                // ШАГ 2: Выбор действия в зависимости от режима
                 if (mode === 'password') {
-                    // Если это пароль - сразу меняем и закрываем
                     await api.updatePassword(newPassword);
-                    alert("Пароль успешно изменен! Пожалуйста, войдите заново.");
+                    alert(t('settings.passwordSuccess'));
                     onClose();
-                    logout(); // Выкидываем юзера на экран логина
+                    logout();
                 } else if (mode === 'email') {
-                    // Если это почта - ИМИТИРУЕМ ОТПРАВКУ ПИСЬМА и идем на 3 шаг
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     setStep(3);
                 }
             }
             else if (step === 3) {
-                // ШАГ 3: Проверка кода (только для почты)
-                // КОСТЫЛЬ ДЛЯ РАЗРАБОТКИ: принимаем только код 0000
                 if (verificationCode === '0000') {
                     await api.updateEmail(newEmail);
-                    alert("Почта успешно изменена! Пожалуйста, войдите заново.");
+                    alert(t('settings.emailSuccess'));
                     onClose();
-                    logout(); // Выкидываем юзера на экран логина
+                    logout();
                 } else {
-                    alert("Неверный код подтверждения!");
+                    alert(t('auth.passwordError'));
                 }
             }
         } catch (error) {
-            if (step === 1) alert("Неверный текущий пароль!");
-            else alert("Ошибка при сохранении новых данных");
+            if (step === 1) alert(t('settings.wrongPassword'));
+            else alert(t('settings.saveError'));
         } finally {
             setLoading(false);
         }
@@ -4780,31 +5516,33 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
 
     return (
         <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
+            <div ref={modalRef} className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors z-20 cursor-pointer">
+                <button
+                    onClick={onClose}
+                    aria-label={t('settings.close')}
+                    className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors z-20 cursor-pointer">
                     <CloseIcon />
                 </button>
 
                 <form onSubmit={handleSubmit} className="relative z-10 flex flex-col w-full">
-                    
+
                     <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">
-                        {step === 1 || mode === 'email' ? `СМЕНА ${mode === 'password' ? 'ПАРОЛЯ' : 'ПОЧТЫ'}` : 'НОВЫЙ ПАРОЛЬ'}
+                        {step === 1 || mode === 'email' ? (mode === 'password' ? t('settings.titlePassword') : t('settings.titleEmail')) : t('settings.newPassword')}
                     </h1>
 
-                    {/* ШАГ 1: ПОДТВЕРЖДЕНИЕ ПАРОЛЯ (Одинаково для обоих режимов) */}
                     {step === 1 && (
                         <div className="flex flex-col gap-5">
                             <div className="flex flex-col gap-2 relative">
-                                <label className="text-gray-400 text-sm pl-1">Текущий пароль</label>
+                                <label className="text-gray-400 text-sm pl-1">{t('settings.currentPasswordLabel')}</label>
                                 <div className="relative">
-                                    <input 
-                                        type={showPassword ? "text" : "password"} 
-                                        placeholder="••••••••" 
-                                        value={currentPassword} 
-                                        onChange={(e) => setCurrentPassword(e.target.value)} 
-                                        className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" 
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        value={currentPassword}
+                                        onChange={(e) => setCurrentPassword(e.target.value)}
+                                        className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors"
                                     />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
                                         {showPassword ? (
@@ -4815,33 +5553,32 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
                                     </button>
                                 </div>
                             </div>
-                            <button 
-                                type="submit" 
-                                disabled={!isStep1Valid || loading} 
+                            <button
+                                type="submit"
+                                disabled={!isStep1Valid || loading}
                                 className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${
                                     isStep1Valid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'
                                 }`}
                             >
-                                {loading ? 'ПРОВЕРКА...' : 'ПРОДОЛЖИТЬ'}
+                                {loading ? t('settings.loading') : t('settings.continueBtn')}
                             </button>
                         </div>
                     )}
 
-                    {/* ШАГ 2: ВВОД НОВЫХ ДАННЫХ */}
                     {step === 2 && mode === 'password' && (
                         <div className="flex flex-col gap-5">
                             <div className="flex flex-col gap-2 relative">
-                                <label className="text-gray-400 text-sm pl-1">Новый пароль</label>
+                                <label className="text-gray-400 text-sm pl-1">{t('settings.newPasswordLabel')}</label>
                                 <div className="relative">
                                     <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red transition-colors" />
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2">
-                                <label className="text-gray-400 text-sm pl-1">Повторите пароль</label>
+                                <label className="text-gray-400 text-sm pl-1">{t('settings.repeatPasswordLabel')}</label>
                                 <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
                             </div>
                             <button type="submit" disabled={!isStep2PasswordValid || loading} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isStep2PasswordValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                {loading ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ'}
+                                {loading ? t('settings.saving') : t('settings.saveBtn')}
                             </button>
                         </div>
                     )}
@@ -4849,35 +5586,34 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
                     {step === 2 && mode === 'email' && (
                         <div className="flex flex-col gap-5">
                             <div className="flex flex-col gap-2">
-                                <label className="text-gray-400 text-sm pl-1">Новая почта</label>
-                                <input type="email" placeholder="new@example.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
+                                <label className="text-gray-400 text-sm pl-1">{t('auth.newEmailLabel')}</label>
+                                <input type="email" placeholder={t('auth.newEmailPlaceholder')} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors" />
                             </div>
                             <button type="submit" disabled={!isStep2EmailValid || loading} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isStep2EmailValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                {loading ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ'}
+                                {loading ? t('settings.saving') : t('settings.saveBtn')}
                             </button>
                         </div>
                     )}
 
-                    {/* НОВЫЙ ШАГ 3: ВВОД КОДА */}
                     {step === 3 && mode === 'email' && (
                         <div className="flex flex-col gap-5 animate-fade-in">
                             <p className="text-sm text-gray-400 mb-2">
-                                Мы отправили код подтверждения на <span className="text-white font-bold">{newEmail}</span>. 
-                                <br/><span className="text-brand-red text-xs">(Для теста введите 0000)</span>
+                                {t('auth.codeSentHint')} <span className="text-white font-bold">{newEmail}</span>.
+                                <br/><span className="text-brand-red text-xs">{t('auth.codeHint')}</span>
                             </p>
                             <div className="flex flex-col gap-2">
-                                <label className="text-gray-400 text-sm pl-1">Код из письма</label>
-                                <input 
-                                    type="text" 
+                                <label className="text-gray-400 text-sm pl-1">{t('auth.codeLabel')}</label>
+                                <input
+                                    type="text"
                                     maxLength={4}
-                                    placeholder="0000" 
-                                    value={verificationCode} 
-                                    onChange={(e) => setVerificationCode(e.target.value)} 
-                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors tracking-[0.5em] font-mono text-center text-xl" 
+                                    placeholder="0000"
+                                    value={verificationCode}
+                                    onChange={(e) => setVerificationCode(e.target.value)}
+                                    className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red transition-colors tracking-[0.5em] font-mono text-center text-xl"
                                 />
                             </div>
                             <button type="submit" disabled={!isStep3Valid || loading} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isStep3Valid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
-                                {loading ? 'СОХРАНЕНИЕ...' : 'ПОДТВЕРДИТЬ'}
+                                {loading ? t('settings.saving') : t('settings.confirmBtn')}
                             </button>
                         </div>
                     )}
@@ -4887,6 +5623,7 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
         </div>
     );
 }
+
 
 ============================================================
 Файл: frontend\src\context\AppContext.tsx
@@ -5141,7 +5878,7 @@ export const useUI = () => {
 ============================================================
 Файл: frontend\src\context\AuthContext.tsx
 ============================================================
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest } from '../api';
 
@@ -5268,19 +6005,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/profile');
   };
 
+  const contextValue = useMemo(() => ({
+    isAuth,
+    userEmail,
+    hasSubscription,
+    notification,
+    setNotification,
+    login,
+    logout,
+    updateSubscriptionStatus
+  }), [isAuth, userEmail, hasSubscription, notification]); // Пересоздавать объект ТОЛЬКО если изменились эти переменные 
+
   return (
-    <AuthContext.Provider
-      value={{
-        isAuth,
-        userEmail,
-        hasSubscription,
-        notification,
-        setNotification,
-        login,
-        logout,
-        updateSubscriptionStatus,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
@@ -5294,9 +6031,59 @@ export const useAuth = () => {
 
 
 ============================================================
+Файл: frontend\src\context\LanguageContext.tsx
+============================================================
+import { createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import { translations, Language } from '../locales';
+
+interface LanguageContextType {
+  lang: Language;
+  toggleLanguage: () => void;
+  t: (key: string) => string; // Функция-переводчик
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  // По умолчанию ставим русский (в будущем можно брать из localStorage или настроек браузера)
+  const [lang, setLang] = useState<Language>('ru');
+
+  const toggleLanguage = () => {
+    setLang((prev) => (prev === 'ru' ? 'en' : 'ru'));
+  };
+
+  // Умная функция перевода. Принимает ключ 'header.login' и отдает текст 'Вход'
+  const t = (key: string): string => {
+    const keys = key.split('.'); // Разделяем 'header.login' на ['header', 'login']
+    let result: any = translations[lang];
+    
+    for (const k of keys) {
+      if (result[k] === undefined) return key; // Если перевода нет, возвращаем сам ключ
+      result = result[k];
+    }
+    return result;
+  };
+
+  // Кэшируем объект, чтобы не было лишних перерисовок
+  const contextValue = useMemo(() => ({ lang, toggleLanguage, t }), [lang]);
+
+  return (
+    <LanguageContext.Provider value={contextValue}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error("useLanguage must be used within LanguageProvider");
+  return context;
+};
+
+============================================================
 Файл: frontend\src\context\ThemeContext.tsx
 ============================================================
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 
 export type Theme = 'dark' | 'light';
 
@@ -5313,6 +6100,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
+    
     if (nextTheme === 'light') {
       document.documentElement.classList.add('light');
     } else {
@@ -5323,7 +6111,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setTimeout(() => document.documentElement.classList.remove('theme-transition-disable'), 10);
   };
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  const contextValue = useMemo(() => ({ theme, toggleTheme }), [theme]);
+
+  return (
+    <ThemeContext.Provider value={contextValue}>
+      {children}
+    </ThemeContext.Provider>
+  )
 };
 
 export const useTheme = () => {
@@ -5336,7 +6130,7 @@ export const useTheme = () => {
 ============================================================
 Файл: frontend\src\context\UIContext.tsx
 ============================================================
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 
 interface UIContextType {
   isLoginModalOpen: boolean;
@@ -5389,26 +6183,21 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const contextValue = useMemo(() => ({
+    isLoginModalOpen, setLoginModal,
+    isPricesModalOpen, setPricesModal,
+    isFeedbackModalOpen, setFeedbackModal,
+    isSettingsModalOpen, openSettingsModal, closeSettingsModal,
+    settingsMode, handlePricesClick,
+    isChangePasswordModalOpen, setChangePasswordModal,
+    isChangeEmailModalOpen, setChangeEmailModal
+  }),[
+    isLoginModalOpen, isPricesModalOpen, isFeedbackModalOpen, 
+    isSettingsModalOpen, settingsMode, isChangePasswordModalOpen, isChangeEmailModalOpen
+  ]);
+
   return (
-    <UIContext.Provider
-      value={{
-        isLoginModalOpen,
-        setLoginModal,
-        isPricesModalOpen,
-        setPricesModal,
-        isFeedbackModalOpen,
-        setFeedbackModal,
-        isChangePasswordModalOpen,
-        setChangePasswordModal,
-        isChangeEmailModalOpen,
-        setChangeEmailModal,
-        isSettingsModalOpen,
-        settingsMode,
-        openSettingsModal,
-        closeSettingsModal,
-        handlePricesClick,
-      }}
-    >
+    <UIContext.Provider value={contextValue}>
       {children}
     </UIContext.Provider>
   );
@@ -5420,6 +6209,54 @@ export const useUI = () => {
   return context;
 };
 
+
+============================================================
+Файл: frontend\src\hooks\useFocusTrap.ts
+============================================================
+import { useEffect, RefObject } from 'react';
+
+export const useFocusTrap = (ref: RefObject<HTMLElement | null>, isOpen: boolean) => {
+  useEffect(() => {
+    if (!isOpen || !ref.current) return;
+
+    const modalElement = ref.current;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      // Ищем элементы заново при каждом нажатии Tab, чтобы учесть включенные/выключенные кнопки
+      const focusableSelectors = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+      const focusableElements = Array.from(modalElement.querySelectorAll<HTMLElement>(focusableSelectors));
+      
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) { // Shift + Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else { // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Фокусим первый элемент при открытии
+    const firstInput = modalElement.querySelector('input:not(:disabled), button:not(:disabled)') as HTMLElement;
+    if (firstInput) setTimeout(() => firstInput.focus(), 10);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, ref]);
+};
 
 ============================================================
 Файл: frontend\src\pages\NotFound.tsx
@@ -5468,9 +6305,12 @@ import Footer from '../components/Footer';
 import { api, TaskItem } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { CloseIcon , Download, ArrowUpRight} from '../assets/icons';
+import { useLanguage } from '../context/LanguageContext';
+
 
 export function Profile() {
-  // 1. Состояние для списка отчетов
+  const { t } = useLanguage();
   const [reports, setReports] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<any>(null);
@@ -5479,8 +6319,17 @@ export function Profile() {
 
   const { userEmail } = useAuth();
 
+  // Маппинг названия тарифа с бэкенда на локализованный ключ
+  const getLocalizedPlanName = (name: string): string => {
+    const lower = name.toLowerCase();
+    if (lower.includes('1 month') || lower.includes('1 месяц')) return t('profile.planMonth1');
+    if (lower.includes('6 month') || lower.includes('6 месяц')) return t('profile.planMonth6');
+    if (lower.includes('year') || lower.includes('год')) return t('profile.planYear1');
+    return name; // fallback — показать как есть
+  };
+
   const handleDownload = (e: React.MouseEvent, host: string) => {
-    e.stopPropagation(); // Чтобы не открывался сам отчет
+    e.stopPropagation();
     const reportText = `ОТЧЕТ CANIA-XSS\nЦель: ${host}\nСтатус: Уязвимостей не найдено (MVP)\nДата: ${new Date().toLocaleString()}`;
     const blob = new Blob([reportText], { type: 'text/plain' });
     const link = document.createElement('a');
@@ -5504,11 +6353,10 @@ export function Profile() {
       setSubscription(null);
     } catch (err) {
       console.error(err);
-      alert("Не удалось отменить подписку");
+      alert(t('profile.subCancelError'));
     }
   };
 
-  // 2. Загружаем данные при входе на страницу
   useEffect(() => {
     api.getMyTasks()
       .then((data) => {
@@ -5533,71 +6381,85 @@ export function Profile() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:py-20 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            
+
             <div className="md:col-span-2 flex flex-col">
                 <h1 className="text-3xl font-bold uppercase text-main-text mb-8">
-                    Ваши отчеты
+                    {t('profile.title')}
                 </h1>
-                
+
                 <div className="flex flex-col gap-4">
                     {loading ? (
-                        <p className="text-desc-text animate-pulse">Загрузка отчетов...</p>
+                        // СКЕЛЕТОНЫ ЗАГРУЗКИ
+                        <div className="flex flex-col gap-4">
+                            {[1, 2, 3].map((skeleton) => (
+                                <div 
+                                    key={skeleton} 
+                                    className="w-full h-22.5 bg-card-border/30 rounded-xl animate-pulse flex justify-between items-center p-6"
+                                >
+                                    <div className="flex flex-col gap-3 w-1/2">
+                                        <div className="h-4 bg-card-border/50 rounded w-3/4"></div>
+                                        <div className="h-3 bg-card-border/50 rounded w-1/4"></div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 bg-card-border/50 rounded-full"></div>
+                                        <div className="w-10 h-10 bg-card-border/50 rounded-full"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     ) : reports.length > 0 ? (
                         reports.map((report) => (
-                            <button
+                            <div
                                 key={report.id}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        navigate(`/scanner/${report.id}`);
+                                    }
+                                }}
                                 onClick={() => navigate(`/scanner/${report.id}`)}
                                 className="w-full flex justify-between items-center p-6 bg-card-bg border border-card-border rounded-xl hover:border-brand-red transition-colors duration-300 group cursor-pointer"
                             >
-                                {/* ЛЕВАЯ ЧАСТЬ: Текст */}
                                 <div className="flex flex-col items-start gap-1 text-left">
                                     <span className="text-main-text font-medium uppercase text-sm">
-                                        Отчет по сайту: {report.host}
+                                        {t('profile.reportPrefix')} {report.host}
                                     </span>
                                     <span className={`text-[10px] uppercase font-bold ${report.status === 5 ? 'text-green-500' : 'text-brand-red'}`}>
-                                        {report.status === 5 ? "Готов" : "В процессе"}
+                                        {report.status === 5 ? t('scanner.ready') : t('scanner.inProcess')}
                                     </span>
                                 </div>
 
-                                {/* ПРАВАЯ ЧАСТЬ: Крестик и Стрелка вместе */}
-                                <div className="flex items-center gap-6"> 
-                                    {/* Кнопка удаления */}
-                                    <div
+                                <div className="flex items-center gap-8">
+                                    <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleDelete(report.id);
                                         }}
-                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red hover:transition-all cursor-pointer"
+                                        className="hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+                                        aria-label={t('profile.deleteReport')}
+                                        title={t('profile.deleteReport')}
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M18 6L6 18M6 6l12 12"/>
-                                        </svg>
-                                    </div>
+                                        <CloseIcon />
+                                    </button>
 
-                                    
-
-                                    {/* КНОПКА СКАЧАТЬ */}
-                                    <div 
+                                    <button
                                         onClick={(e) => handleDownload(e, report.host)}
-                                        className="p-2 hover:bg-white/10 rounded-full text-desc-text hover:text-white transition-all cursor-pointer"
-                                        title="Скачать отчет"
+                                        className="hover:bg-white/10 rounded-full text-desc-text hover:text-brand-red transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+                                        aria-label={t('profile.downloadReport')}
+                                        title={t('profile.downloadReport')}
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                            <polyline points="7 10 12 15 17 10" />
-                                            <line x1="12" y1="15" x2="12" y2="3" />
-                                        </svg>
-                                    </div>
+                                        <Download />
+                                    </button>
 
-                                    <svg className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                    </svg>
+                                    <ArrowUpRight className="w-6 h-6 text-desc-text group-hover:text-brand-red transition-colors duration-300"/>
                                 </div>
-                            </button>
+                            </div>
                         ))
                     ) : (
                         <div className="p-10 border border-dashed border-card-border rounded-xl text-center">
-                            <p className="text-desc-text">У вас пока нет созданных отчетов.</p>
+                            <p className="text-desc-text">{t('profile.noReports')}</p>
                         </div>
                     )}
                 </div>
@@ -5605,72 +6467,68 @@ export function Profile() {
 
             <div className="md:col-span-1 flex flex-col">
                 <div className="bg-card-bg border border-card-border rounded-xl p-8 min-h-125">
-                    
+
                     <h2 className="text-2xl font-bold uppercase text-main-text mb-12">
-                        Подписка
+                        {t('profile.subTitle')}
                     </h2>
 
                     {subscription && (
-                            <button 
+                            <button
                                 onClick={handleCancelSub}
                                 style={{ marginTop: '30px', color: 'gray', fontSize: '12px', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                             >
-                                [DEV] Сбросить подписку
+                                {t('profile.devReset')}
                             </button>
                     )}
-                    
+
                     <div className="text-desc-text text-sm leading-relaxed flex flex-col gap-6">
-                        
-                        {/* Блок с аккаунтом */}
+
                         <div>
-                            <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Аккаунт</p>
+                            <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.account')}</p>
                             <p className="font-bold text-main-text truncate" title={userEmail || ''}>
-                                {userEmail || "Неизвестно"}
+                                {userEmail || t('profile.unknown')}
                             </p>
                         </div>
 
-                        {/* Блок с тарифом (Зависит от того, пришла ли подписка с бэка) */}
                         {subLoading ? (
-                            <p className="animate-pulse text-brand-red">Проверка статуса...</p>
+                            <p className="animate-pulse text-brand-red">{t('profile.checking')}</p>
                         ) : subscription ? (
-                            // ЕСЛИ ПОДПИСКА КУПЛЕНА:
                             <>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.currentTariff')}</p>
                                     <p className="font-bold text-brand-red text-xl uppercase">
-                                        {subscription.name} {/* Название тарифа с бэкенда */}
+                                        {getLocalizedPlanName(subscription.name)}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.status')}</p>
                                     <p className="text-green-500 font-bold uppercase tracking-wider">
-                                        Активен
+                                        {t('profile.active')}
                                     </p>
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-card-border">
                                     <p className="text-xs opacity-70">
-                                        Безлимитные проверки и приоритетная обработка отчетов включены.
+                                        {t('profile.unlimitedText')}
                                     </p>
                                 </div>
                             </>
                         ) : (
-                            // ЕСЛИ ПОДПИСКИ НЕТ (Базовый уровень):
                             <>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Текущий тариф</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.currentTariff')}</p>
                                     <p className="font-bold text-main-text text-xl uppercase">
-                                        Базовый
+                                        {t('profile.basic')}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">Статус</p>
+                                    <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.status')}</p>
                                     <p className="text-desc-text font-bold uppercase tracking-wider">
-                                        Активен
+                                        {t('profile.active')}
                                     </p>
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-card-border">
                                     <p className="text-xs opacity-50 mt-2">
-                                        Оформите подписку в разделе "Тарифы" для снятия ограничений.
+                                        {t('pricing.noSubText')}
                                     </p>
                                 </div>
                             </>
@@ -5687,31 +6545,36 @@ export function Profile() {
   );
 }
 
+
 ============================================================
 Файл: frontend\src\pages\Scanner.tsx
 ============================================================
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Download } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
-import ReactMarkdown from 'react-markdown';
+// import ReactMarkdown from 'react-markdown';
+const ReactMarkdown = React.lazy(() => import('react-markdown'));
+
 import { useParams, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 type ScanStatus = 'idle' | 'scanning' | 'ready';
 
 export function Scanner() {
+  const { t } = useLanguage();
   const { hasSubscription } = useAuth();
-  const { taskId } = useParams<{ taskId: string }>(); 
+  const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
 
   const [url, setUrl] = useState('');
   const [scannedHost, setScannedHost] = useState('');
   const [scanStatus, setScanStatus] = useState<ScanStatus>('idle');
   const [textIndex, setTextIndex] = useState(0);
-  
+
   const [selectedAttack, setSelectedAttack] = useState('');
   const [selectedDepth, setSelectedDepth] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -5719,18 +6582,17 @@ export function Scanner() {
   const [zoom, setZoom] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [reportText, setReportText] = useState('');
-  
+
   const reportRef = useRef<HTMLDivElement>(null);
 
-  // ВЕРНУЛ ТВОЙ ОРИГИНАЛЬНЫЙ ТЕКСТ
-  const scanTexts =[
-    "Проверяем код",
-    "ищем уязвимости",
-    "проверка может занять несколько минут",
+  const scanTexts = [
+    t('scanner.scanText1'),
+    t('scanner.scanText2'),
+    t('scanner.scanText3'),
   ];
 
-  const attackTypes =['XSS', 'SQL Injections', 'CSRF', 'IDOR', 'Все типы'];
-  const depthLevels =['Низкая', 'Средняя', 'Высокая'];
+  const attackTypes = [t('scanner.xss'), t('scanner.sql'), t('scanner.csrf'), t('scanner.idor'), t('scanner.allTypes')];
+  const depthLevels = [t('scanner.low'), t('scanner.medium'), t('scanner.high')];
 
   useEffect(() => {
     if (scanStatus !== 'scanning') return;
@@ -5748,47 +6610,43 @@ export function Scanner() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   },[]);
 
-    // Добавь этот useEffect перед функцией startScan
-    useEffect(() => {
-        if (taskId) {
-            const token = localStorage.getItem('token');
-            if (!token) return;
+  useEffect(() => {
+    if (taskId) {
+        const token = localStorage.getItem('token');
+        if (!token) return;
 
-            // Включаем статус загрузки (чтобы не моргала пустая форма)
-            setScanStatus('scanning'); 
-            
-            // Идем на бэкенд за конкретной задачей
-            api.getTask(taskId, token)
-                .then((task) => {
-                    setScannedHost(task.host);
-                    setReportText(task.reportContent || "Отчет пуст или еще генерируется");
-                    setScanStatus('ready');
-                })
-                .catch((err) => {
-                    console.error(err);
-                    setError("Не удалось загрузить отчет");
-                    setScanStatus('idle');
-                });
-        } else {
-            // Если ID нет (просто зашли на /scanner), сбрасываем всё
-            setScanStatus('idle');
-            setUrl('');
-            setScannedHost('');
-        }
-    }, [taskId]); // Перезапускать, если ID в URL изменится
+        setScanStatus('scanning');
+
+        api.getTask(taskId, token)
+            .then((task) => {
+                setScannedHost(task.host);
+                setReportText(task.reportContent || t('scanner.reportEmpty'));
+                setScanStatus('ready');
+            })
+            .catch((err) => {
+                console.error(err);
+                setError(t('scanner.loadError'));
+                setScanStatus('idle');
+            });
+    } else {
+        setScanStatus('idle');
+        setUrl('');
+        setScannedHost('');
+    }
+  }, [taskId]);
 
   const startScan = async () => {
     setError(null);
 
-    if (!url) { setError("Введите URL сайта!"); return; }
-    if (!selectedAttack || !selectedDepth) { setError("Выберите тип атаки и глубину!"); return; }
-    if (!url.includes('.')) { setError("Введите корректный URL (например, example.com)!"); return; }
+    if (!url) { setError(t('scanner.errorNoUrl')); return; }
+    if (!selectedAttack || !selectedDepth) { setError(t('scanner.errorNoOptions')); return; }
+    if (!url.includes('.')) { setError(t('scanner.errorInvalidUrl')); return; }
 
     const token = localStorage.getItem('token');
-    if (!token) { setError("Вы не авторизованы!"); return; }
+    if (!token) { setError(t('scanner.errorNotAuth')); return; }
 
-    const attackMap: Record<string, number> = { 'XSS': 1, 'SQL Injections': 2, 'Все типы': 1 };
-    const depthMap: Record<string, number> = { 'Низкая': 1, 'Средняя': 2, 'Высокая': 3 };
+    const attackMap: Record<string, number> = { [t('scanner.xss')]: 1, [t('scanner.sql')]: 2, [t('scanner.allTypes')]: 1 };
+    const depthMap: Record<string, number> = { [t('scanner.low')]: 1, [t('scanner.medium')]: 2, [t('scanner.high')]: 3 };
 
     try {
         setScannedHost(url);
@@ -5807,7 +6665,7 @@ export function Scanner() {
             try {
                 const checkTask = await api.getTask(result.id, token);
                 if (checkTask.status === 5) {
-                    setReportText(checkTask.reportContent || "Отчет пуст");
+                    setReportText(checkTask.reportContent || t('scanner.reportEmptyShort'));
                     setScanStatus('ready');
                     clearInterval(intervalId);
                 }
@@ -5818,7 +6676,7 @@ export function Scanner() {
 
     } catch (err: any) {
         setScanStatus('idle');
-        setError(err.message || "Не удалось запустить сканирование");
+        setError(err.message || t('scanner.scanError'));
     }
   };
 
@@ -5845,16 +6703,16 @@ export function Scanner() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-12 relative z-10 flex flex-col">
-        
+      <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-12 relative z-20 flex flex-col mb-40">
+
         {scanStatus !== 'ready' && (
             <div className="animate-fade-in">
                 <section className="mb-12 mt-8">
                     <h1 className="text-4xl md:text-5xl font-bold uppercase text-main-text mb-4">
-                        Проверьте ваш сайт на уязвимости
+                        {t('scanner.title')}
                     </h1>
                     <p className="text-brand-red text-xs uppercase font-bold tracking-wider">
-                        Мы не несем ответственность за использование инструмента в противоправных целях
+                        {t('scanner.warning')}
                     </p>
                 </section>
 
@@ -5867,31 +6725,31 @@ export function Scanner() {
                 <section className="flex flex-col md:flex-row gap-4 mb-8">
                     <input
                         type="text"
-                        placeholder="EXAMPLE.COM"
+                        placeholder={t('scanner.placeholder')}
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         disabled={scanStatus === 'scanning'}
                         className="flex-1 bg-transparent border border-card-border p-4 rounded-sm text-main-text outline-none focus:border-brand-red transition-colors disabled:opacity-50"
                     />
-                    <button 
+                    <button
                         onClick={startScan}
                         disabled={!hasSubscription || scanStatus === 'scanning'}
-                        className={`px-10 py-4 font-bold uppercase rounded-sm flex items-center justify-center gap-2 transition-all 
+                        className={`px-10 py-4 font-bold uppercase rounded-sm flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red focus-visible:ring-offset-1 focus-visible:ring-offset-main-bg
                             ${!hasSubscription ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-brand-red hover:bg-red-700 cursor-pointer'}`}
                     >
-                        {scanStatus === 'scanning' ? 'СКАНИРОВАНИЕ...' : 'ЗАПУСТИТЬ АУДИТ'} <span className="text-xl">→</span>
+                        {scanStatus === 'scanning' ? t('scanner.scanningBtn') : t('scanner.auditBtn')} <span className="text-xl">→</span>
                     </button>
                 </section>
 
                 {!hasSubscription && (
                     <p className="text-brand-red text-[10px] -mt-6 mb-6 uppercase font-bold text-right">
-                        Для использования сканера необходимо выбрать тариф
+                        {t('scanner.noSub')}
                     </p>
                 )}
 
                 <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-                    <CustomSelect value={selectedAttack} onChange={setSelectedAttack} options={attackTypes} placeholder="Тип атаки" />
-                    <CustomSelect value={selectedDepth} onChange={setSelectedDepth} options={depthLevels} placeholder="Глубина атаки" />
+                    <CustomSelect value={selectedAttack} onChange={setSelectedAttack} options={attackTypes} placeholder={t('scanner.attackType')} />
+                    <CustomSelect value={selectedDepth} onChange={setSelectedDepth} options={depthLevels} placeholder={t('scanner.depth')} />
                 </section>
 
                 {scanStatus === 'scanning' && (
@@ -5911,50 +6769,50 @@ export function Scanner() {
 
         {scanStatus === 'ready' && (
             <div className="animate-fade-in flex-1 flex flex-col mt-4 md:mt-8">
-                
+
                 {!isFullscreen && (
-                    <button 
-                        onClick={() => { 
-                            navigate('/scanner'); // <--- Меняем URL на чистый
-                            setScanStatus('idle'); 
-                            setUrl(''); 
-                        }} 
+                    <button
+                        onClick={() => {
+                            navigate('/scanner');
+                            setScanStatus('idle');
+                            setUrl('');
+                        }}
                         className="text-desc-text hover:text-white mb-6 flex items-center gap-2 cursor-pointer w-fit uppercase text-sm font-bold tracking-wider"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                        Новый скан
+                        {t('scanner.newScan')}
                     </button>
                 )}
 
                 <section className='flex justify-between items-center mb-6 shrink-0'>
                     <h2 className='text-2xl md:text-3xl font-bold uppercase tracking-wide'>
-                        Отчет по сайту <span className="text-brand-red lowercase">{scannedHost}</span>
+                        {t('scanner.reportTitle')} <span className="text-brand-red lowercase">{scannedHost}</span>
                     </h2>
-                    <button 
-                        onClick={handleDownload} 
-                        className='flex items-center bg-brand-red hover:bg-red-700 py-3 px-8 rounded-sm font-bold uppercase gap-3 cursor-pointer transition-colors shadow-lg shadow-brand-red/20'
+                    <button
+                        onClick={handleDownload}
+                        className='flex items-center bg-brand-red hover:bg-light-red duration-300 py-3 px-8 rounded-3xl font-bold uppercase gap-3 cursor-pointer transition-colors shadow-lg shadow-brand-red/20'
                     >
-                        Скачать <Download />
+                        {t('scanner.download')} <Download className='h-6 w-6'/>
                     </button>
 
                 </section>
 
                 <div 
                     ref={reportRef} 
-                    className={`border border-card-border rounded-lg overflow-hidden bg-[#0A0A0A] flex flex-col relative transition-all duration-300 ${isFullscreen ? 'w-screen h-screen' : 'h-150'}`}
+                    className={`border border-card-border rounded-lg overflow-hidden bg-main-bg flex flex-col relative transition-all duration-300 ${isFullscreen ? 'w-screen h-screen' : 'h-150'}`}
                 >
-                    
-                    <div className="flex justify-between items-center bg-[#151515] px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text shrink-0 z-20">
+
+                    <div className="flex justify-between items-center bg-card-bg px-6 py-3 border-b border-card-border text-xs md:text-sm font-mono text-desc-text shrink-0 z-20">
                         <div className="flex-1 italic">*report_{scannedHost}.md*</div>
                         
-                        <div className="flex items-center gap-4 bg-black/50 px-4 py-1 rounded-full border border-card-border">
+                        <div className="flex items-center gap-4 bg-main-bg px-4 py-1 rounded-full border border-card-border">
                             <button onClick={() => setZoom(z => Math.max(z - 10, 50))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">—</button>
                             <span className="text-main-text min-w-11.25 text-center select-none">{zoom}%</span>
                             <button onClick={() => setZoom(z => Math.min(z + 10, 200))} className="hover:text-brand-red cursor-pointer select-none text-lg leading-none">+</button>
                         </div>
                         
                         <div className="flex-1 flex justify-end">
-                            <button onClick={toggleFullscreen} className="hover:text-white cursor-pointer p-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
+                            <button onClick={toggleFullscreen} className="hover:text-brand-red text-desc-text cursor-pointer p-2 bg-main-bg rounded-md border border-transparent hover:border-card-border transition-colors">
                                 {isFullscreen ? (
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" /></svg>
                                 ) : (
@@ -5966,32 +6824,33 @@ export function Scanner() {
 
                     <div className="flex-1 relative min-h-0 bg-main-bg">
                         <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 md:p-12 z-10">
-                            
+
                             <div 
                                 className="max-w-4xl mx-auto font-mono text-desc-text leading-relaxed"
                                 style={{ fontSize: `${zoom}%` }}
-                            >
-                                <ReactMarkdown
+                            >                               
+                                {/* НАДО ЧЕРЕЗ ЛОКАЛЬ БУДЕТ СДЕЛАТЬ ЗАГРУЗКУ */}
+                                <Suspense fallback={<div>{t('common.loading')}</div>}>
+                                    <ReactMarkdown
                                     children={reportText.replace(/^[ \t]+/gm, '')} 
                                     components={{
-                                        h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-white mb-6 border-b border-white/10 pb-4 uppercase tracking-wide" {...props} />,
-                                        h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-white mt-10 mb-4" {...props} />,
+                                        h1: ({node, ...props}) => <h1 className="text-[2em] font-bold text-main-text mb-6 border-b border-card-border pb-4 uppercase tracking-wide" {...props} />,
+                                        h2: ({node, ...props}) => <h2 className="text-[1.5em] font-bold text-main-text mt-10 mb-4" {...props} />,
                                         p: ({node, ...props}) => {
-                                            // Простой парсер: если строка содержит лог, красим в зеленый
                                             const text = String(props.children);
                                             const isLog = text.includes('[INFO]') || text.includes('[SUCCESS]');
-                                            return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-gray-300'}`} {...props} />;
+                                            return <p className={`mb-3 text-[1em] ${isLog ? 'text-green-500 font-mono text-[0.9em]' : 'text-desc-text'}`} {...props} />;
                                         },
                                         ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-brand-red text-[1em]" {...props} />,
-                                        li: ({node, ...props}) => <li className="text-gray-300" {...props} />,
+                                        li: ({node, ...props}) => <li className="text-desc-text" {...props} />,
                                         strong: ({node, ...props}) => <strong className="text-brand-red font-bold" {...props} />,
                                     }}
                                 />
+                                </Suspense>
                             </div>
 
                         </div>
 
-                        {/* Водяной знак оставляем фоном */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0 overflow-hidden">
                             <p className="font-black text-4xl md:text-8xl uppercase -rotate-12 select-none whitespace-nowrap">
                                 CANIA REPORT PREVIEW
@@ -6007,6 +6866,7 @@ export function Scanner() {
     </div>
   );
 }
+
 
 ============================================================
 Файл: NotificationDb\NotificationContext.cs

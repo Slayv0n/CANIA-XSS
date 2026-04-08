@@ -5,6 +5,7 @@ import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot, EyeOn, EyeOff } from '../a
 import { api, setAccessToken, setRefreshToken, RegisterRequest, LoginRequest } from '../api';
 import { useLanguage } from '../context/LanguageContext';
 import { Spinner } from '../assets/icons/Spinner';
+import PasswordStrength from './PasswordStrength';
 
 interface LoginCardProps {
     onClose: () => void;
@@ -157,6 +158,9 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                             {showPassword ? <EyeOn className='transition-colors duration-300'/> : <EyeOff className='transition-colors duration-300'/>}
                                         </button>
                                     </div>
+                                    {authMode === 'register' && (
+                                        <PasswordStrength password={password} />
+                                    )}  
                                 </div>
 
                                 {authMode === 'register' && (
