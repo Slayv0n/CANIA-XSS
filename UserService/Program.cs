@@ -77,22 +77,14 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-// Инициализация базы с ожиданием (retry logic)
-for (int i = 0; i < 10; i++) // 10 попыток
+using (var scope = app.Services.CreateScope())
 {
-    try
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<UserContext>();
+
+    if (context.Database.GetPendingMigrations().Any())
     {
-        using var scope = app.Services.CreateScope();
-        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<UserContext>>();
-        using var context = contextFactory.CreateDbContext();
-        context.Database.EnsureCreated();
-        Console.WriteLine("Database connected and created successfully!");
-        break; // Если успешно — выходим из цикла
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
-        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+        context.Database.Migrate();
     }
 }
 
@@ -154,9 +146,25 @@ app.MapGet("/users/all", async (IUserService userService, string status = "") =>
 {
     try
     {
-        //тут был коментарий
         var users = await userService.GetAllUsersAsync();
         return Results.Ok(users);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+app.MapGet("/users/id/{email}", async (IUserService userService, string email) =>
+{
+    try
+    {
+        var id = await userService.GetUserIdAsync(email);
+        if (id == Guid.Empty) throw new NotFoundException("User not found");
+        return Results.Ok(id);
+    }
+    catch (NotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
     }
     catch (Exception ex)
     {

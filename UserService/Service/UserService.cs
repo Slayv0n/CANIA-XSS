@@ -9,6 +9,7 @@ using UserDb.Models;
 using SharedModels.General;
 using SharedModels.Events.Users;
 using SharedModels.Hash;
+using MassTransit.Initializers;
 
 namespace UserAPI.Service
 {
@@ -17,6 +18,7 @@ namespace UserAPI.Service
         Task<UserResponse> CreateUserAsync(CreateRequest request);
         Task<UserResponse> GetUserAsync(Guid id, string status = "");
         Task<List<UserResponse>> GetAllUsersAsync(string status = "");
+        Task<Guid> GetUserIdAsync (string email);
         Task<UserResponse> UpdateUserAsync(Guid id, string email);
         Task DeleteUserAsync(Guid id); 
         
@@ -40,11 +42,9 @@ namespace UserAPI.Service
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
             
-            // 1. ПРОВЕРКА НА ДУБЛИКАТ
-            var exists = await db.Users.AnyAsync(u => u.Email == request.Email);
-            if (exists)
+            if (await db.Users.AnyAsync(u => u.Email == request.Email))
             {
-                throw new Exception("Пользователь с такой почтой уже существует");
+                throw new Exception("User with this email already exists");
             }
 
             var user = new User() { Email = request.Email };
@@ -65,16 +65,15 @@ namespace UserAPI.Service
                 PasswordHash = passwordHash
             });
 
-            var response = new UserResponse(user);
-
-            return response;
+            return new UserResponse(user);
         }
 
         public async Task<UserResponse> GetUserAsync(Guid id, string status = "")
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id && u.Status.ToString().Contains(status));
+            var user = await db.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id && u.Status.ToString().Contains(status));
 
             if (user == null)
             {
@@ -82,21 +81,26 @@ namespace UserAPI.Service
                 throw new NotFoundException("User not found");
             }
 
-            var response = new UserResponse(user);
-
-            return response;
+            return new UserResponse(user);
         }
 
         public async Task<List<UserResponse>> GetAllUsersAsync(string status = "")
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
-
-            var usersResponse = await db.Users
+            
+            return await db.Users
+                .AsNoTracking()
                 .Where(u => u.Status.ToString().Contains(status))
                 .Select(u => new UserResponse(u))
                 .ToListAsync();
+        }
 
-            return usersResponse;
+        public async Task<Guid> GetUserIdAsync(string email)
+        {
+            using var db = await _dbContextFactory.CreateDbContextAsync();
+
+            return await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email)
+                .Select(u => u != null ? u.Id : Guid.Empty);
         }
 
         public async Task<UserResponse> UpdateUserAsync(Guid id, string email)
@@ -129,9 +133,7 @@ namespace UserAPI.Service
                 Status = user.Status
             });
 
-            var response = new UserResponse(user);
-
-            return response;
+            return new UserResponse(user);
         }
 
         public async Task DeleteUserAsync(Guid id)

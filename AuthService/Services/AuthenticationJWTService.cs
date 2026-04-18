@@ -36,7 +36,7 @@ namespace Auth_API.Services
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null)
             {
@@ -50,16 +50,17 @@ namespace Auth_API.Services
                 throw new AuthException("Email or password incorrect");
             }
 
-            var accessToken = _jwtService.GenerateAccessToken(user.Id);
-            var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user.Id);
+            var tokens = await Task.WhenAll(
+                Task.Run(() => _jwtService.GenerateAccessToken(user.Id)),
+                _jwtService.GenerateRefreshTokenAsync(user.Id));
 
             _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
 
             return new LoginResponse()
             {
                 UserId = user.Id,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
+                AccessToken = tokens[0],
+                RefreshToken = tokens[1]
             };
         }
 
@@ -111,18 +112,21 @@ namespace Auth_API.Services
 
             var userId = await _jwtService.GetUserIdAsync(token);
 
-            var accessToken = _jwtService.GenerateAccessToken(userId);
-            var refreshToken = await _jwtService.GenerateRefreshTokenAsync(userId);
+            var revokeTask = _jwtService.RevokeRefreshTokenAsync(token);
 
-            await _jwtService.RevokeRefreshTokenAsync(token);
+            var tokens = await Task.WhenAll(
+                Task.Run(() => _jwtService.GenerateAccessToken(userId)),
+                _jwtService.GenerateRefreshTokenAsync(userId));
+
+            await revokeTask;
 
             _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
 
             return new LoginResponse()
             {
                 UserId = userId,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
+                AccessToken = tokens[0],
+                RefreshToken = tokens[1]
             };
         }
     }

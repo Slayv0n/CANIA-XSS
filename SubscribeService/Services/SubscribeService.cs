@@ -1,4 +1,5 @@
 ﻿using MassTransit;
+using MassTransit.Initializers;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Events.Subscribes;
 using SharedModels.Exceptions;
@@ -12,7 +13,8 @@ namespace Subscribe_API.Services
     public interface ISubscribeService
     {
         Task<SubscribeResponse> SubscribeAsync(Guid id, Tariff tariff);
-        Task<SubscribeResponse> UpdateAsync(Guid id, Tariff tariff);
+        Task<SubscribeResponse?> GetSubscribeAsync(Guid id);
+        Task<SubscribeResponse> UpdateSubscribeAsync(Guid id, Tariff tariff);
         Task UnscribeAsync(Guid id);
     }
     public class SubscribeService : ISubscribeService
@@ -61,13 +63,25 @@ namespace Subscribe_API.Services
             {
                 Id = id,
                 Name = tariff.Name,
-                Cost = tariff.Cost.ToString() // Исправлено для RabbitMQ
+                Cost = tariff.Cost 
             });
 
             return new SubscribeResponse() { Id = id, Tarrif = tariff };
         }
 
-        public async Task<SubscribeResponse> UpdateAsync(Guid id, Tariff tariff)
+        public async Task<SubscribeResponse?> GetSubscribeAsync(Guid id)
+        {
+            using var db = await _dbContextFactory.CreateDbContextAsync();
+
+            return await db.Subscribes.AsNoTracking().Include(s => s.Tariff).FirstOrDefaultAsync(s => s.Id == id)
+                .Select(s => s != null ? new SubscribeResponse()
+                {
+                    Id = id,
+                    Tarrif = s.Tariff
+                } : null);
+        }
+
+        public async Task<SubscribeResponse> UpdateSubscribeAsync(Guid id, Tariff tariff)
         {
             using var db = await _dbContextFactory.CreateDbContextAsync();
             var subscribe = await db.Subscribes.FirstOrDefaultAsync(s => s.Id == id && s.Status == Status.Active);

@@ -266,21 +266,15 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-for (int i = 0; i < 10; i++) // 10 попыток
+
+using (var scope = app.Services.CreateScope())
 {
-    try
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AuthContext>();
+
+    if (context.Database.GetPendingMigrations().Any())
     {
-        using var scope = app.Services.CreateScope();
-        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AuthContext>>();
-        using var context = contextFactory.CreateDbContext();
-        context.Database.EnsureCreated();
-        Console.WriteLine("Database connected and created successfully!");
-        break; // Если успешно — выходим из цикла
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10). Error: {ex.Message}");
-        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+        context.Database.Migrate();
     }
 }
 app.UseForwardedHeaders();
@@ -310,6 +304,8 @@ app.MapPost("/auth/login", async (LoginRequest request, IAuthenticationJWTServic
         return Results.BadRequest(ex.Message);
     }
 });
+
+app.MapGet("/health", () => Results.Ok(new { status = "OK", time = DateTime.UtcNow }));
 
 app.MapPost("/auth/refresh", async (TokenRequest request, IAuthenticationJWTService authenticationService) =>
 {
@@ -370,8 +366,6 @@ app.MapPost("/auth/logout/all", async (TokenRequest request, HttpContext context
 });
 
 //Social auth
-
-app.MapGet("/health", () => Results.Ok(new { status = "OK", time = DateTime.UtcNow }));
 
 app.MapGet("/auth/login/google", () =>
     Results.Challenge(new AuthenticationProperties { RedirectUri = "/auth/callback" }, new[] { "Google" }));

@@ -9,7 +9,6 @@ using Password_API.Services;
 using PasswordDb;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,22 +64,15 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-// Инициализация базы с ожиданием (retry logic)
-for (int i = 0; i < 10; i++) // 10 попыток
+
+using (var scope = app.Services.CreateScope())
 {
-    try
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<PasswordContext>();
+
+    if (context.Database.GetPendingMigrations().Any())
     {
-        using var scope = app.Services.CreateScope();
-        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<PasswordContext>>(); 
-        using var context = contextFactory.CreateDbContext();
-        context.Database.EnsureCreated();
-        Console.WriteLine("Database connected and created successfully!");
-        break; // Если успешно — выходим из цикла
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
-        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+        context.Database.Migrate();
     }
 }
 
@@ -152,33 +144,30 @@ app.MapPost("/passwords/reset/{token}/{address}",
 });
 
 
-
 app.MapPost("/passwords/reset/complete", async (
     IPasswordTokenService tokenService, 
-    IPasswordService passwordService, 
-    PasswordDb.PasswordContext db,
-    Password_API.Models.Requests.CompleteResetRequest request) =>
+    IPasswordService passwordService,
+    UpdateRequest request,
+    string token, string address, Guid id) =>
 {
-    // 1. Проверяем токен еще раз
-    var isValid = await tokenService.VerifyTokenAsync(request.Token, request.Email);
-    if (!isValid) return Results.BadRequest("Неверный или просроченный код");
+    try
+    {
+        var result = await tokenService.VerifyTokenAsync(token, address);
 
-    // 2. Нам нужно найти UserId по Email. 
-    // Поскольку PasswordService не хранит Email в таблице паролей, 
-    // мы возьмем ID из таблицы токенов (если ты его там сохранял) 
-    // или сделаем "фронтенд-стайл": просто обновим пароль по ID.
-    
-    // ВНИМАНИЕ: Для MVP мы сделаем хитрость. 
-    // Мы передадим ID в запросе или найдем его. 
-    // Давай пока просто найдем любую запись в базе для теста:
-    var passwordEntry = await db.Passwords.FirstOrDefaultAsync(); 
-    
-    if (passwordEntry != null) {
-        await passwordService.UpdateAsync(passwordEntry.Id, request.NewPassword);
+        if (!result) throw new NotFoundException("Entity not found");
+
+        await passwordService.UpdateAsync(id, request.Password);
+
         return Results.Ok();
     }
-
-    return Results.BadRequest("Юзер не найден");
+    catch (NotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
 
 app.Run();

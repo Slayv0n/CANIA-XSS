@@ -40,6 +40,7 @@ namespace Notification_API.Consumers
             await db.SaveChangesAsync();
 
             var address = user.Email;
+
             await _service.SendAsync(address,
                 "Регистрация",
                 "Вы зарегистрировались на сервисе Cania",

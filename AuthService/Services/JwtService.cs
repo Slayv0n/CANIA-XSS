@@ -100,7 +100,7 @@ namespace Auth_API.Services
 
             var tokenHash = ComputeSha256Hash(token);
 
-            var userId = await db.RefreshTokens
+            var userId = await db.RefreshTokens.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.TokenHash == tokenHash && r.ExpiresAt > DateTime.UtcNow)
                 .Select(r => r != null ? r.UserId : Guid.Empty);
 
@@ -164,7 +164,7 @@ namespace Auth_API.Services
 
             var tokenHash = ComputeSha256Hash(token);
 
-            var refreshToken = await db.RefreshTokens
+            var refreshToken = await db.RefreshTokens.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.TokenHash == tokenHash && r.ExpiresAt > DateTime.UtcNow);
 
             _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");

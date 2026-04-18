@@ -2,11 +2,9 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
 using Subscribe_API.Consumers;
-using Subscribe_API.Models.Requests;
 using Subscribe_API.Services;
 using SubscribeDb;
 using SubscribeDb.Models;
-using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,37 +34,34 @@ builder.Services.AddScoped<ISubscribeService, SubscribeService>();
 
 var app = builder.Build();
 
-// Инициализация БД
-for (int i = 0; i < 10; i++)
+using (var scope = app.Services.CreateScope())
 {
-    try {
-        using var scope = app.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SubscribeContext>>().CreateDbContext();
-        dbContext.Database.EnsureCreated();
-        Console.WriteLine("Subscribe DB READY!");
-        break;
-    } catch { 
-        Thread.Sleep(3000); 
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<SubscribeContext>();
+
+    if (context.Database.GetPendingMigrations().Any())
+    {
+        context.Database.Migrate();
     }
 }
 
-// 1. Получить подписку (БЕЗ 404 ОШИБКИ)
-app.MapGet("/subscribes/my", async (HttpContext context, IDbContextFactory<SubscribeContext> dbFactory) =>
+app.MapPost("/subscribes/subscribe", async (ISubscribeService service, HttpContext context, Tariff tariff) =>
 {
     try
     {
         bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-        if (!verify) return Results.Unauthorized();
 
-        using var db = await dbFactory.CreateDbContextAsync();
-        var subscribe = await db.Subscribes
-            .Include(s => s.Tariff)
-            .FirstOrDefaultAsync(s => s.Id == userId && s.Status == SharedModels.General.Status.Active);
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
 
-        // ВОТ ИСПРАВЛЕНИЕ: Возвращаем пустоту, а не 404
-        if (subscribe == null) return Results.Ok((Tariff?)null); 
-        
-        return Results.Ok(subscribe.Tariff);
+        var subscribe = await service.SubscribeAsync(userId, tariff);
+        return Results.Ok(subscribe);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
     }
     catch (Exception ex)
     {
@@ -74,32 +69,56 @@ app.MapGet("/subscribes/my", async (HttpContext context, IDbContextFactory<Subsc
     }
 });
 
-// 2. Купить/Обновить подписку
-app.MapPost("/subscribes/subscribe", async (ISubscribeService service, HttpContext context, Tariff tariff) =>
+app.MapGet("/subscribes/account", async (ISubscribeService service, HttpContext context) =>
 {
     try
     {
         bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-        if (!verify) return Results.Unauthorized();
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
 
-        var subscribe = await service.SubscribeAsync(userId, tariff);
-        return Results.Ok(subscribe);
+        var subscribe = await service.GetSubscribeAsync(userId);
+        return Results.Ok(subscribe != null ? subscribe : "Data is empty");
+
     }
-    catch (Exception ex) { return Results.BadRequest(ex.Message); }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
 
-// 3. Отменить подписку
 app.MapDelete("/subscribes/unscribe", async (ISubscribeService service, HttpContext context) =>
 {
     try
     {
         bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-        if (!verify) return Results.Unauthorized();
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
 
         await service.UnscribeAsync(userId);
         return Results.Ok();
     }
-    catch (Exception ex) { return Results.BadRequest(ex.Message); }
+    catch (NotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
 
 app.Run();

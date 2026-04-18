@@ -86,25 +86,26 @@ namespace Auth_API.Services
                 };
 
                 await db.UserSocialAccounts.AddAsync(socialAccount);
-                await db.SaveChangesAsync();
             }
             else
             {
                 user = socialAccount.User;
-                socialAccount.LastLoginAt = DateTime.UtcNow;
-                await db.SaveChangesAsync();
+                socialAccount.LastLoginAt = DateTime.UtcNow;            
             }
 
-            var accessToken = _jwtService.GenerateAccessToken(user.Id);
-            var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user.Id);
+            await db.SaveChangesAsync();
+
+            var tokens = await Task.WhenAll(
+                Task.Run(() => _jwtService.GenerateAccessToken(user.Id)),
+                _jwtService.GenerateRefreshTokenAsync(user.Id));
 
             _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
 
             return new LoginResponse()
             {
                 UserId = user.Id,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
+                AccessToken = tokens[0],
+                RefreshToken = tokens[1]
             };
         }
     }

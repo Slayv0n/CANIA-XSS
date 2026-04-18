@@ -26,7 +26,7 @@ namespace Auth_API.Consumers
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var usaVerify = await db.UserSocialAccounts.AnyAsync(usa => usa.UserId == context.Message.Id);
+            var usaVerify = await db.UserSocialAccounts.AsNoTracking().AnyAsync(usa => usa.UserId == context.Message.Id);
 
             if (usaVerify)
             {

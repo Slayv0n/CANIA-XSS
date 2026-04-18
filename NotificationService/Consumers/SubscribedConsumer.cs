@@ -30,7 +30,8 @@ namespace Notification_API.Consumers
 
             using var db = await _dbContextFactory.CreateDbContextAsync();
 
-            var address = await db.Users.FirstOrDefaultAsync(u => u.Id == context.Message.Id)
+            var address = await db.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == context.Message.Id)
                 .Select(u => u != null ? u.Email : null);
 
             await _service.SendAsync(address,
