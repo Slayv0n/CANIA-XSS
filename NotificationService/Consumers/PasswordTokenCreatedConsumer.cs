@@ -11,15 +11,12 @@ namespace Notification_API.Consumers
 {
     public class PasswordTokenCreatedConsumer : IConsumer<PasswordTokenCreated> 
     {
-        private readonly IDbContextFactory<NotificationContext> _dbContextFactory;
         private readonly INotificationServcie _servcie;
         private readonly ILogger<PasswordTokenCreatedConsumer> _logger;
 
-        public PasswordTokenCreatedConsumer(IDbContextFactory<NotificationContext> dbContextFactory,
-            INotificationServcie servcie,
+        public PasswordTokenCreatedConsumer(INotificationServcie servcie,
             ILogger<PasswordTokenCreatedConsumer> logger)
         {
-            _dbContextFactory = dbContextFactory;
             _servcie = servcie;
             _logger = logger;
         }
@@ -27,8 +24,6 @@ namespace Notification_API.Consumers
         public async Task Consume(ConsumeContext<PasswordTokenCreated> context)
         {
             _logger.LogInformation($"Password token message send start at {DateTime.UtcNow}");
-
-            using var db = await _dbContextFactory.CreateDbContextAsync();
 
             var address = context.Message.MessageAddress;
 

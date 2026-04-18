@@ -37,7 +37,7 @@ namespace Password_API.Services
             if (password == null)
             {
                 _logger.LogWarning($"Password not found {id}");
-                throw new NotFoundException("Password not found");
+                throw new NotFoundException("Entity not found");
             }
 
             if (password.Status != Status.Active)

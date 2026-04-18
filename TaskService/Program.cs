@@ -1,44 +1,34 @@
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
-using SharedModels.General;
+using SubscribeDb;
+using System;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Threading;
 using Task_API.Consumers;
 using Task_API.Models.Request;
 using Task_API.Services;
 using TaskDb;
-using SubscribeDb;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Настройка базы данных через Factory
 builder.Services.AddDbContextFactory<TaskContext>(
     options => options.UseNpgsql(builder.Configuration.GetValue<string>("TASK_DB_CONNECTION")));
 
-// <--- ДОБАВИТЬ ЭТО (чтобы сервис мог подключаться к базе подписок)
-builder.Services.AddDbContextFactory<SubscribeDb.SubscribeContext>(
-    options => options.UseNpgsql(builder.Configuration.GetValue<string>("SUBSCRIBE_DB_CONNECTION")));
-    
 builder.Services.AddScoped<ITaskService, TaskService>();
 
-// 2. Настройка MassTransit (RabbitMQ)
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<TaskStatusUpdatedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        // Указываем хост 'rabbitmq', как в docker-compose
-        cfg.Host(Environment.GetEnvironmentVariable("RabbitMQ_Host") ?? "rabbitmq", "/", h =>
-        {
-            h.Username("guest");
-            h.Password("guest");
-        });
-
         cfg.ReceiveEndpoint("task-status-queue", e =>
         {
             e.ConfigureConsumer<TaskStatusUpdatedConsumer>(context);
+
             e.PrefetchCount = 10;
             e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
@@ -47,80 +37,29 @@ builder.Services.AddMassTransit(x =>
 
 var app = builder.Build();
 
-// 3. КОСТЫЛЬ: Ожидание запуска базы данных (чтобы не было 502 ошибки)
-for (int i = 0; i < 10; i++)
+using (var scope = app.Services.CreateScope())
 {
-    try
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<SubscribeContext>();
+
+    if (context.Database.GetPendingMigrations().Any())
     {
-        using var scope = app.Services.CreateScope();
-        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TaskContext>>();
-        using var context = contextFactory.CreateDbContext();
-        context.Database.EnsureCreated();
-        Console.WriteLine(">>>> TASK DATABASE IS READY!");
-        break;
-    }
-    catch (Exception)
-    {
-        Console.WriteLine($">>>> Waiting for Postgres... Attempt {i + 1}/10");
-        Thread.Sleep(3000);
+        context.Database.Migrate();
     }
 }
 
-app.UseStaticFiles();
-
-// --- ЭНДПОИНТЫ ---
-
-// Создать новую задачу
-// Создать новую задачу
-app.MapPost("/task/create", async (
-    CreateRequest request, 
-    HttpContext context, 
-    ITaskService taskService,
-    IDbContextFactory<SubscribeDb.SubscribeContext> subDbFactory) => // <--- Добавили фабрику БД подписок
+app.MapPost("/task/create", async (CreateRequest request, ITaskService taskService) =>
 {
     try
     {
-        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-        if (!verify) return Results.Unauthorized();
-
-        // --- ПРОВЕРКА ПОДПИСКИ ---
-        using var subDb = await subDbFactory.CreateDbContextAsync();
-        var hasActiveSub = await subDb.Subscribes.AnyAsync(s => 
-            s.Id == userId && s.Status == SharedModels.General.Status.Active);
-
-        if (!hasActiveSub)
-        {
-            // Возвращаем 403 (Forbidden), если подписки нет
-            return Results.Json(new { error = "Subscription required" }, statusCode: 403);
-        }
-        // --- КОНЕЦ ПРОВЕРКИ ---
-
-        var task = await taskService.CreateAsync(userId, request.Host, request.TypeOfAttacks, request.Depth);
+        var task = await taskService.CreateAsync(Guid.NewGuid(), request.Host, request.TypeOfAttacks, request.Depth);
         return Results.Ok(task);
     }
-    catch (Exception ex) { return Results.BadRequest(ex.Message); }
-});
-
-// Получить список всех задач (для Профиля)
-app.MapGet("/task/all", async (HttpContext context, IDbContextFactory<TaskContext> dbFactory) =>
-{
-    try
+    catch
     {
-        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
-        if (!verify) return Results.Unauthorized();
-
-        using var db = await dbFactory.CreateDbContextAsync();
-        var tasks = await db.Tasks
-            .Where(t => t.UserId == userId)
-            .OrderByDescending(t => t.CreatedTime)
-            .ToListAsync();
-
-        return Results.Ok(tasks);
+        return Results.BadRequest();
     }
-    catch (Exception ex) { return Results.BadRequest(ex.Message); }
 });
-
-// Получить статус конкретной задачи
 app.MapGet("/task/{taskId:Guid}", async (Guid taskId, ITaskService taskService) =>
 {
     try
@@ -128,20 +67,40 @@ app.MapGet("/task/{taskId:Guid}", async (Guid taskId, ITaskService taskService) 
         var task = await taskService.GetAsync(taskId);
         return Results.Ok(task);
     }
-    catch (Exception ex) { return Results.NotFound(ex.Message); }
+    catch (NotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
 
-// Живое обновление через SSE
-app.MapGet("/task/connection/{taskId:Guid}", (Guid taskId, ITaskService taskService, CancellationToken cancellationToken) =>
+app.MapGet("/task/connection/{taskId:Guid}", (Guid taskId, ITaskService taskService,
+    CancellationToken cancellationToken,
+    HttpContext context) =>
 {
     try
     {
-        return TypedResults.ServerSentEvents(taskService.GetUpdateTaskAsync(taskId, cancellationToken), eventType: "task");
+        return TypedResults
+        .ServerSentEvents(taskService.GetUpdateTaskAsync(taskId, cancellationToken),
+        eventType: "task");
     }
-    catch (Exception ex) { return Results.BadRequest(ex.Message); }
+    catch (TaskCanceledException)
+    {
+        return Results.Ok("Connection closed");
+    }
+    catch (NotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
 
-// Удалить задачу (Крестик в профиле)
 app.MapDelete("/task/cancel/{taskId:Guid}", async (Guid taskId, ITaskService taskService) =>
 {
     try
@@ -149,7 +108,15 @@ app.MapDelete("/task/cancel/{taskId:Guid}", async (Guid taskId, ITaskService tas
         await taskService.CancellAsync(taskId);
         return Results.Ok();
     }
-    catch (Exception ex) { return Results.BadRequest(ex.Message); }
+    catch (NotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
+
 
 app.Run();

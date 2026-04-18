@@ -3,8 +3,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672"
+      - "15672"
     networks:
       - cania-network
 
@@ -17,8 +17,10 @@ services:
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
       - JWT_SECRET=YourSuperSecretKeyThatIsAtLeast32CharactersLong123!
-      - JWT_ISSUER=Cania
-      - JWT_AUDIENCE=Cania
+      - JWT_ISSUER=Auth
+      - JWT_AUDIENCE=Services
+      - JwtSettings_ExpirationAccessTokenMinutes=15
+      - JwtSettings_ExpirationRefreshTokenDays=7
     depends_on: [auth-api, user-api, task-api]
     networks:
       - cania-network
@@ -26,21 +28,21 @@ services:
   auth-api:
     build: { context: ., dockerfile: AuthService/Dockerfile }
     ports:
-      - "8081:8081"
+      - "8081"
     environment:
       - ASPNETCORE_HTTP_PORTS=8081
       - AUTH_DB_CONNECTION=Host=auth-db;Port=5432;Database=AuthDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
       - JWT_SECRET=YourSuperSecretKeyThatIsAtLeast32CharactersLong123!
+      - JWT_ISSUER=Auth
+      - JWT_AUDIENCE=Services
+      - JwtSettings_ExpirationAccessTokenMinutes=15
+      - JwtSettings_ExpirationRefreshTokenDays=7
 
-      # ДОБАВЬ ЭТИ СТРОКИ (можно просто любой текст для теста):
-      - JWT_ISSUER=Cania
-      - JWT_AUDIENCE=Cania
-
-      - Google_ClientId=dummy_google_id
-      - Google_SecretKey=dummy_google_secret
-      - GitHub_ClientId=dummy_github_id
-      - GitHub_SecretKey=dummy_github_secret
+      - Google_ClientId={Google_ClientId}
+      - Google_SecretKey={Google_SecretKey}
+      - GitHub_ClientId={GitHub_ClientId}
+      - GitHub_SecretKey={GitHub_SecretKey}
       - AUTH_HOST=localhost:8081
     depends_on: [auth-db, rabbitmq]
     networks: [cania-network]
@@ -53,7 +55,7 @@ services:
   user-api:
     build: { context: ., dockerfile: UserService/Dockerfile }
     ports:
-      - "8082:8082"
+      - "8082"
     environment:
       - ASPNETCORE_HTTP_PORTS=8082
       - User_Db_Connection=Host=user-db;Port=5432;Database=UserDb;Username=postgres;Password=password;
@@ -69,12 +71,11 @@ services:
   task-api:
     build: { context: ., dockerfile: TaskService/Dockerfile }
     ports:
-      - "8086:8086"
+      - "8086"
     environment:
       - ASPNETCORE_HTTP_PORTS=8086
       - TASK_DB_CONNECTION=Host=task-db;Port=5432;Database=TaskDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
-      - SUBSCRIBE_DB_CONNECTION=Host=subscribe-db;Port=5432;Database=SubscribeDb;Username=postgres;Password=password;
     depends_on: [task-db, rabbitmq]
     networks: [cania-network]
 
@@ -97,7 +98,6 @@ services:
     environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: PasswordDb }
     networks: [cania-network]
 
-  # --- ВОТ ЭТИ ДВА Я ЗАБЫЛ ДОБАВИТЬ ---
   subscribe-api:
     build: { context: ., dockerfile: SubscribeService/Dockerfile }
     environment:
@@ -118,9 +118,9 @@ services:
       - ASPNETCORE_HTTP_PORTS=8083
       - NOTIFICATION_DB_CONNECTION=Host=notification-db;Port=5432;Database=NotificationDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
-      - GMAIL_PASSWORD=${GMAIL_APP_PASS}
-      - Email__Smtp__Username=${GMAIL_USER}
-      - Email__FromEmail=${GMAIL_USER}
+      - GMAIL_PASSWORD={GMAIL_PASSWORD}
+      - Email__Smtp__Username=caniapentest@gmail.com
+      - Email__FromEmail=caniapentest@gmail.com
     depends_on: [notification-db, rabbitmq]
     networks: [cania-network]
 

@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Notification_API.Consumers;
 using Notification_API.Service;
 using NotificationDb;
-using SharedModels.ProcessedEvents;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,22 +79,15 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-// Инициализация базы с ожиданием (retry logic)
-for (int i = 0; i < 10; i++) // 10 попыток
+
+using (var scope = app.Services.CreateScope())
 {
-    try
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<NotificationContext>();
+
+    if (context.Database.GetPendingMigrations().Any())
     {
-        using var scope = app.Services.CreateScope();
-        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<NotificationContext>>();
-        using var context = contextFactory.CreateDbContext();
-        context.Database.EnsureCreated();
-        Console.WriteLine("Database connected and created successfully!");
-        break; // Если успешно — выходим из цикла
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database not ready yet... (Attempt {i + 1}/10)");
-        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
+        context.Database.Migrate();
     }
 }
 

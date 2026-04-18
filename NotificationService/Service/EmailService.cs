@@ -34,7 +34,6 @@ namespace Notification_API.Service
             {
                 _logger.LogInformation($"Send to {address} started");
 
-                // Читаем настройки из конфига (или docker-compose)
                 var smtpHost = _configuration["Email:Smtp:Host"] ?? "smtp.gmail.com";
                 var smtpPort = _configuration.GetValue<int>("Email:Smtp:Port", 587);
                 var smtpUsername = _configuration["Email:Smtp:Username"];
@@ -55,7 +54,6 @@ namespace Notification_API.Service
 
                 using var smtp = new SmtpClient();
                 
-                // ИСПРАВЛЕНО: Подключаемся по правильному порту с TLS шифрованием!
                 await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
 
                 if (!string.IsNullOrEmpty(smtpUsername) && !string.IsNullOrEmpty(smtpPassword))
@@ -70,7 +68,7 @@ namespace Notification_API.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Ошибка при отправке письма: {ex.Message}");
+                _logger.LogError(ex.Message);
                 throw;
             }
         }
