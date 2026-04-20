@@ -11,9 +11,11 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
+using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
+using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -286,12 +288,29 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/health", () => Results.Ok(new { status = "OK", time = DateTime.UtcNow }));
+
 //JWT Auth
 
 app.MapPost("/auth/login", async (LoginRequest request, IAuthenticationJWTService authenticationService) =>
 {
     try
     {
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
+        }
+
         var response = await authenticationService.LoginAsync(request.Email, request.Password);
         return Results.Ok(response);
     }
@@ -305,12 +324,25 @@ app.MapPost("/auth/login", async (LoginRequest request, IAuthenticationJWTServic
     }
 });
 
-app.MapGet("/health", () => Results.Ok(new { status = "OK", time = DateTime.UtcNow }));
-
 app.MapPost("/auth/refresh", async (TokenRequest request, IAuthenticationJWTService authenticationService) =>
 {
     try
     {
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
+        }
+
         var response = await authenticationService.RefreshAsync(request.RefreshToken);
         return Results.Ok(response);
     }
@@ -328,6 +360,21 @@ app.MapPost("/auth/logout", async (TokenRequest request, IAuthenticationJWTServi
 {
     try
     {
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
+        }
+
         await authenticationService.LogoutAsync(request.RefreshToken);
         return Results.Ok();
     }
@@ -350,6 +397,21 @@ app.MapPost("/auth/logout/all", async (TokenRequest request, HttpContext context
         if (!verify)
         {
             throw new AuthException("User");
+        }
+
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
         }
 
         await authenticationService.LogoutAllAsync(userId, request.RefreshToken);

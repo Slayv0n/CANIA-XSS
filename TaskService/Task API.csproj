@@ -27,7 +27,6 @@
   <ItemGroup>
     <ProjectReference Include="..\SharedModels\SharedModels.csproj" />
     <ProjectReference Include="..\TaskDb\TaskDb.csproj" />
-    <ProjectReference Include="..\SubscribeDb\SubscribeDb.csproj" />
   </ItemGroup>
 
 </Project>

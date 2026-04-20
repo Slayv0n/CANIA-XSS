@@ -1,19 +1,15 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 using MassTransit;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using SharedModels.Exceptions;
 using SharedModels.General;
-using System;
+using System.ComponentModel.DataAnnotations;
 using UserAPI.Consumers;
 using UserAPI.Models.Requests;
 using UserAPI.Service;
 using UserDb;
-using UserDb.Models;
+using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -106,6 +102,21 @@ app.MapPost("/users/create", async (IUserService userService, CreateRequest requ
 {
     try
     {
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
+        }
+
         var user = await userService.CreateUserAsync(request);
         return Results.Ok(user);
     }
@@ -174,12 +185,27 @@ app.MapGet("/users/id/{email}", async (IUserService userService, string email) =
 app.MapPut("/users/update", async (IUserService userService, HttpContext context, UpdateRequest request) =>
 {
     try
-    {
+    {      
         bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
 
         if (!verify)
         {
             throw new AuthException("User");
+        }
+
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
         }
 
         var user = await userService.UpdateUserAsync(userId, request.Email);

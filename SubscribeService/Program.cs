@@ -5,6 +5,8 @@ using Subscribe_API.Consumers;
 using Subscribe_API.Services;
 using SubscribeDb;
 using SubscribeDb.Models;
+using System.ComponentModel.DataAnnotations;
+using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +56,21 @@ app.MapPost("/subscribes/subscribe", async (ISubscribeService service, HttpConte
         if (!verify)
         {
             throw new AuthException("User");
+        }
+
+        var validationContext = new ValidationContext(tariff);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(tariff, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
         }
 
         var subscribe = await service.SubscribeAsync(userId, tariff);

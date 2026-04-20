@@ -1,16 +1,12 @@
 using MassTransit;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
-using SubscribeDb;
-using System;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Threading;
+using System.ComponentModel.DataAnnotations;
 using Task_API.Consumers;
 using Task_API.Models.Request;
 using Task_API.Services;
 using TaskDb;
+using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +36,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<SubscribeContext>();
+    var context = services.GetRequiredService<TaskContext>();
 
     if (context.Database.GetPendingMigrations().Any())
     {
@@ -52,6 +48,21 @@ app.MapPost("/task/create", async (CreateRequest request, ITaskService taskServi
 {
     try
     {
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
+        }
+
         var task = await taskService.CreateAsync(Guid.NewGuid(), request.Host, request.TypeOfAttacks, request.Depth);
         return Results.Ok(task);
     }
