@@ -9,6 +9,8 @@ using Password_API.Services;
 using PasswordDb;
 using SharedModels.Exceptions;
 using SharedModels.General;
+using System.ComponentModel.DataAnnotations;
+using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,6 +102,21 @@ app.MapPut("/passwords/update",async (IPasswordService service, HttpContext cont
             throw new AuthException("User");
         }
 
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
+        }
+
         await service.UpdateAsync(userId, request.Password);
         return Results.Ok();
     }
@@ -152,6 +169,21 @@ app.MapPost("/passwords/reset/complete", async (
 {
     try
     {
+        var validationContext = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
+        {
+            return Results.BadRequest(new
+            {
+                errors = results.Select(r => new
+                {
+                    field = string.Join(", ", r.MemberNames),
+                    message = r.ErrorMessage
+                })
+            });
+        }
+
         var result = await tokenService.VerifyTokenAsync(token, address);
 
         if (!result) throw new NotFoundException("Entity not found");

@@ -10,8 +10,6 @@ COPY ["TaskService/Task API.csproj", "TaskService/"]
 COPY ["TaskDb/TaskDb.csproj", "TaskDb/"]
 COPY ["SharedModels/SharedModels.csproj", "SharedModels/"]
 
-COPY ["SubscribeDb/SubscribeDb.csproj", "SubscribeDb/"]
-
 RUN dotnet restore "TaskService/Task API.csproj"
 
 COPY . .
