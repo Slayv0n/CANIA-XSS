@@ -28,13 +28,6 @@
       ],
       "AddHeadersToRequest": { "X-Forwarded-Host": "{Request.Host}" }
     },
-    {
-      "UpstreamPathTemplate": "/api/signin-github",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/signin-github",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
-    },
 
     // 2. ПОЛЬЗОВАТЕЛИ: Регистрация (UserService - 8082, без авторизации)
     {

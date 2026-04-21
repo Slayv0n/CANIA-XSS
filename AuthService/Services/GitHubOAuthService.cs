@@ -64,8 +64,6 @@ namespace Auth_API.Services
             var content = await response.Content.ReadAsStringAsync();
             var parsed = HttpUtility.ParseQueryString(content);
 
-            _logger.LogInformation(parsed["access_token"] + " " + parsed["token_type"] + " " + parsed["scope"]);
-
             return new GitHubTokenResponse
             {
                 AccessToken = parsed["access_token"],

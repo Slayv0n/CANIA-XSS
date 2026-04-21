@@ -14,6 +14,7 @@ using SharedModels.Exceptions;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Claims;
+using static MassTransit.Transports.ReceiveEndpoint;
 using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -44,43 +45,6 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.IsEssential = true;
     options.Cookie.HttpOnly = true;
-})
-.AddOpenIdConnect("Google", options =>
-{
-    options.Authority = "https://accounts.google.com";
-    options.ClientId = builder.Configuration.GetValue<string>("Google_ClientId")
-        ?? throw new InvalidOperationException("Google_ClientId is required");
-    options.ClientSecret = builder.Configuration.GetValue<string>("Google_SecretKey")
-        ?? throw new InvalidOperationException("Google_SecretKey is required");
-
-    options.Scope.Add("openid");
-    options.Scope.Add("profile");
-    options.Scope.Add("email");
-
-    options.CallbackPath = "/signin-google";
-
-    options.SaveTokens = true;
-    options.GetClaimsFromUserInfoEndpoint = true;
-
-    options.CorrelationCookie.MaxAge = TimeSpan.FromMinutes(10);
-    options.CorrelationCookie.SameSite = SameSiteMode.None;
-    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.CorrelationCookie.IsEssential = true;
-    options.CorrelationCookie.HttpOnly = false;
-
-    options.Events = new OpenIdConnectEvents
-    {
-        OnTokenValidated = context =>
-        {
-            var identity = (ClaimsIdentity?)context.Principal?.Identity;
-
-            identity?.AddClaim(new Claim("provider", "google"));
-
-            Console.WriteLine($"Token validated, provider: google");
-
-            return Task.CompletedTask;
-        }
-    };
 });
 
 builder.Services.AddCors(options =>
@@ -133,6 +97,8 @@ var jwtSettings = new JwtSettings
 };
 
 builder.Services.AddHttpClient<IGitHubOAuthService, GitHubOAuthService>();
+
+builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>();
 
 builder.Services.AddSingleton<JwtSettings>(jwtSettings);
 
@@ -336,19 +302,14 @@ app.MapPost("/auth/logout/all", async (TokenRequest request, HttpContext context
 
 //Social auth
 
-app.MapGet("/auth/login/google", () =>
-    Results.Challenge(new AuthenticationProperties { RedirectUri = "/auth/callback" }, new[] { "Google" }));
-
-app.MapGet("/auth/github/login", async (
-    IGitHubOAuthService githubService) =>
+app.MapGet("/auth/github/login", async (IGitHubOAuthService githubService) =>
 {
     var authUrl = await githubService.GetAuthorizationUrl();
     return Results.Redirect(authUrl);
 });
-app.MapGet("/auth/github/callback", async (
-    HttpContext context,
+app.MapGet("/auth/github/callback", async (HttpContext context,
     IGitHubOAuthService githubService,
-    ISocialAuthenticationService service) =>
+    ISocialAuthenticationService socialService) =>
 {
     var code = context.Request.Query["code"].ToString();
     var state = context.Request.Query["state"].ToString();
@@ -385,12 +346,51 @@ app.MapGet("/auth/github/callback", async (
     var identity = new ClaimsIdentity(claims, "GitHub");
     var claimsPrincipal = new ClaimsPrincipal(identity);
 
-    var response = await service.LoginAsync(claimsPrincipal);
+    var response = await socialService.LoginAsync(claimsPrincipal);
 
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
     return Results.Redirect("http://localhost:5173/profile");
 });
 
+app.MapGet("/auth/google/login", async (IGoogleOAuthService googleService) =>
+{
+    var authUrl = await googleService.GetAuthorizationUrl();
+    return Results.Redirect(authUrl);
+});
+
+app.MapGet("/auth/google/callback", async (HttpContext context,
+    IGoogleOAuthService googleService,
+    ISocialAuthenticationService socialService) =>
+{
+    var code = context.Request.Query["code"].ToString();
+    var state = context.Request.Query["state"].ToString();
+
+    if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state))
+        return Results.BadRequest("Missing code or state");
+
+    var tokenResponse = await googleService.ExchangeCodeForToken(code);
+
+    if (string.IsNullOrEmpty(tokenResponse.AccessToken))
+        return Results.Unauthorized();
+
+    var userInfo = await googleService.GetUserInfo(tokenResponse.AccessToken);
+    var email = userInfo.Email;
+    
+    var claims = new List<Claim>
+        {
+            new Claim("provider", "google"),
+            new Claim(ClaimTypes.NameIdentifier, userInfo.Id ?? "unknown"),
+            new Claim(ClaimTypes.Email, email!)
+        };
+    var identity = new ClaimsIdentity(claims, "Google");
+    var claimsPrincipal = new ClaimsPrincipal(identity);
+
+    var response = await socialService.LoginAsync(claimsPrincipal);
+
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+    return Results.Redirect("http://localhost:5173/profile");
+});
 
 app.Run();

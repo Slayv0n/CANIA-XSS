@@ -107,7 +107,7 @@ namespace Auth_API.Services
             if (userId == Guid.Empty)
             {
                 _logger.LogWarning($"Token invalid {token}");
-                throw new AuthException($"Token invalid");
+                throw new AuthException($"Недействительный токен");
             }
 
             _logger.LogInformation($"{MethodBase.GetCurrentMethod()?.Name} ended at {DateTime.UtcNow}");
@@ -146,7 +146,7 @@ namespace Auth_API.Services
             if (refreshToken == null)
             {
                 _logger.LogWarning($"Token not found: {token}");
-                throw new NotFoundException("Token not found");
+                throw new NotFoundException("Недействительный токен");
             }
 
             refreshToken.Status = Status.Deleted;

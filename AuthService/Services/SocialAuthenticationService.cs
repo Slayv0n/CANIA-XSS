@@ -44,7 +44,7 @@ namespace Auth_API.Services
                 
             if (string.IsNullOrEmpty(provider) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerId))
             {
-                throw new InvalidOperationException("Email is required");
+                throw new InvalidOperationException("Электронная почта обязательна");
             }
 
             var socialAccount = await db.UserSocialAccounts
