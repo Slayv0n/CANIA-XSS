@@ -346,9 +346,25 @@ app.MapGet("/auth/github/callback", async (HttpContext context,
     var identity = new ClaimsIdentity(claims, "GitHub");
     var claimsPrincipal = new ClaimsPrincipal(identity);
 
-    var response = await socialService.LoginAsync(claimsPrincipal);
+    var jwtResponse = await socialService.LoginAsync(claimsPrincipal);
 
-    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    context.Response.Cookies.Append("access_token", jwtResponse.AccessToken, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Lax,
+        Expires = DateTimeOffset.UtcNow.AddMinutes(15),
+        Path = "/"
+    });
+
+    context.Response.Cookies.Append("refresh_token", jwtResponse.RefreshToken, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Lax,
+        Expires = DateTimeOffset.UtcNow.AddDays(7),
+        Path = "/"
+    });
 
     return Results.Redirect("http://localhost:5173/profile");
 });
@@ -386,9 +402,25 @@ app.MapGet("/auth/google/callback", async (HttpContext context,
     var identity = new ClaimsIdentity(claims, "Google");
     var claimsPrincipal = new ClaimsPrincipal(identity);
 
-    var response = await socialService.LoginAsync(claimsPrincipal);
+    var jwtResponse = await socialService.LoginAsync(claimsPrincipal);
 
-    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    context.Response.Cookies.Append("access_token", jwtResponse.AccessToken, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Lax,
+        Expires = DateTimeOffset.UtcNow.AddMinutes(15),
+        Path = "/"
+    });
+
+    context.Response.Cookies.Append("refresh_token", jwtResponse.RefreshToken, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Lax,
+        Expires = DateTimeOffset.UtcNow.AddDays(7),
+        Path = "/"
+    });
 
     return Results.Redirect("http://localhost:5173/profile");
 });
