@@ -39,10 +39,10 @@ services:
       - JwtSettings_ExpirationAccessTokenMinutes=15
       - JwtSettings_ExpirationRefreshTokenDays=7
 
-      - Google_ClientId={Google_ClientId}
-      - Google_SecretKey={Google_SecretKey}
-      - GitHub_ClientId={GitHub_ClientId}
-      - GitHub_SecretKey={GitHub_SecretKey}
+      - Google_ClientId=${Google_ClientId}
+      - Google_SecretKey=${Google_SecretKey}
+      - GitHub_ClientId=${GitHub_ClientId}
+      - GitHub_SecretKey=${GitHub_SecretKey}
       - AUTH_HOST=localhost:8081
     depends_on: [auth-db, rabbitmq]
     networks: [cania-network]
@@ -118,7 +118,7 @@ services:
       - ASPNETCORE_HTTP_PORTS=8083
       - NOTIFICATION_DB_CONNECTION=Host=notification-db;Port=5432;Database=NotificationDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
-      - GMAIL_PASSWORD={GMAIL_PASSWORD}
+      - GMAIL_PASSWORD=${GMAIL_PASSWORD}
       - Email__Smtp__Username=caniapentest@gmail.com
       - Email__FromEmail=caniapentest@gmail.com
     depends_on: [notification-db, rabbitmq]

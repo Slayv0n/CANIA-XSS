@@ -20,7 +20,13 @@
       "UpstreamHttpMethod": [ "GET", "POST" ],
       "DownstreamPathTemplate": "/auth/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "auth-api",
+          "Port": 8081
+        }
+      ],
+      "AddHeadersToRequest": { "X-Forwarded-Host": "{Request.Host}" }
     },
     {
       "UpstreamPathTemplate": "/api/signin-github",
