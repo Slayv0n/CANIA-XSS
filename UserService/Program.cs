@@ -73,14 +73,19 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-using (var scope = app.Services.CreateScope())
+// пж оставь этот костыль мне нейронка пишет что 
+// код быстрее бд компилируется и у меня ошибка появляется
+for (int i = 0; i < 15; i++) // 15 попыток
 {
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<UserContext>();
-
-    if (context.Database.GetPendingMigrations().Any())
-    {
-        context.Database.Migrate();
+    try {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<UserContext>();
+        context.Database.Migrate(); // Миграция сама проверит, что нужно
+        Console.WriteLine("DATABASE READY!");
+        break;
+    } catch {
+        Console.WriteLine("Waiting for database...");
+        Thread.Sleep(3000); // Ждем 3 секунды перед следующей попыткой
     }
 }
 
