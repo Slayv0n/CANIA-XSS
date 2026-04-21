@@ -1,6 +1,5 @@
 ﻿using Auth_API.Models.Responses;
 using AuthDb;
-using AuthDb.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedModels.Exceptions;
 using SharedModels.Hash;
@@ -41,13 +40,19 @@ namespace Auth_API.Services
             if (user == null)
             {
                 _logger.LogWarning($"User not found {email}");
-                throw new AuthException("Email or password incorrect");
+                throw new AuthException("Неверные данные");
             }
 
-            if (!PasswordHasher.VerifyPassword(password, user.PasswordHash ?? ""))
+            if (user.PasswordHash == null)
+            {
+                _logger.LogWarning($"User logged in through third-party services");
+                throw new AuthException("Пользователь вошёл с помощью сторонних сервисов и не установил пароль");
+            }
+
+            if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
             {
                 _logger.LogWarning($"Password incorrect");
-                throw new AuthException("Email or password incorrect");
+                throw new AuthException("Неверные данные");
             }
 
             var tokens = await Task.WhenAll(
@@ -73,7 +78,7 @@ namespace Auth_API.Services
             if (!verify)
             {
                 _logger.LogWarning($"Token incorrect {token}");
-                throw new AuthException("Token incorrect");
+                throw new AuthException("Недействительный токен");
             }
 
             await _jwtService.RevokeAllRefreshTokenAsync(userId);
@@ -90,7 +95,7 @@ namespace Auth_API.Services
             if (!verify)
             {
                 _logger.LogWarning($"Token incorrect {token}");
-                throw new AuthException("Token incorrect");
+                throw new AuthException("Недействительный токен");
             }
 
             await _jwtService.RevokeRefreshTokenAsync(token);
@@ -107,7 +112,7 @@ namespace Auth_API.Services
             if (!verify)
             {
                 _logger.LogWarning($"Token incorrect {token}");
-                throw new AuthException("Token incorrect");
+                throw new AuthException("Недействительный токен");
             }
 
             var userId = await _jwtService.GetUserIdAsync(token);

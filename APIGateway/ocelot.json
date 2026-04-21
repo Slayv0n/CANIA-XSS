@@ -20,14 +20,13 @@
       "UpstreamHttpMethod": [ "GET", "POST" ],
       "DownstreamPathTemplate": "/auth/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
-    },
-    {
-      "UpstreamPathTemplate": "/api/signin-github",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/signin-github",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "auth-api", "Port": 8081 }]
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "auth-api",
+          "Port": 8081
+        }
+      ],
+      "AddHeadersToRequest": { "X-Forwarded-Host": "{Request.Host}" }
     },
 
     // 2. ПОЛЬЗОВАТЕЛИ: Регистрация (UserService - 8082, без авторизации)
