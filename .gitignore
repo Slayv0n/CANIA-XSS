@@ -1,0 +1,25 @@
+# API-ключи
+.env
+
+# Временные файлы 
+__pycache__/
+*.py[cod]
+
+#  Разные отчеты и выводы
+execution_results/
+reports/
+
+# Виртуальное окружение
+venv/
+env/
+
+# Настройки VSC
+.vscode/
+
+# Системные приколы
+Thumbs.db
+.DS_Store
+
+# БД
+security_docs_lancedb/
+
