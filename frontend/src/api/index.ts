@@ -217,14 +217,15 @@ export const api = {
   },
 
   async getMySubscription(token?: string): Promise<Tariff | null> {
-    const response = await authFetch(`${API_BASE}/subscribes/my`, {
+    const response = await authFetch(`${API_BASE}/subscribes/account`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
     if (!response.ok) throw new Error('Ошибка получения подписки');
 
     const text = await response.text();
-    return text ? JSON.parse(text) : null;
+    if (!text || text === '"Data is empty"') return null; 
+    return JSON.parse(text);
   },
 
   async cancelSubscription(token?: string) {
