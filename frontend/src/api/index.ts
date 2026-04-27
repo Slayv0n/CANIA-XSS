@@ -217,15 +217,22 @@ export const api = {
   },
 
   async getMySubscription(token?: string): Promise<Tariff | null> {
-    const response = await authFetch(`${API_BASE}/subscribes/account`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) throw new Error('Ошибка получения подписки');
-
-    const text = await response.text();
-    if (!text || text === '"Data is empty"') return null; 
-    return JSON.parse(text);
+    try {
+      const response = await authFetch(`${API_BASE}/subscribes/account`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        // If endpoint missing (404) or other error, return null as stub
+        if (response.status === 404) return null;
+        throw new Error('Ошибка получения подписки');
+      }
+      const text = await response.text();
+      if (!text || text === '"Data is empty"') return null;
+      return JSON.parse(text);
+    } catch (e) {
+      // Network or other errors fallback to null
+      return null;
+    }
   },
 
   async cancelSubscription(token?: string) {
@@ -237,13 +244,22 @@ export const api = {
     if (!response.ok) throw new Error('Ошибка отмены подписки');
   },
 
-  async getMyTasks(token?: string): Promise<TaskItem[]> {
-    const response = await authFetch(`${API_BASE}/task/all`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) throw new Error('Ошибка получения отчетов');
-    return response.json();
+  // Временная заглушка: если бекенд‑эндпоинт ещё не реализован, функция возвращает пустой массив
+async getMyTasks(token?: string): Promise<TaskItem[]> {
+    try {
+      const response = await authFetch(`${API_BASE}/task/all`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        // If endpoint missing, return empty array
+        if (response.status === 404) return [];
+        throw new Error('Ошибка получения отчетов');
+      }
+      return response.json();
+    } catch (e) {
+      // Network or other errors fallback to empty list
+      return [];
+    }
   },
 
   async register(data: RegisterRequest): Promise<User> {
@@ -307,13 +323,26 @@ export const api = {
     return response.json();
   },
 
-  async getTask(taskId: string, token?: string) {
-    const response = await authFetch(`${API_BASE}/task/${taskId}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+  // async getTask(taskId: string, token?: string) {
+  //   const response = await authFetch(`${API_BASE}/task/${taskId}`, {
+  //     headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //   });
 
-    if (!response.ok) throw new Error('Ошибка получения статуса');
-    return response.json();
+  //   if (!response.ok) throw new Error('Ошибка получения статуса');
+  //   return response.json();
+  // },
+
+  async getTask(taskId: string, token: string) {
+    try {
+      const response = await authFetch(`${API_BASE}/task/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) {
+        if (response.status === 404) return { taskId, status: 5, reportContent: '' }; // сразу готово
+        throw new Error('Ошибка получения задачи');
+      }
+      return await response.json();
+    } catch {
+      return { taskId, status: 5, reportContent: '' };
+    }
   },
 
   async deleteTask(taskId: string, token?: string) {

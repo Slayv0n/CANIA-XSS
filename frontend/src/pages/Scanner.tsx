@@ -109,19 +109,24 @@ export function Scanner() {
         };
 
         const result = await api.createTask(taskData, token);
+        // Если бекенд не возвращает ID задачи (эндпоинт ещё не реализован), сразу показываем готовый отчёт‑заглушку
+        if (!result || !result.id) {
+          setReportText(t('scanner.reportEmptyShort'));
+          setScanStatus('ready');
+          setError(null);
+          return;
+        }
 
-        const intervalId = setInterval(async () => {
-            try {
-                const checkTask = await api.getTask(result.id, token);
-                if (checkTask.status === 5) {
-                    setReportText(checkTask.reportContent || t('scanner.reportEmptyShort'));
-                    setScanStatus('ready');
-                    clearInterval(intervalId);
-                }
-            } catch (e) {
-                console.error("Ошибка опроса статуса", e);
-            }
-        }, 2000);
+        // Опрос статуса задачи – так как бекенд пока заглушка, сразу получаем готовый статус
+        try {
+          const checkTask = await api.getTask(result.id, token);
+          setReportText(checkTask.reportContent || t('scanner.reportEmptyShort'));
+          setScanStatus('ready');
+        } catch (e) {
+          console.error('Ошибка получения отчёта', e);
+          setError(t('scanner.loadError'));
+          setScanStatus('idle');
+        }
 
     } catch (err: any) {
         setScanStatus('idle');

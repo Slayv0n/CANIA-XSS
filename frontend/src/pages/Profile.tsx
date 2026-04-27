@@ -19,12 +19,23 @@ export function Profile() {
   const { userEmail } = useAuth();
 
   // Маппинг названия тарифа с бэкенда на локализованный ключ
-  const getLocalizedPlanName = (name: string): string => {
+  // Старый вариант функции оставлен для справки (закомментирован)
+  // const getLocalizedPlanName = (name: string): string => {
+  //   const lower = name.toLowerCase();
+  //   if (lower.includes('1 month') || lower.includes('1 месяц')) return t('profile.planMonth1');
+  //   if (lower.includes('6 month') || lower.includes('6 месяц')) return t('profile.planMonth6');
+  //   if (lower.includes('year') || lower.includes('год')) return t('profile.planYear1');
+  //   return name; // fallback — показать как есть
+  // };
+
+  // Новый вариант, безопасный к `undefined`
+  const getLocalizedPlanName = (name?: string): string => {
+    if (!name) return '';
     const lower = name.toLowerCase();
     if (lower.includes('1 month') || lower.includes('1 месяц')) return t('profile.planMonth1');
     if (lower.includes('6 month') || lower.includes('6 месяц')) return t('profile.planMonth6');
     if (lower.includes('year') || lower.includes('год')) return t('profile.planYear1');
-    return name; // fallback — показать как есть
+    return name; // fallback
   };
 
   const handleDownload = (e: React.MouseEvent, host: string) => {

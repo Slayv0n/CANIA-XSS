@@ -115,7 +115,7 @@ export default function Header() {
 
               {/* Выпадающее меню профиля */}
               <div
-                className={`absolute min-w-[240px] h-auto py-4 bg-main-bg border border-card-border shadow-2xl top-17 right-0 rounded-2xl flex flex-col items-start gap-1 px-4 transition-all duration-300 ease-out origin-top-right z-[100] ${
+                className={`absolute min-w-60 h-auto py-4 bg-main-bg border border-card-border shadow-2xl top-17 right-0 rounded-2xl flex flex-col items-start gap-1 px-4 transition-all duration-300 ease-out origin-top-right z-[100] ${
                   isProfileMenuOpen
                     ? 'opacity-100 pointer-events-auto translate-y-0 scale-100 visible'
                     : 'opacity-0 pointer-events-none -translate-y-4 scale-95 invisible'
