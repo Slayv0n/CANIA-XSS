@@ -23,6 +23,7 @@ class DataParserToolkit(Toolkit):
         self.results_dir = Path(results_dir)
         self.results_dir.mkdir(exist_ok=True)
 
+        # Определяем инструменты
         tools = [
             self.parse_nmap_output,
             self.parse_gobuster_output,
@@ -56,6 +57,7 @@ class DataParserToolkit(Toolkit):
         }
 
         try:
+            # Парсим открытые порты
             port_pattern = r'(\d+)/(tcp|udp)\s+(open|filtered)\s+(\S+)'
             for match in re.finditer(port_pattern, output):
                 port, protocol, state, service = match.groups()
@@ -74,6 +76,7 @@ class DataParserToolkit(Toolkit):
                         "protocol": protocol
                     })
 
+            # Определение ОС
             os_pattern = r'OS guess:\s+(.+?)(?:\n|$)'
             os_match = re.search(os_pattern, output)
             if os_match:
@@ -105,6 +108,7 @@ class DataParserToolkit(Toolkit):
             "critical_finds": []
         }
 
+        # Критичные пути
         critical_paths = [
             'admin', 'phpmyadmin', 'wp-admin', 'backup', '.git', '.env',
             'config', 'sql', 'database', 'login', 'panel', 'console'
@@ -170,17 +174,20 @@ class DataParserToolkit(Toolkit):
                 tech = match.group(1)
                 result["technologies"].append(tech)
 
+                # Определяем CMS
                 cms_list = ['WordPress', 'Joomla', 'Drupal', 'Magento', 'Shopify']
                 for cms in cms_list:
                     if cms.lower() in tech.lower():
                         result["cms"] = tech
                         break
 
+                # Определяем фреймворки
                 frameworks = ['Laravel', 'Django', 'Rails', 'Symfony', 'Express']
                 for fw in frameworks:
                     if fw.lower() in tech.lower():
                         result["frameworks"].append(tech)
 
+            # Поиск сервера
             server_pattern = r'Server:\s+(\S+)'
             server_match = re.search(server_pattern, output)
             if server_match:
@@ -324,12 +331,14 @@ class DataParserToolkit(Toolkit):
         report.append(f"🕐 ВРЕМЯ: {parsed_data.get('timestamp', 'Unknown')[:19]}")
         report.append("")
 
+        # Открытые порты
         if parsed_data.get("nmap", {}).get("open_ports"):
             report.append("🔓 ОТКРЫТЫЕ ПОРТЫ:")
             for port in parsed_data["nmap"]["open_ports"][:10]:
                 report.append(f"  - {port['port']}/{port['protocol']} ({port['service']})")
             report.append("")
 
+        # Критические находки
         critical_finds = parsed_data.get("gobuster", {}).get("critical_finds", [])
         critical_vulns = parsed_data.get("nikto", {}).get("vulnerabilities", {}).get("critical", [])
 
@@ -341,6 +350,7 @@ class DataParserToolkit(Toolkit):
                 report.append(f"  - {vuln['title']}")
             report.append("")
 
+        # Технологии
         if parsed_data.get("whatweb", {}).get("technologies"):
             report.append("🛠 ТЕХНОЛОГИИ:")
             for tech in parsed_data["whatweb"]["technologies"][:10]:
@@ -351,6 +361,7 @@ class DataParserToolkit(Toolkit):
                 report.append(f"  🖥️ Сервер: {parsed_data['whatweb']['server']}")
             report.append("")
 
+        # Статистика
         summary = parsed_data.get("summary", {})
         report.append("📊 СТАТИСТИКА:")
         report.append(f"  - Открытых портов: {summary.get('open_ports_count', 0)}")
@@ -387,6 +398,7 @@ class DataParserToolkit(Toolkit):
             logger.error(f"Ошибка сохранения: {e}")
             return f"❌ Ошибка сохранения: {e}"
 
+# Создаем парсер-агента
 parser_agent = Agent(
     name='Data Parser',
     role='Парсинг и структурирование данных сканирования',
