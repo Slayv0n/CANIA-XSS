@@ -225,7 +225,7 @@ agent_terminal = Agent(
     tools=[ShellTools()],
     knowledge=knowledge,
     search_knowledge=True,
-    debug_mode=True
+    markdown=True
 )
 
 
@@ -259,5 +259,5 @@ agent_executor = Agent(
     tools=[ShellTools()],
     knowledge=None,  # НЕТ базы знаний - не тратим токены
     search_knowledge=False,  # НЕ ищем в базе
-    debug_mode=False  # отключаем debug для экономии
+    markdown=True
 )

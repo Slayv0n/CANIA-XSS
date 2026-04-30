@@ -27,6 +27,6 @@ def load_config(path: str | None = None) -> Config:
             id_model=env('ID_MODEL')
         ),
         bot=TgBot(
-            token=env('BOT_TOKEN')
+            token=env('BOT_TOKEN', default='STUB_TOKEN_NOT_USED')
         )
     )

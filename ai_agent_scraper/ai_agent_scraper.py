@@ -422,5 +422,4 @@ parser_agent = Agent(
         "4. Покажи отчет через format_for_report"
     ],
     markdown=True,
-    debug_mode=False
 )
