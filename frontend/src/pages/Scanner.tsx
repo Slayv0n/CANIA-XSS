@@ -3,8 +3,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Download } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
-import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { api, getAccessToken } from '../api';
 // import ReactMarkdown from 'react-markdown';
 const ReactMarkdown = React.lazy(() => import('react-markdown'));
 
@@ -61,7 +61,9 @@ export function Scanner() {
 
   useEffect(() => {
     if (taskId) {
-        const token = localStorage.getItem('token');
+        // const token = localStorage.getItem('token');
+        const token = getAccessToken();
+
         if (!token) return;
 
         setScanStatus('scanning');
@@ -91,7 +93,8 @@ export function Scanner() {
     if (!selectedAttack || !selectedDepth) { setError(t('scanner.errorNoOptions')); return; }
     if (!url.includes('.')) { setError(t('scanner.errorInvalidUrl')); return; }
 
-    const token = localStorage.getItem('token');
+    // const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (!token) { setError(t('scanner.errorNotAuth')); return; }
 
     const attackMap: Record<string, number> = { [t('scanner.xss')]: 1, [t('scanner.sql')]: 2, [t('scanner.allTypes')]: 1 };

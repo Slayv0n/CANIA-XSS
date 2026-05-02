@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useRef, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest } from '../api';
+import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest, clearTokens } from '../api';
 
 export type AuthContextState = {
   isAuth: boolean;
@@ -23,49 +23,82 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const refresh = getRefreshToken();
     return Boolean(token && refresh);
   });
+  
   const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('userEmail'));
   const [hasSubscription, setHasSubscription] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
 
   const tokenRefreshTimerRef = useRef<number | null>(null);
 
-  const logout = () => {
+  // Функция для загрузки данных профиля (Email) с бэкенда
+  const loadUserProfile = useCallback(async () => {
+    if (!getAccessToken()) return;
+    try {
+      const profile = await api.getProfile(); // Вызов /api/users/account
+      if (profile && profile.email) {
+        setUserEmail(profile.email);
+        localStorage.setItem('userEmail', profile.email);
+      }
+    } catch (err) {
+      console.error("Ошибка загрузки профиля:", err);
+    }
+  }, []);
+
+  const logout = useCallback(() => {
     if (tokenRefreshTimerRef.current) {
       clearTimeout(tokenRefreshTimerRef.current);
       tokenRefreshTimerRef.current = null;
     }
     localStorage.removeItem('isAuth');
     localStorage.removeItem('userEmail');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    clearTokens();
     setIsAuth(false);
     setUserEmail(null);
     setHasSubscription(false);
     setNotification(null);
     navigate('/');
-  };
+  }, [navigate]);
 
-  const updateSubscriptionStatus = async () => {
+  const updateSubscriptionStatus = useCallback(async () => {
     if (!isAuth) {
       setHasSubscription(false);
       return;
     }
-
     try {
       const sub = await api.getMySubscription();
       setHasSubscription(!!sub);
     } catch {
       setHasSubscription(false);
     }
-  };
+  }, [isAuth]);
 
+  const login = useCallback((email: string) => {
+    localStorage.setItem('isAuth', 'true');
+    setIsAuth(true);
+    
+    if (email === 'Google User') {
+      // Если вошли через OAuth, почту не знаем — грузим из API
+      loadUserProfile();
+    } else {
+      // Если обычный логин — почта у нас уже есть
+      setUserEmail(email);
+      localStorage.setItem('userEmail', email);
+    }
+    
+    setNotification('Вы успешно вошли.');
+  }, [loadUserProfile]);
+
+  // Загружаем профиль и подписку при инициализации, если авторизованы
   useEffect(() => {
     if (isAuth) {
       updateSubscriptionStatus();
+      if (!userEmail || userEmail === 'Google User') {
+        loadUserProfile();
+      }
     }
-  }, [isAuth]);
+  }, [isAuth, updateSubscriptionStatus, loadUserProfile, userEmail]);
 
+  // Логика автоматического обновления токена (рефреш)
   useEffect(() => {
     if (!isAuth) return;
 
@@ -73,12 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const exp = getTokenExpiration(token);
     if (!exp) return;
 
-    const refreshInMs = exp * 1000 - Date.now() - 30000;
-
-    if (tokenRefreshTimerRef.current) {
-      clearTimeout(tokenRefreshTimerRef.current);
-      tokenRefreshTimerRef.current = null;
-    }
+    const refreshInMs = exp * 1000 - Date.now() - 10000; // за 10 сек до конца
 
     const doRefresh = async () => {
       const ok = await refreshTokenRequest();
@@ -87,7 +115,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout();
         return;
       }
-      setNotification('Токен обновлен автоматически.');
       setIsAuth(true);
     };
 
@@ -99,31 +126,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     tokenRefreshTimerRef.current = window.setTimeout(doRefresh, refreshInMs);
 
     return () => {
-      if (tokenRefreshTimerRef.current) {
-        clearTimeout(tokenRefreshTimerRef.current);
-        tokenRefreshTimerRef.current = null;
-      }
+      if (tokenRefreshTimerRef.current) clearTimeout(tokenRefreshTimerRef.current);
     };
-  }, [isAuth]);
-
-  useEffect(() => {
-    const handleAuthExpired = () => {
-      logout();
-      setNotification('Сессия истекла, пожалуйста, войдите снова.');
-    };
-
-    window.addEventListener('auth-expired', handleAuthExpired);
-    return () => window.removeEventListener('auth-expired', handleAuthExpired);
-  }, [logout]);
-
-  const login = (email: string) => {
-    localStorage.setItem('isAuth', 'true');
-    localStorage.setItem('userEmail', email);
-    setIsAuth(true);
-    setUserEmail(email);
-    setNotification('Вы успешно вошли.');
-    navigate('/profile');
-  };
+  }, [isAuth, logout]);
 
   const contextValue = useMemo(() => ({
     isAuth,
@@ -134,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     login,
     logout,
     updateSubscriptionStatus
-  }), [isAuth, userEmail, hasSubscription, notification]); // Пересоздавать объект ТОЛЬКО если изменились эти переменные 
+  }), [isAuth, userEmail, hasSubscription, notification, login, logout, updateSubscriptionStatus]);
 
   return (
     <AuthContext.Provider value={contextValue}>

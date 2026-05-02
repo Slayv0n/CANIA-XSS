@@ -16,6 +16,8 @@ import Feedback from './components/Feedback';
 import Prices from './components/Prices';
 import NotFound from './pages/NotFound';
 import SettingsModal from './components/SettingsModal';
+import OAuthCallback from './pages/OAuthCallback';
+
 
 const Profile = React.lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
 const Scanner = React.lazy(() => import('./pages/Scanner').then(module => ({ default: module.Scanner })));
@@ -84,6 +86,7 @@ function AppRoutes() {
               path="/scanner/:taskId?" 
               element={isAuth ? <Scanner /> : <Navigate to="/" replace />} 
             />
+            <Route path="/oauth-callback" element={<OAuthCallback />} />
             <Route path="*" element={<NotFound onGoHome={() => navigate('/')} /> } />
           </Routes>
         </Suspense> 

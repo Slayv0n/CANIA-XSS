@@ -348,6 +348,10 @@ app.MapGet("/auth/github/callback", async (HttpContext context,
 
     var jwtResponse = await socialService.LoginAsync(claimsPrincipal);
 
+    /* --- СТАРЫЙ ВАРИАНТ ---
+    // Этот вариант не подходит для текущей архитектуры, так как Ocelot (API Gateway)
+    // ждет токен в заголовке Authorization: Bearer, а не в куках. Фронтенд не может 
+    // достать HttpOnly куку, чтобы вставить ее в заголовок.
     context.Response.Cookies.Append("access_token", jwtResponse.AccessToken, new CookieOptions
     {
         HttpOnly = true,
@@ -367,6 +371,12 @@ app.MapGet("/auth/github/callback", async (HttpContext context,
     });
 
     return Results.Redirect("http://localhost:5173/profile");
+    ------------------------ */
+
+    // --- НОВЫЙ ВАРИАНТ ---
+    // Возвращаем токены в URL, чтобы фронтенд мог их перехватить на специальной странице,
+    // сохранить в клиентские куки и использовать для заголовка Authorization.
+    return Results.Redirect($"http://localhost:5173/oauth-callback?access_token={jwtResponse.AccessToken}&refresh_token={jwtResponse.RefreshToken}");
 });
 
 app.MapGet("/auth/google/login", async (IGoogleOAuthService googleService) =>
@@ -404,25 +414,26 @@ app.MapGet("/auth/google/callback", async (HttpContext context,
 
     var jwtResponse = await socialService.LoginAsync(claimsPrincipal);
 
-    context.Response.Cookies.Append("access_token", jwtResponse.AccessToken, new CookieOptions
-    {
-        HttpOnly = true,
-        Secure = true,
-        SameSite = SameSiteMode.Lax,
-        Expires = DateTimeOffset.UtcNow.AddMinutes(15),
-        Path = "/"
-    });
+    // context.Response.Cookies.Append("access_token", jwtResponse.AccessToken, new CookieOptions
+    // {
+    //     HttpOnly = true,
+    //     Secure = true,
+    //     SameSite = SameSiteMode.Lax,
+    //     Expires = DateTimeOffset.UtcNow.AddMinutes(15),
+    //     Path = "/"
+    // });
 
-    context.Response.Cookies.Append("refresh_token", jwtResponse.RefreshToken, new CookieOptions
-    {
-        HttpOnly = true,
-        Secure = true,
-        SameSite = SameSiteMode.Lax,
-        Expires = DateTimeOffset.UtcNow.AddDays(7),
-        Path = "/"
-    });
+    // context.Response.Cookies.Append("refresh_token", jwtResponse.RefreshToken, new CookieOptions
+    // {
+    //     HttpOnly = true,
+    //     Secure = true,
+    //     SameSite = SameSiteMode.Lax,
+    //     Expires = DateTimeOffset.UtcNow.AddDays(7),
+    //     Path = "/"
+    // });
 
-    return Results.Redirect("http://localhost:5173/profile");
+    // return Results.Redirect("http://localhost:5173/profile");
+    return Results.Redirect($"http://localhost:5173/oauth-callback?access_token={jwtResponse.AccessToken}&refresh_token={jwtResponse.RefreshToken}");
 });
 
 app.Run();

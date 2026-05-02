@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { api, TaskItem } from '../api';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext'; // not needed – using useCurrentUser hook
 import { useNavigate } from 'react-router-dom';
 import { CloseIcon , Download, ArrowUpRight} from '../assets/icons';
 import { useLanguage } from '../context/LanguageContext';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 
 export function Profile() {
@@ -15,8 +17,9 @@ export function Profile() {
   const [subscription, setSubscription] = useState<any>(null);
   const [subLoading, setSubLoading] = useState(true);
   const navigate = useNavigate();
-
   const { userEmail } = useAuth();
+
+  const { loading: isAuthLoading } = useCurrentUser();
 
   // Маппинг названия тарифа с бэкенда на локализованный ключ
   // Старый вариант функции оставлен для справки (закомментирован)
@@ -200,9 +203,9 @@ export function Profile() {
                             </p>
                         </div>
 
-                        {subLoading ? (
-                            <p className="animate-pulse text-brand-red">{t('profile.checking')}</p>
-                        ) : subscription ? (
+                        {(subLoading || isAuthLoading) ? (
+                                <p className="animate-pulse text-brand-red">{t('profile.checking')}</p>
+                            ) : subscription ? (
                             <>
                                 <div>
                                     <p className="text-desc-text text-xs uppercase tracking-wider mb-1">{t('profile.currentTariff')}</p>

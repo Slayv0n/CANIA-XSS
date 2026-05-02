@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest } from '../api';
+import { api, getAccessToken, getRefreshToken, getTokenExpiration, refreshTokenRequest, clearTokens } from '../api';
 
 export type Theme = 'dark' | 'light';
 
@@ -118,8 +118,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     localStorage.removeItem('isAuth');
     localStorage.removeItem('userEmail');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    clearTokens();
+    // localStorage.removeItem('token');
+    // localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     setIsAuth(false);
     setUserEmail(null);

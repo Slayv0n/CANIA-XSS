@@ -2,6 +2,8 @@ const API_BASE = '/api';
 const ACCESS_TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 
+import Cookies from 'js-cookie';
+
 export interface Tariff {
   name: string;
   description: string;
@@ -45,14 +47,38 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
-export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
-export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
-export const setAccessToken = (token: string) => localStorage.setItem(ACCESS_TOKEN_KEY, token);
-export const setRefreshToken = (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token);
-export const clearTokens = () => {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+// export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
+// export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+// export const setAccessToken = (token: string) => localStorage.setItem(ACCESS_TOKEN_KEY, token);
+// export const setRefreshToken = (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token);
+
+// --- НОВЫЙ КОД УПРАВЛЕНИЯ ТОКЕНАМИ ---
+
+
+export const getAccessToken = () => Cookies.get(ACCESS_TOKEN_KEY) || null;
+export const getRefreshToken = () => Cookies.get(REFRESH_TOKEN_KEY) || null;
+
+// Проверяем, запущен ли сайт по HTTPS
+const isSecure = window.location.protocol === 'https:';
+export const setAccessToken = (token: string) => {
+  // secure будет false на локалке и true на проде
+  Cookies.set(ACCESS_TOKEN_KEY, token, { expires: 15 / 1440, secure: isSecure, sameSite: 'Lax' });
 };
+
+export const setRefreshToken = (token: string) => {
+  //кука 7 дней
+  Cookies.set(REFRESH_TOKEN_KEY, token, { expires: 7, secure: isSecure, sameSite: 'Lax' });
+};
+
+export const clearTokens = () => {
+  Cookies.remove(ACCESS_TOKEN_KEY);
+  Cookies.remove(REFRESH_TOKEN_KEY);
+};
+
+// export const clearTokens = () => {
+//   localStorage.removeItem(ACCESS_TOKEN_KEY);
+//   localStorage.removeItem(REFRESH_TOKEN_KEY);
+// };
 
 export async function refreshTokenRequest(): Promise<boolean> {
   return refreshToken();

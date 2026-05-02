@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useAuth } from '../context/AuthContext';
 import { GoogleIcon, GithubIcon, CloseIcon, GlowSpot, EyeOn, EyeOff } from '../assets/icons';
@@ -27,13 +27,12 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     const [repeatPassword, setRepeatPassword] = useState('');
     const [agreePolicy, setAgreePolicy] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState('');
+    const[error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     // Таймер
     const [timer, setTimer] = useState(60);
-
-    const [resetToken, setResetToken] = useState('');
+    const[resetToken, setResetToken] = useState('');
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
@@ -53,6 +52,11 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     const isRegisterValid = email.length > 0 && password.length > 0 && repeatPassword.length > 0 && agreePolicy;
     const isNewPasswordValid = password.length > 0 && repeatPassword.length > 0 && password === repeatPassword;
 
+    const handleGoogleLogin = () => {
+        window.location.href = '/api/auth/google/login';
+    };
+
+    // ВОТ ЗДЕСЬ БЫЛА ОШИБКА: функция handleSubmit не была объявлена!
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -63,46 +67,37 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                 // 1. Создаем аккаунт
                 await api.register({ email, password } as RegisterRequest);
                 
-                // 2. Ждем 1-2 секунды, чтобы RabbitMQ успел прокинуть юзера в AuthDb
-                // (Это костыль для распределенных систем, пока нет сложной логики)
+                // 2. Ждем 1.5 секунды, чтобы RabbitMQ успел прокинуть юзера
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
-                // 3. Сразу вызываем ЛОГИН, чтобы получить реальный токен
+                // 3. Сразу вызываем ЛОГИН, чтобы получить токены
                 const response = await api.login({ email, password } as LoginRequest);
                 setAccessToken(response.accessToken);
                 setRefreshToken(response.refreshToken);
 
-                // 4. Только теперь пускаем в систему
+                // 4. Пускаем в систему
                 login(email);
                 onClose();
-            }
-            // Реальный логин через API
-            if (authMode === 'login' && isLoginValid) {
+            } 
+            else if (authMode === 'login' && isLoginValid) {
+                // Реальный логин
                 const response = await api.login({ email, password } as LoginRequest);
                 setAccessToken(response.accessToken);
                 setRefreshToken(response.refreshToken);
 
-                // Вызываем login и передаем email, который юзер ввел в форму
                 login(email);
                 onClose();
-            }
-            //пока что не доделано
-            if (authMode === 'forgot_email' && email) {
-                // 1. Отправляем запрос на реальный бэкенд
+            } 
+            else if (authMode === 'forgot_email' && email) {
                 await api.resetPasswordRequest(email);
-                
-                // 2. Переключаем интерфейс на таймер
                 setAuthMode('forgot_timer');
                 setTimer(60);
-            }
-            if (authMode === 'forgot_timer') {
-                // 2. Юзер ввел токен из письма и жмет подтвердить
+            } 
+            else if (authMode === 'forgot_timer') {
                 await api.verifyResetToken(resetToken, email);
-                // Если токен верный (ошибки не вылетело), пускаем менять пароль
                 setAuthMode('new_password');
-            }
-
-            if (authMode === 'new_password' && isNewPasswordValid) {
+            } 
+            else if (authMode === 'new_password' && isNewPasswordValid) {
                 await api.completeReset(email, resetToken, password);
                 alert(t('auth.passwordSuccess'));
                 setAuthMode('login');
@@ -120,7 +115,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                 ref={modalRef}
                 role='dialog'
                 aria-modal="true"
-                className="bg-main-bg text-white w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
+                className="bg-main-bg text-main-text w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
                 <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
 
                 <button
@@ -218,9 +213,10 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" onClick={handleGoogleLogin} className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GoogleIcon className="w-5 h-5" /> {t('auth.google')}
                                 </button>
+                                {/* По аналогии можно добавить обработчик для GitHub, если потребуется */}
                                 <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GithubIcon className="w-5 h-5 text-white" /> {t('auth.github')}
                                 </button>
@@ -228,7 +224,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                         </>
                     )}
 
-                    {/* забыли почту */}
+                    {/* ЗАБЫЛИ ПОЧТУ */}
                     {authMode === 'forgot_email' && (
                         <>
                             <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.restoreTitle')}</h1>
@@ -257,7 +253,6 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 <span className="text-white font-bold">{email}</span>
                             </p>
 
-                            {/* ИНПУТ ДЛЯ КОДА */}
                             <div className="flex flex-col gap-2 text-left mt-2">
                                 <label className="text-gray-400 text-sm pl-1">{t('auth.codeLabel')}</label>
                                 <input
@@ -269,7 +264,6 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 />
                             </div>
 
-                            {/* ЛОГИКА ТАЙМЕРА И КНОПКИ ПОВТОРА */}
                             <div className="mt-2">
                                 {timer > 0 ? (
                                     <div className="text-3xl font-bold tracking-widest text-brand-red">
@@ -289,10 +283,8 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 )}
                             </div>
 
-                            {/* КНОПКА ПОДТВЕРЖДЕНИЯ */}
                             <button
-                                type="button"
-                                onClick={handleSubmit}
+                                type="submit"
                                 disabled={!resetToken || loading}
                                 className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-2 cursor-pointer ${resetToken ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}
                             >
@@ -305,7 +297,7 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                         </div>
                     )}
 
-                    {/* новый пароль */}
+                    {/* НОВЫЙ ПАРОЛЬ */}
                     {authMode === 'new_password' && (
                         <>
                             <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.savePasswordTitle')}</h1>
