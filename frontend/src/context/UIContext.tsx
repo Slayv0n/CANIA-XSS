@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 
 interface UIContextType {
   isLoginModalOpen: boolean;
@@ -38,7 +38,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
   const [settingsMode, setSettingsMode] = useState<'password' | 'email'>('password');
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now();
     // Добавляем новый тост в массив
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -51,7 +51,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
         setToasts((prev) => prev.filter((toast) => toast.id !== id));
       }, 400);
     }, 3000);
-  };
+  }, []);
 
   const openSettingsModal = (mode: 'password' | 'email') => {
     setSettingsMode(mode);

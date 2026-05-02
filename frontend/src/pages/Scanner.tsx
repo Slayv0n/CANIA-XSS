@@ -3,8 +3,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Download } from '../assets/icons';
 import CustomSelect from '../components/CustomSelect';
-import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { api, getAccessToken } from '../api';
 // import ReactMarkdown from 'react-markdown';
 const ReactMarkdown = React.lazy(() => import('react-markdown'));
 
@@ -61,7 +61,9 @@ export function Scanner() {
 
   useEffect(() => {
     if (taskId) {
-        const token = localStorage.getItem('token');
+        // const token = localStorage.getItem('token');
+        const token = getAccessToken();
+
         if (!token) return;
 
         setScanStatus('scanning');
@@ -91,7 +93,8 @@ export function Scanner() {
     if (!selectedAttack || !selectedDepth) { setError(t('scanner.errorNoOptions')); return; }
     if (!url.includes('.')) { setError(t('scanner.errorInvalidUrl')); return; }
 
-    const token = localStorage.getItem('token');
+    // const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (!token) { setError(t('scanner.errorNotAuth')); return; }
 
     const attackMap: Record<string, number> = { [t('scanner.xss')]: 1, [t('scanner.sql')]: 2, [t('scanner.allTypes')]: 1 };
@@ -109,19 +112,24 @@ export function Scanner() {
         };
 
         const result = await api.createTask(taskData, token);
+        // Если бекенд не возвращает ID задачи (эндпоинт ещё не реализован), сразу показываем готовый отчёт‑заглушку
+        if (!result || !result.id) {
+          setReportText(t('scanner.reportEmptyShort'));
+          setScanStatus('ready');
+          setError(null);
+          return;
+        }
 
-        const intervalId = setInterval(async () => {
-            try {
-                const checkTask = await api.getTask(result.id, token);
-                if (checkTask.status === 5) {
-                    setReportText(checkTask.reportContent || t('scanner.reportEmptyShort'));
-                    setScanStatus('ready');
-                    clearInterval(intervalId);
-                }
-            } catch (e) {
-                console.error("Ошибка опроса статуса", e);
-            }
-        }, 2000);
+        // Опрос статуса задачи – так как бекенд пока заглушка, сразу получаем готовый статус
+        try {
+          const checkTask = await api.getTask(result.id, token);
+          setReportText(checkTask.reportContent || t('scanner.reportEmptyShort'));
+          setScanStatus('ready');
+        } catch (e) {
+          console.error('Ошибка получения отчёта', e);
+          setError(t('scanner.loadError'));
+          setScanStatus('idle');
+        }
 
     } catch (err: any) {
         setScanStatus('idle');

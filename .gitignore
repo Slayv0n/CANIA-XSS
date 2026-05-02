@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Секреты для Docker
 .env
+
+AGENTS.md
+.claude

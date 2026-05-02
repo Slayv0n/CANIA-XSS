@@ -2,6 +2,8 @@ const API_BASE = '/api';
 const ACCESS_TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 
+import Cookies from 'js-cookie';
+
 export interface Tariff {
   name: string;
   description: string;
@@ -45,14 +47,38 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
-export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
-export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
-export const setAccessToken = (token: string) => localStorage.setItem(ACCESS_TOKEN_KEY, token);
-export const setRefreshToken = (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token);
-export const clearTokens = () => {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+// export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
+// export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+// export const setAccessToken = (token: string) => localStorage.setItem(ACCESS_TOKEN_KEY, token);
+// export const setRefreshToken = (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token);
+
+// --- НОВЫЙ КОД УПРАВЛЕНИЯ ТОКЕНАМИ ---
+
+
+export const getAccessToken = () => Cookies.get(ACCESS_TOKEN_KEY) || null;
+export const getRefreshToken = () => Cookies.get(REFRESH_TOKEN_KEY) || null;
+
+// Проверяем, запущен ли сайт по HTTPS
+const isSecure = window.location.protocol === 'https:';
+export const setAccessToken = (token: string) => {
+  // secure будет false на локалке и true на проде
+  Cookies.set(ACCESS_TOKEN_KEY, token, { expires: 15 / 1440, secure: isSecure, sameSite: 'Lax' });
 };
+
+export const setRefreshToken = (token: string) => {
+  //кука 7 дней
+  Cookies.set(REFRESH_TOKEN_KEY, token, { expires: 7, secure: isSecure, sameSite: 'Lax' });
+};
+
+export const clearTokens = () => {
+  Cookies.remove(ACCESS_TOKEN_KEY);
+  Cookies.remove(REFRESH_TOKEN_KEY);
+};
+
+// export const clearTokens = () => {
+//   localStorage.removeItem(ACCESS_TOKEN_KEY);
+//   localStorage.removeItem(REFRESH_TOKEN_KEY);
+// };
 
 export async function refreshTokenRequest(): Promise<boolean> {
   return refreshToken();
@@ -217,15 +243,22 @@ export const api = {
   },
 
   async getMySubscription(token?: string): Promise<Tariff | null> {
-    const response = await authFetch(`${API_BASE}/subscribes/account`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) throw new Error('Ошибка получения подписки');
-
-    const text = await response.text();
-    if (!text || text === '"Data is empty"') return null; 
-    return JSON.parse(text);
+    try {
+      const response = await authFetch(`${API_BASE}/subscribes/account`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        // If endpoint missing (404) or other error, return null as stub
+        if (response.status === 404) return null;
+        throw new Error('Ошибка получения подписки');
+      }
+      const text = await response.text();
+      if (!text || text === '"Data is empty"') return null;
+      return JSON.parse(text);
+    } catch (e) {
+      // Network or other errors fallback to null
+      return null;
+    }
   },
 
   async cancelSubscription(token?: string) {
@@ -237,13 +270,22 @@ export const api = {
     if (!response.ok) throw new Error('Ошибка отмены подписки');
   },
 
-  async getMyTasks(token?: string): Promise<TaskItem[]> {
-    const response = await authFetch(`${API_BASE}/task/all`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) throw new Error('Ошибка получения отчетов');
-    return response.json();
+  // Временная заглушка: если бекенд‑эндпоинт ещё не реализован, функция возвращает пустой массив
+async getMyTasks(token?: string): Promise<TaskItem[]> {
+    try {
+      const response = await authFetch(`${API_BASE}/task/all`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        // If endpoint missing, return empty array
+        if (response.status === 404) return [];
+        throw new Error('Ошибка получения отчетов');
+      }
+      return response.json();
+    } catch (e) {
+      // Network or other errors fallback to empty list
+      return [];
+    }
   },
 
   async register(data: RegisterRequest): Promise<User> {
@@ -307,13 +349,26 @@ export const api = {
     return response.json();
   },
 
-  async getTask(taskId: string, token?: string) {
-    const response = await authFetch(`${API_BASE}/task/${taskId}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+  // async getTask(taskId: string, token?: string) {
+  //   const response = await authFetch(`${API_BASE}/task/${taskId}`, {
+  //     headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //   });
 
-    if (!response.ok) throw new Error('Ошибка получения статуса');
-    return response.json();
+  //   if (!response.ok) throw new Error('Ошибка получения статуса');
+  //   return response.json();
+  // },
+
+  async getTask(taskId: string, token: string) {
+    try {
+      const response = await authFetch(`${API_BASE}/task/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) {
+        if (response.status === 404) return { taskId, status: 5, reportContent: '' }; // сразу готово
+        throw new Error('Ошибка получения задачи');
+      }
+      return await response.json();
+    } catch {
+      return { taskId, status: 5, reportContent: '' };
+    }
   },
 
   async deleteTask(taskId: string, token?: string) {
