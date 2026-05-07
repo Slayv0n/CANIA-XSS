@@ -1,7 +1,8 @@
 from agno.agent import Agent
 from agno.models.openrouter import OpenRouter
 
-from agno.tools.shell import ShellTools
+# from agno.tools.shell import DockerShellTools
+from utils.docker_shell_tools import DockerShellTools
 
 from agno.knowledge import Knowledge
 from agno.vectordb.lancedb import LanceDb, SearchType
@@ -10,6 +11,8 @@ from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbe
 import os
 from pathlib import Path
 from datetime import datetime
+
+docker_tools = DockerShellTools(container_name="cania-xss-runner")
 
 embedder = SentenceTransformerEmbedder(
     id="all-MiniLM-L6-v2",
@@ -49,8 +52,8 @@ files_to_add = [
 
 
 agent_terminal = Agent(
-    name='OSINT Scanner',
-    role='Поиск уязвимостей и открытых мест',
+    name='OSINT Scanner (Containerized)',
+    role='Поиск уязвимостей и открытых мест с использованием Docker-контейнера',
     instructions=[
         "ТЫ: Эксперт по кибербезопасности и OSINT разведке",
         "У тебя есть доступ к базе знаний с документацией по всем инструментам",
@@ -222,7 +225,7 @@ agent_terminal = Agent(
         "- Спрашивай пользователя если нужны уточнения",
         "- Используй базу знаний для редких опций"
     ],
-    tools=[ShellTools()],
+    tools=[docker_tools.run_docker_command],
     knowledge=knowledge,
     search_knowledge=True,
     markdown=True
@@ -234,30 +237,29 @@ results_dir.mkdir(exist_ok=True)
 
 
 agent_executor = Agent(
-    name='Command Executor',
-    role='Только выполнение команд и сохранение результатов',
+    name='Command Executor (Docker)',
+    role='Выполнение системных команд внутри Docker-контейнера',
     instructions=[
-"ТЫ: Исполнитель команд. ТЫ НЕ АНАЛИЗИРУЕШЬ, НЕ ИЩЕШЬ ФАЙЛЫ, НЕ ДУМАЕШЬ.",
-
-        "=== ТВОИ КОМАНДЫ (ТОЛЬКО ЭТИ) ===",
-        "- Для сканирования портов: nmap -F {target}",
-        "- Для поиска директорий: gobuster dir -u {target} -w /usr/share/wordlists/dirb/common.txt",
+        "ТЫ: Исполнитель команд. ТЫ НЕ АНАЛИЗИРУЕШЬ, НЕ ИЩЕШЬ ФАЙЛЫ, НЕ ДУМАЕШЬ.",
+        "ТЫ РАБОТАЕШЬ ВНУТРИ DOCKER-КОНТЕЙНЕРА, где предустановлены все OSINT-инструменты.",
+        "",
+        "=== ТВОИ КОМАНДЫ (доступные в контейнере) ===",
+        "- Для сканирования портов: nmap -F --open {target}",
+        "- Для поиска директорий: gobuster dir -u {target} -w /usr/share/wordlists/dirb/common.txt", # Используй этот путь в контейнере
         "- Для HTTP заголовков: curl -I {target}",
         "- Для WHOIS: whois {domain}",
         "- Для DNS: dig {domain} ANY",
-
+        "- Для определения технологий: whatweb {target}",
+        "",
         "=== ВАЖНО ===",
-        "1. НИКОГДА не ищи wordlist'ы - используй ТОЛЬКО /usr/share/wordlists/dirb/common.txt",
-        "2. НИКОГДА не генерируй find команды",
-        "3. Если файл не существует - просто скажи об этом",
-        "4. НЕ пытайся найти альтернативы",
-
-        "=== ФОРМАТ ОТВЕТА ===",
-        "✅ Команда выполнена: {command}",
-        "📁 Файл: {путь_к_файлу}",
+        "1. Все инструменты (nmap, gobuster, whatweb, whois, dig, curl) ДОЛЖНЫ быть доступны в контейнере.",
+        "2. Используй указанный путь для wordlist'ов. НЕ ИЩИ другие wordlist'ы.",
+        "3. НИКОГДА не генерируй 'find' команды.",
+        "4. НЕ пытайся найти альтернативы, если команда не работает (это значит, что проблема с контейнером).",
+        "5. Всегда возвращай полный вывод команды."
     ],
-    tools=[ShellTools()],
-    knowledge=None,  # НЕТ базы знаний - не тратим токены
-    search_knowledge=False,  # НЕ ищем в базе
+    tools=[docker_tools.run_docker_command],
+    knowledge=None,
+    search_knowledge=False,
     markdown=True
 )
