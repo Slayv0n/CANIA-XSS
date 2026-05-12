@@ -4,11 +4,21 @@ from agno.agent import Agent
 from agno.tools import Toolkit
 from agno.tools.shell import ShellTools
 from agno.utils.log import logger
+from agno.models.openrouter import OpenRouter # Изменено на OpenRouter
 import re
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Настройка модели
+model = OpenRouter(
+    id=os.getenv("ID_MODEL"),
+)
 
 class DataParserToolkit(Toolkit):
     """Toolkit для парсинга результатов OSINT сканирования"""
@@ -402,6 +412,7 @@ class DataParserToolkit(Toolkit):
 parser_agent = Agent(
     name='Data Parser',
     role='Парсинг и структурирование данных сканирования',
+    model=model,
     tools=[DataParserToolkit(results_dir="execution_results")],
     instructions=[
         "ТЫ: Специалист по парсингу данных OSINT сканирования",

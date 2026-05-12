@@ -11,6 +11,14 @@ from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbe
 import os
 from pathlib import Path
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Настройка модели
+model = OpenRouter(
+    id=os.getenv("ID_MODEL"),
+)
 
 docker_tools = DockerShellTools(container_name="cania-xss-runner")
 
@@ -54,6 +62,7 @@ files_to_add = [
 agent_terminal = Agent(
     name='OSINT Scanner (Containerized)',
     role='Поиск уязвимостей и открытых мест с использованием Docker-контейнера',
+    model=model,
     instructions=[
         "ТЫ: Эксперт по кибербезопасности и OSINT разведке",
         "У тебя есть доступ к базе знаний с документацией по всем инструментам",
@@ -239,6 +248,7 @@ results_dir.mkdir(exist_ok=True)
 agent_executor = Agent(
     name='Command Executor (Docker)',
     role='Выполнение системных команд внутри Docker-контейнера',
+    model=model,
     instructions=[
         "ТЫ: Исполнитель команд. ТЫ НЕ АНАЛИЗИРУЕШЬ, НЕ ИЩЕШЬ ФАЙЛЫ, НЕ ДУМАЕШЬ.",
         "ТЫ РАБОТАЕШЬ ВНУТРИ DOCKER-КОНТЕЙНЕРА, где предустановлены все OSINT-инструменты.",

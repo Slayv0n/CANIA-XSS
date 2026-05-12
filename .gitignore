@@ -1,4 +1,44 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
 .env
+.venv
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
 
-venv
-data.db
+# === Данные и Базы данных (ВАЖНО) ===
+# Игнорируем саму векторную базу, так как она весит много и пересобирается из документов
+security_docs_lancedb/
+ai_agent_terminal/security_docs_lancedb/
+knowledge_fin/
+*.db
+*.sqlite3
+
+# === Результаты работы и Логи ===
+# Игнорируем временные JSON-результаты и отчеты, чтобы не захламлять гит
+execution_results/
+reports/
+*.log
+agno_logs/
+
+# === Playwright / Browser ===
+# Игнорируем скачанные браузеры и скриншоты тестов
+test-results/
+playwright-report/
+blob-report/
+playwright/.local-browsers/
+
+# === IDE / Редакторы ===
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# === Docker ===
+# Если используешь локальные вольюмы для монго
+mongo_data/

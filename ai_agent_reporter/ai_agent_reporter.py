@@ -1,6 +1,16 @@
 from agno.agent import Agent
+from agno.models.openrouter import OpenRouter # Изменено на OpenRouter
 from models.schemas import FinalReport
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Настройка модели
+model = OpenRouter(
+    id=os.getenv("ID_MODEL"),
+)
 
 def save_report_to_disk(report_content: str, filename: str):
     """Инструмент для сохранения итогового отчета в файл"""
@@ -14,6 +24,7 @@ def save_report_to_disk(report_content: str, filename: str):
 reporter_agent = Agent(
     name="Reporter",
     role="Специалист по подготовке профессиональных отчетов о безопасности",
+    model=model,
     tools=[save_report_to_disk],
     instructions=[
         "Твоя задача — собрать данные от Взломщика и подготовить финальный отчет.",

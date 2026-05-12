@@ -1,190 +1,143 @@
-# from typing import List, Optional
-# from pydantic import BaseModel, Field
-
-# from agno.team import Team
-# from agno.agent import Agent, RunOutput
-# from agno.models.openrouter import OpenRouter
-# from agno.db.sqlite import SqliteDb
-# from agno.learn import (
-#     LearningMachine,
-#     LearningMode,
-#     LearnedKnowledgeConfig,
-#     )
-# from agno.utils.pprint import pprint_run_response
-
-# from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
-# from agno.knowledge.knowledge import Knowledge
-# from agno.vectordb.lancedb import LanceDb, SearchType
-
-
-# from config.config import Config, load_config
-# from ai_agent_terminal.ai_agent_terminal import agent_terminal, agent_executor, knowledge as terminal_knowledge
-# from ai_agent_scraper.ai_agent_scraper import parser_agent  # Импортируем парсер-агент
-
-
-# config: Config = load_config()
-
-# API_KEY = config.agent.token
-# ID_MODEL = config.agent.id_model
-
-
-# # db = SqliteDb(db_file="data.db")
-
-# # embedder = SentenceTransformerEmbedder(
-# #     id="all-MiniLM-L6-v2",
-# # )
-
-# # vector_db = LanceDb(
-# #     table_name="learnings",
-# #     uri="knowledge_fin",
-# #     search_type=SearchType.hybrid,
-# #     embedder=embedder,
-# # )
-
-# # knowledge = Knowledge(
-# #     name="Agent Learnings",
-# #     vector_db=vector_db
-# # )
-
-
-
-# team = Team (
-#     name="Research Team",
-#     members=[agent_terminal, agent_executor, parser_agent],  # Добавили парсера
-#     model=OpenRouter(id=ID_MODEL, api_key=API_KEY),
-#     debug_mode=True,
-#     show_tool_calls=True,
-#     instructions="""
-#     ТЫ: Координатор команды из трех агентов. Твоя задача - ПРАВИЛЬНО распределять задачи.
-
-#     АГЕНТ 1: OSINT Scanner (agent_terminal)
-#     - Роль: Поиск уязвимостей и открытых мест
-#     - ОПЫТЕН в анализе, объяснении, поиске уязвимостей
-#     - ИМЕЕТ доступ к базе знаний с документацией
-#     - Используй ЕГО когда:
-#       * Нужно ПРОАНАЛИЗИРОВАТЬ результаты сканирования
-#       * Нужно ОБЪЯСНИТЬ как работает инструмент
-#       * Нужно НАЙТИ уязвимости в результатах
-#       * Пользователь спрашивает "что это значит?", "как это работает?"
-
-#     АГЕНТ 2: Command Executor (agent_executor)
-#     - Роль: Только выполнение команд и сохранение результатов
-#     - НЕ ИМЕЕТ базы знаний, НЕ анализирует
-#     - Используй ЕГО когда:
-#       * Нужно просто ВЫПОЛНИТЬ команду
-#       * Пользователь даёт прямую команду (nmap, curl, gobuster)
-#       * Пользователь даёт URL или домен для базового сканирования
-#       * Нужно СОХРАНИТЬ вывод в файл
-#       * Любой запрос, где НЕ ТРЕБУЕТСЯ анализ
-
-#     АГЕНТ 3: Data Parser (parser_agent) - НОВЫЙ!
-#     - Роль: Парсинг и структурирование данных из результатов сканирования
-#     - УМЕЕТ:
-#       * Извлекать открытые порты из nmap
-#       * Парсить найденные директории из gobuster
-#       * Определять технологии из whatweb
-#       * Классифицировать уязвимости из nikto
-#       * Формировать структурированный JSON с результатами
-#     - Используй ЕГО когда:
-#       * Получены результаты сканирования и их нужно СТРУКТУРИРОВАТЬ
-#       * Нужно выделить КРИТИЧЕСКИЕ уязвимости
-#       * Нужно СОХРАНИТЬ результаты в JSON формате
-#       * Нужно ПОДГОТОВИТЬ данные для отчета
-#       * Пользователь спрашивает "какие порты открыты?", "какие технологии используются?"
-#       * Нужно извлечь конкретные данные из результатов сканирования
-
-#     ВАЖНО: Работаем в ТАКОМ ПОРЯДКЕ:
-#     1. Если запрос на СКАНИРОВАНИЕ → АГЕНТ 2 выполняет команды
-#     2. После получения результатов → АГЕНТ 3 парсит данные
-#     3. Если нужно объяснить результаты → АГЕНТ 1 анализирует
-
-#     ПРИМЕРЫ РАСПРЕДЕЛЕНИЯ:
-
-#     Базовое сканирование:
-#     1. "просканируй avito.ru" → АГЕНТ 2 (выполнить nmap -F)
-#     2. После выполнения → АГЕНТ 3 (распарсить результаты)
-#     3. Показать структурированный вывод пользователю
-
-#     Поиск директорий:
-#     1. "найди директории на avito.ru" → АГЕНТ 2 (выполнить gobuster)
-#     2. После выполнения → АГЕНТ 3 (распарсить пути)
-#     3. Выделить критичные директории (/admin, /backup)
-
-#     Полный анализ:
-#     1. "проведи полный анализ example.com" → АГЕНТ 2 (выполнить все команды)
-#     2. После всех команд → АГЕНТ 3 (распарсить все результаты)
-#     3. АГЕНТ 1 (проанализировать уязвимости на основе распарсенных данных)
-
-#     Прямые вопросы:
-#     - "какие порты открыты?" → АГЕНТ 3 (если есть предыдущие результаты)
-#     - "что такое nmap?" → АГЕНТ 1 (объяснение)
-#     - "curl -I https://google.com" → АГЕНТ 2 (прямая команда)
-
-#     ЗАПОМНИ:
-#     - Всегда ДУМАЙ в какой последовательности вызывать агентов
-#     - Для СКАНИРОВАНИЯ: АГЕНТ 2 → АГЕНТ 3 → (опционально АГЕНТ 1)
-#     - Для АНАЛИЗА: АГЕНТ 1
-#     - Для ПАРСИНГА: АГЕНТ 3
-#     - Если пользователь дал команду с URL → сразу АГЕНТ 2
-#     """
-
-# )
-
-
-# if __name__ == "__main__":
-#     print("🔍 OSINT Research Team готов к работе!")
-#     print("Доступны агенты:")
-#     print("  📡 OSINT Scanner - анализ и объяснения")
-#     print("  ⚙️ Command Executor - выполнение команд")
-#     print("  📊 Data Parser - структурирование данных")
-#     print("\nВведите ваш запрос:")
-
-#     while question := input("\nUser: ").strip():
-#         if question.lower() in ['exit', 'quit', 'q']:
-#             print("До свидания!")
-#             break
-
-#         print("AI  :", team.run(question).content)
-
 import os
+import json
+import threading
+import re # Добавлен импорт re для парсинга JSON
 from dotenv import load_dotenv
-from agno.team import Team
-from agno.models.openrouter import OpenRouter
+from concurrent.futures import ThreadPoolExecutor
 
-# Импорты всех агентов
-from ai_agent_terminal.ai_agent_terminal import agent_terminal, agent_executor
-from ai_agent_scraper.ai_agent_scraper import parser_agent
-from ai_agent_planner.ai_agent_planner import planner_agent
+# Импорт твоих модулей
+from utils.spider import Spider
+from utils.browser_manager import BrowserManager
 from ai_agent_exploiter.ai_agent_exploiter import exploiter_agent
 from ai_agent_reporter.ai_agent_reporter import reporter_agent
 
+# Импорт агентов коллеги
+from ai_agent_terminal.ai_agent_terminal import agent_terminal, agent_executor
+from ai_agent_scraper.ai_agent_scraper import parser_agent
+
 load_dotenv()
 
-model = OpenRouter(
-    id=os.getenv("ID_MODEL", "nvidia/nemotron-3-super-120b-a12b:free"), # Убедитесь, что это ваша модель по умолчанию
-    api_key=os.getenv("OPENROUTER_API_KEY") # <-- Исправлено на OPENROUTER_API_KEY
-)
+def run_spider_sync(url):
+    """Обертка для запуска синхронного Паука в отдельном потоке"""
+    spider = Spider(max_depth=1)
+    return spider.crawl(url)
 
-cania_team = Team(
-    name="CANIA-XSS Full Suite",
-    members=[
-        agent_terminal, agent_executor, parser_agent, 
-        planner_agent, exploiter_agent, reporter_agent
-    ],
-    model=model,
-    markdown=True,
-    instructions=[
-        "Вы — автономная система аудита безопасности CANIA-XSS.",
-        "ЭТАП 1: OSINT (Docker). Используйте agent_executor для nmap/gobuster/whatweb/whois/dig. Результаты передайте parser_agent.",
-        "ЭТАП 2: АНАЛИЗ. parser_agent должен структурировать данные, а agent_terminal — выявить потенциальные точки входа.",
-        "ЭТАП 3: ЦЕЛЕВОЙ АУДИТ. Если найден веб-сайт, Planner должен исследовать его формы через Playwright.",
-        "ЭТАП 4: ЭКСПЛУАТАЦИЯ. Exploiter проводит XSS-атаки на основе данных от Planner и RAG.",
-        "ЭТАП 5: ОТЧЕТ. Reporter собирает данные всех предыдущих этапов и формирует итоговый Markdown-отчет.",
-        "Работайте последовательно. Результат работы одного агента является входными данными для другого."
-    ]
-)
+def orchestrator(target_url: str):
+    print(f"\n🚀 ЗАПУСК ПОЛНОГО АУДИТА: {target_url}")
+
+
+    osint_data = "Данные OSINT отсутствуют."
+    final_attack_results = []
+
+    # --- ЭТАП 1: OSINT (Временно закомментируй, если Docker не готов) ---
+    try:
+        print("\n[1/5] Сбор сетевой информации (OSINT)...")
+        # Агенты теперь сами инициализируют свои модели
+        osint_raw = agent_terminal.run(f"Просканируй инфраструктуру {target_url}")
+        osint_data = parser_agent.run(osint_raw.content)
+        print("✅ OSINT завершен.")
+    except Exception as e:
+        print(f"⚠️ Шаг OSINT пропущен: {e}")
+
+    # --- ЭТАП 2: РАЗВЕДКА (Паук в потоке) ---
+    print("\n[2/5] Запуск Паука (поиск форм)...")
+    try:
+        # Запускаем в отдельном потоке, чтобы не конфликтовать с asyncio
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(run_spider_sync, target_url)
+            site_map = future.result()
+    except Exception as e:
+        print(f"❌ Ошибка Паука: {e}")
+        return
+
+    if not site_map:
+        print("❌ Формы на сайте не найдены.")
+        return
+    print(f"✅ Карта сайта построена. Найдено страниц: {len(site_map)}")
+
+# --- ЭТАП 3: ПЛАНИРОВАНИЕ АТАКИ (Exploiter + RAG) ---
+    print("\n[3/5] Выбор стратегии атак (Exploiter)...")
+    
+    # Формируем промпт: передаем карту сайта
+    prompt = f"Tech Stack: Web App\nSite Map: {json.dumps(site_map, ensure_ascii=False)}"
+
+    try:
+        # 1. Запускаем агента
+        run_output = exploiter_agent.run(prompt)
+        
+        # 2. Извлекаем строгий Pydantic-объект (AttackResults)
+        # Благодаря output_schema=AttackResults, здесь уже не строка, а объект
+        attack_data = run_output.content if hasattr(run_output, 'content') else run_output
+        
+        # 3. Проверка
+        if hasattr(attack_data, 'results') and attack_data.results:
+            print(f"✅ План сформирован. Векторов: {len(attack_data.results)}")
+            for v in attack_data.results:
+                print(f"   • Поле #{v.field_index}: {v.payload[:40]}...")
+        else:
+            print("⚠️ Агент не смог составить план атак (пустой results).")
+            return # Прерываем, если нет плана
+            
+    except Exception as e:
+        print(f"❌ Сбой на этапе планирования: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+
+    # --- ЭТАП 4: ИСПОЛНЕНИЕ (BrowserManager) ---
+    print("\n[4/5] Запуск инъекций в браузере...")
+    browser = BrowserManager() # Инициализируем синглтон
+    
+    # Проходим по каждому URL из карты сайта
+    # Важно: BrowserManager навигирует внутри себя, но нам нужно сказать ему КУДА идти
+    # Твой BrowserManager.navigate(url) делает goto.
+    
+    final_attack_results = []
+    
+    # Берем первый URL из site_map для атаки (или делай цикл, если сайт многостраничный)
+    target_url_for_attack = list(site_map.keys())[0] 
+    print(f"[*] Навигация к цели: {target_url_for_attack}")
+    browser.navigate(target_url_for_attack)
+
+    print("[*] Начинаю перебор векторов...")
+    for vector in attack_data.results:
+        try:
+            print(f"   [*] Атака на поле #{vector.field_index} пейлоадом: {vector.payload[:30]}...")
+            
+            # ВЫЗОВ ТВОЕГО BROWSER MANAGER
+            # inject_payload возвращает строку статуса
+            result_msg = browser.inject_payload(vector.field_index, vector.payload)
+            
+            # Анализируем ответ
+            status = "Failed"
+            if "XSS_CONFIRMED" in result_msg:
+                status = "Success (Alert!)"
+                print(f"   🔴 КРИТИЧЕСКАЯ УЯЗВИМОСТЬ НАЙДЕНА!")
+            elif "Тихо" not in result_msg: # Если не "Тихо" и не "Confirmed", значит что-то произошло
+                status = "Reflected/Suspicious"
+            
+            # Обновляем объект результата (Pydantic модели позволяют менять атрибуты, если mutable)
+            # Или просто сохраняем в список для репортера
+            vector.result = status 
+            final_attack_results.append(vector)
+            
+            # Небольшая пауза между атаками
+            import time
+            time.sleep(1) 
+            
+        except Exception as e:
+            print(f"   [!] Ошибка при инъекции #{vector.field_index}: {e}")
+            vector.result = "Error"
+            final_attack_results.append(vector)
+
+    # --- ЭТАП 5: ОТЧЕТ (Reporter) ---
+    print("\n[5/5] Генерация отчета...")
+    reporter_agent.run(
+        f"Цель: {target_url}. OSINT: {osint_data}. Результаты атак: {final_attack_results}"
+    )
+    print("\n✨ АУДИТ ЗАВЕРШЕН. Проверь папку 'reports'.")
 
 if __name__ == "__main__":
-    target_url = input("Введите URL для проверки: ").strip()
-    if target_url:
-        cania_team.run(f"Проведи полный аудит {target_url}")
+    target = input("URL: ").strip()
+    if target:
+        orchestrator(target)
