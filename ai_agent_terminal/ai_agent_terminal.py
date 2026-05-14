@@ -28,8 +28,8 @@ embedder = SentenceTransformerEmbedder(
 
 
 vector_db = LanceDb(
-    table_name="security_tools",
-    uri="security_docs_lancedb",
+    table_name="tool_docs",  
+    uri=str(Path(__file__).parent.parent / "security_docs_lancedb"), 
     search_type=SearchType.hybrid,
     embedder=embedder,
 )

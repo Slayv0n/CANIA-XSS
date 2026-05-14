@@ -16,8 +16,10 @@ class SiteMap(BaseModel):
 
 class AttackVector(BaseModel):
     field_index: int
+    field_name: str = Field(..., description="Человеко-понятное имя: 'Поиск (placeholder: \"Найти\")'")
     payload: str
-    result: str # "Success (Alert)", "Reflected", "Failed"
+    result: str
+    url: Optional[str] = Field(None, description="URL страницы с полем")
 
 class FinalReport(BaseModel):
     target: str

@@ -10,34 +10,86 @@ class Spider:
         self.site_map = {} # {url: [inputs]}
 
     def is_internal(self, base_url, target_url):
-        """Проверяет, является ли ссылка внутренней для домена"""
-        base_domain = urlparse(base_url).netloc
-        target_domain = urlparse(target_url).netloc
-        return base_domain == target_domain or not target_domain
+        """
+        🔥 ЖЕСТКАЯ ПРОВЕРКА: разрешает только ссылки в пределах целевого домена
+        """
+        try:
+            base_parsed = urlparse(base_url)
+            target_parsed = urlparse(target_url)
+            
+            base_domain = base_parsed.netloc.lower()
+            target_domain = target_parsed.netloc.lower()
+            
+            # 🔥 Разрешаем только если домены совпадают
+            # (учитываем поддомены: app.example.com → example.com разрешено)
+            if target_domain == base_domain:
+                return True
+            
+            # 🔥 Разрешаем поддомены: blog.example.com → example.com
+            if target_domain.endswith('.' + base_domain):
+                return True
+            
+            # 🔥 Разрешаем относительные ссылки (без домена)
+            if not target_domain:
+                return True
+            
+            # ❌ Всё остальное — внешний домен, блокируем
+            return False
+            
+        except Exception:
+            # При ошибке парсинга — блокируем ссылку (безопаснее)
+            return False
 
     def get_forms_from_page(self, page, url):
-        """Извлекает все поля ввода со страницы"""
+        """Извлекает текстовые поля с БОГАТЫМИ МЕТАДАННЫМИ для человеческого отчета"""
         content = page.content()
         soup = BeautifulSoup(content, 'html.parser')
         
+        ALLOWED_INPUT_TYPES = {'text', 'search', 'email', 'password', 'url', 'tel', 'number', None, ''}
         found_inputs = []
-        # Ищем все input, textarea и select
-        for idx, tag in enumerate(soup.find_all(['input', 'textarea', 'select'])):
-            input_info = {
+        
+        for idx, tag in enumerate(soup.find_all(['input', 'textarea'])):
+            input_type = tag.get('type', '').lower().strip()
+            if tag.name == 'input' and input_type not in ALLOWED_INPUT_TYPES:
+                continue
+            
+            # 🔥 ИЗВЛЕКАЕМ ВИЗУАЛЬНЫЕ ПОДСКАЗКИ
+            name = tag.get('name', '')
+            field_id = tag.get('id', '')
+            placeholder = tag.get('placeholder', '')
+            aria_label = tag.get('aria-label', '')
+            
+            # 🔥 Ищем связанный <label> по атрибуту 'for'
+            associated_label = ''
+            if field_id:
+                label_tag = soup.find('label', attrs={'for': field_id})
+                if label_tag:
+                    associated_label = label_tag.get_text(strip=True)
+            
+            # 🔥 Формируем человеко-понятное описание поля
+            # Приоритет: label > aria-label > placeholder > name/id
+            human_name = associated_label or aria_label or placeholder or name or field_id or f"field_{idx}"
+            
+            field_info = {
                 "index": idx,
                 "tag": tag.name,
-                "type": tag.get('type', 'text'),
-                "name": tag.get('name', 'N/A'),
-                "id": tag.get('id', 'N/A'),
-                "placeholder": tag.get('placeholder', 'N/A')
+                "type": input_type or 'text',
+                "name": name,
+                "id": field_id,
+                "placeholder": placeholder,
+                "aria_label": aria_label,
+                "associated_label": associated_label,
+                "human_name": human_name,  # 🔑 ГЛАВНОЕ: понятное имя
+                "url": url  # 🔑 Сохраняем URL поля
             }
-            # Не берем скрытые поля (обычно это CSRF токены, их сложно атаковать в лоб)
-            if input_info["type"] != "hidden":
-                found_inputs.append(input_info)
+            
+            found_inputs.append(field_info)
         
         if found_inputs:
             self.site_map[url] = found_inputs
             print(f"  [+] Найдено полей: {len(found_inputs)}")
+        else:
+            print(f"  [+] Полей для ввода текста не найдено")
 
     def crawl(self, start_url):
         print(f"[*] Запуск Паука на {start_url} (глубина: {self.max_depth})")
@@ -98,23 +150,29 @@ class Spider:
                     self.get_forms_from_page(page, current_url)
                     
                     # Сбор ссылок
+                    # Сбор ссылок
                     if depth < self.max_depth:
                         hrefs = page.eval_on_selector_all("a", "elements => elements.map(e => e.href)")
                         for href in hrefs:
                             full_url = urljoin(current_url, href).split('#')[0].rstrip('/')
-                            if self.is_internal(start_url, full_url) and full_url not in self.visited_urls:
+                            
+                            # 🔥 ПРОВЕРКА ДОМЕНА ПЕРЕД ДОБАВЛЕНИЕМ В ОЧЕРЕДЬ
+                            if not self.is_internal(start_url, full_url):
+                                # Отладочный лог (можно закомментировать в продакшене)
+                                # print(f"  [↗️] Пропущена внешняя ссылка: {full_url}")
+                                continue
+                            
+                            if full_url not in self.visited_urls:
                                 queue.append((full_url, depth + 1))
-                                
+
                 except Exception as e:
                     print(f"  [!] Ошибка на {current_url}: {str(e)[:100]}")
 
             browser.close()
         return self.site_map
 
-# Тестовый запуск
 if __name__ == "__main__":
     spider = Spider(max_depth=1)
-    # Замени на URL своего локального проекта или любой тестовый сайт
     results = spider.crawl("http://zero.webappsecurity.com/")
     print("\n--- ИТОГ СКАНИРОВАНИЯ ---")
     print(json.dumps(results, indent=2, ensure_ascii=False))

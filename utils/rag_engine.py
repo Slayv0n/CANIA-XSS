@@ -5,20 +5,18 @@ from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbe
 from typing import List
 
 class RagEngine:
-    def __init__(self, db_path: str = None, table_name: str = "xss_payloads"): # 🔑 ДОБАВЛЕНО
+    def __init__(self, table_name: str, db_path: str = None):
         if db_path is None:
             db_path = Path(__file__).parent.parent / "security_docs_lancedb"
         
         db_path_str = str(db_path.resolve())
-        # print(f"[*] RagEngine ищет базу в: {db_path_str}") # Можно закомментировать шум
         
         self.db = lancedb.connect(db_path_str)
         self.embedder = SentenceTransformerEmbedder(id="all-MiniLM-L6-v2")
-        self.table_name = table_name # 🔑 СОХРАНЯЕМ ИМЯ
+        self.table_name = table_name
 
         try:
-            self.table = self.db.open_table(table_name) # 🔑 ОТКРЫВАЕМ НУЖНУЮ
-            # print(f"[+] Таблица '{table_name}' открыта.")
+            self.table = self.db.open_table(table_name)
         except Exception as e:
             print(f"[!] Таблица '{table_name}' не найдена: {e}")
             self.table = None
