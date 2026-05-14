@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { setAccessToken, setRefreshToken } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const navigate = useNavigate();
   const hasProcessed = useRef(false);
 
   useEffect(() => {
@@ -22,15 +23,17 @@ export default function OAuthCallback() {
 
       setAccessToken(accessToken);
       setRefreshToken(refreshToken);
+      
+      // Авторизуем пользователя (эта функция сама подтянет профиль через /api/users)
       login('Google User');
 
-      // Заменяем историю, чтобы токены не оставались в URL
-      window.location.href = '/profile';
+      // Мягко переходим в профиль, НЕ сбрасывая состояние приложения!
+      navigate('/profile', { replace: true });
     } else {
       // Если токенов нет — редирект на главную
-      window.location.href = '/';
+      navigate('/', { replace: true });
     }
-  }, [searchParams, login]);
+  }, [searchParams, login, navigate]);
 
   return null; // Показывать ничего не нужно
 }

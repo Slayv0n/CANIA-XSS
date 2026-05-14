@@ -234,6 +234,8 @@ export const translations: any = {
       invalidVerificationCode: "Неверный код подтверждения!",
       wrongPassword: "Неверный текущий пароль!",
       saveError: "Ошибка при сохранении новых данных",
+      forgotPassword: "Вошли через соцсети или забыли пароль?",
+      codeSent: "Код подтверждения отправлен на почту",
       close: "Закрыть"
     },
     common: {
@@ -478,6 +480,8 @@ export const translations: any = {
       invalidVerificationCode: "Invalid verification code!",
       wrongPassword: "Incorrect current password!",
       saveError: "Error saving new data",
+      forgotPassword: "Logged in via social networks or forgot password?",
+      codeSent: "Verification code sent to email",
       close: "Close"
     },
     common: {

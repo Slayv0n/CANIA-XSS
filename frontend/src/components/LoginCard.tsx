@@ -21,7 +21,6 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     const { t } = useLanguage();
     const [authMode, setAuthMode] = useState<AuthMode>('login');
 
-    // Состояния полей
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
@@ -30,7 +29,6 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     const[error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Таймер
     const [timer, setTimer] = useState(60);
     const[resetToken, setResetToken] = useState('');
 
@@ -56,7 +54,11 @@ export default function LoginCard({ onClose }: LoginCardProps) {
         window.location.href = '/api/auth/google/login';
     };
 
-    // ВОТ ЗДЕСЬ БЫЛА ОШИБКА: функция handleSubmit не была объявлена!
+    // ОБРАБОТЧИК ДЛЯ GITHUB
+    const handleGithubLogin = () => {
+        window.location.href = '/api/auth/github/login';
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -64,23 +66,16 @@ export default function LoginCard({ onClose }: LoginCardProps) {
 
         try {
             if (authMode === 'register' && isRegisterValid) {
-                // 1. Создаем аккаунт
                 await api.register({ email, password } as RegisterRequest);
-                
-                // 2. Ждем 1.5 секунды, чтобы RabbitMQ успел прокинуть юзера
                 await new Promise(resolve => setTimeout(resolve, 1500));
-
-                // 3. Сразу вызываем ЛОГИН, чтобы получить токены
                 const response = await api.login({ email, password } as LoginRequest);
                 setAccessToken(response.accessToken);
                 setRefreshToken(response.refreshToken);
 
-                // 4. Пускаем в систему
                 login(email);
                 onClose();
             } 
             else if (authMode === 'login' && isLoginValid) {
-                // Реальный логин
                 const response = await api.login({ email, password } as LoginRequest);
                 setAccessToken(response.accessToken);
                 setRefreshToken(response.refreshToken);
@@ -110,13 +105,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div 
                 ref={modalRef}
                 role='dialog'
                 aria-modal="true"
-                className="bg-main-bg text-main-text w-full max-w-120 p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
-                <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-200 h-100 opacity-90" />
+                className="bg-main-bg text-main-text w-full max-w-[480px] p-8 md:p-10 rounded-3xl shadow-2xl relative border border-white/5 overflow-hidden">
+                <GlowSpot className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[200px] h-[100px] opacity-90" />
 
                 <button
                     onClick={onClose}
@@ -216,15 +211,13 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 <button type="button" onClick={handleGoogleLogin} className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GoogleIcon className="w-5 h-5" /> {t('auth.google')}
                                 </button>
-                                {/* По аналогии можно добавить обработчик для GitHub, если потребуется */}
-                                <button type="button" className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
+                                <button type="button" onClick={handleGithubLogin} className="w-full border border-white/10 bg-transparent rounded-lg py-2.5 flex items-center justify-center gap-3 hover:bg-white/5 transition-colors duration-300 text-sm font-medium text-gray-300 cursor-pointer">
                                     <GithubIcon className="w-5 h-5 text-white" /> {t('auth.github')}
                                 </button>
                             </div>
                         </>
                     )}
 
-                    {/* ЗАБЫЛИ ПОЧТУ */}
                     {authMode === 'forgot_email' && (
                         <>
                             <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.restoreTitle')}</h1>
@@ -243,7 +236,6 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                         </>
                     )}
 
-                    {/* ЭКРАН ВВОДА КОДА */}
                     {authMode === 'forgot_timer' && (
                         <div className="flex flex-col gap-6 text-center animate-fade-in">
                             <h1 className="text-3xl font-bold uppercase tracking-wide">{t('auth.codeTitle')}</h1>
@@ -297,7 +289,6 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                         </div>
                     )}
 
-                    {/* НОВЫЙ ПАРОЛЬ */}
                     {authMode === 'new_password' && (
                         <>
                             <h1 className="text-3xl font-bold mb-8 uppercase tracking-wide">{t('auth.savePasswordTitle')}</h1>

@@ -322,7 +322,7 @@ async getMyTasks(token?: string): Promise<TaskItem[]> {
   },
 
   async getProfile(token?: string): Promise<User> {
-    const response = await authFetch(`${API_BASE}/users/account`, {
+    const response = await authFetch(`${API_BASE}/users`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 

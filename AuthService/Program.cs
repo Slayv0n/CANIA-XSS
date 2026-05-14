@@ -333,6 +333,17 @@ app.MapGet("/auth/github/callback", async (HttpContext context,
             ?? emails.FirstOrDefault()?.Email;
     }
 
+    // саня проверь что нейронка написала это правда? если да, то вот что она нагенерировала вместо срочки выше
+
+    //email = emails.FirstOrDefault(e => e.Primary && e.Verified)?.Email 
+    //?? emails.FirstOrDefault(e => e.Verified)?.Email;
+
+    // Google всегда отдает проверенные (Verified) email-адреса. А вот в GitHub пользователь может 
+    // написать в профиле любой email, даже не подтверждая его.
+    // В вашем GitHubOAuthService.cs вы берете первый попавшийся email. 
+    // Хакер может указать в своем GitHub чужую почту (например, админа) и ваш сервис свяжет 
+    // их аккаунты (Account Takeover).
+
     if (string.IsNullOrEmpty(email))
         email = $"{userInfo.Login}@users.noreply.github.com";
 

@@ -71,7 +71,7 @@ function AppRoutes() {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [setLoginModal, setPricesModal, setFeedbackModal, closeSettingsModal]);
-
+  
   return (
     <div className="h-screen w-full bg-main-bg overflow-hidden relative">
       <div id="scroll-container" className="fixed inset-0 overflow-y-auto z-10 custom-scrollbar animate-fade-in">
