@@ -22,7 +22,6 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
 
     const [step, setStep] = useState<1 | 2 | 3>(1);
     
-    // Новые стейты для обработки входа через соцсети
     const [authMethod, setAuthMethod] = useState<'password' | 'email_code'>('password');
     const [currentEmailCode, setCurrentEmailCode] = useState('');
     const [isSendingCode, setIsSendingCode] = useState(false);
@@ -33,14 +32,17 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
     const [newEmail, setNewEmail] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
 
+    // Стейты для глазиков
     const [showPassword, setShowPassword] = useState(false);
+    const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+    
     const [loading, setLoading] = useState(false);
 
-    // Валидация Шага 1 в зависимости от выбранного метода
     const isStep1Valid = authMethod === 'password' 
         ? currentPassword.length > 0 
         : currentEmailCode.length > 0;
 
+    // В SettingsModal логика password === repeatPassword уже была правильной!
     const isStep2PasswordValid = newPassword.length > 0 && newPassword === repeatPassword;
     const isStep2EmailValid = newEmail.includes('@') && newEmail.includes('.');
     const isStep3Valid = verificationCode.length >= 4;
@@ -156,7 +158,6 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
                                         {loading ? t('settings.loading') : t('settings.continueBtn')}
                                     </button>
 
-                                    {/* Ссылка-помощник для тех, кто авторизовался без пароля */}
                                     <button 
                                         type="button" 
                                         onClick={handleSendCodeToCurrentEmail}
@@ -218,9 +219,15 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
                                 </div>
                                 <PasswordStrength password={newPassword} />
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2 relative">
                                 <label className="text-desc-text text-sm pl-1">{t('settings.repeatPasswordLabel')}</label>
-                                <input type="password" placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-input-bg border border-card-border rounded-xl p-3 text-main-text outline-none focus:border-brand-red transition-colors" />
+                                <div className="relative">
+                                    {/* ДОБАВЛЕН ГЛАЗИК */}
+                                    <input type={showRepeatPassword ? "text" : "password"} placeholder="••••••••" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-input-bg border border-card-border rounded-xl p-3 pr-10 text-main-text outline-none focus:border-brand-red transition-colors" />
+                                    <button type="button" onClick={() => setShowRepeatPassword(!showRepeatPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-desc-text hover:text-brand-red cursor-pointer transition-colors">
+                                        {showRepeatPassword ? <EyeOff /> : <EyeOn />}
+                                    </button>
+                                </div>
                             </div>
 
                             <button type="submit" disabled={!isStep2PasswordValid || loading} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${
@@ -282,4 +289,4 @@ export default function SettingsModal({ mode, onClose }: SettingsModalProps) {
             </div>
         </div>
     );
-}
+}   
