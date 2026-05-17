@@ -25,12 +25,16 @@ export default function LoginCard({ onClose }: LoginCardProps) {
     const [password, setPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
     const [agreePolicy, setAgreePolicy] = useState(false);
+    
+    // Стейты для глазиков
     const [showPassword, setShowPassword] = useState(false);
-    const[error, setError] = useState('');
+    const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+    
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const [timer, setTimer] = useState(60);
-    const[resetToken, setResetToken] = useState('');
+    const [resetToken, setResetToken] = useState('');
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
@@ -46,15 +50,15 @@ export default function LoginCard({ onClose }: LoginCardProps) {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
+    // ИСПРАВЛЕНА ЛОГИКА: теперь строго password === repeatPassword
     const isLoginValid = email.length > 0 && password.length > 0;
-    const isRegisterValid = email.length > 0 && password.length > 0 && repeatPassword.length > 0 && agreePolicy;
-    const isNewPasswordValid = password.length > 0 && repeatPassword.length > 0 && password === repeatPassword;
+    const isRegisterValid = email.length > 0 && password.length > 0 && password === repeatPassword && agreePolicy;
+    const isNewPasswordValid = password.length > 0 && password === repeatPassword;
 
     const handleGoogleLogin = () => {
         window.location.href = '/api/auth/google/login';
     };
 
-    // ОБРАБОТЧИК ДЛЯ GITHUB
     const handleGithubLogin = () => {
         window.location.href = '/api/auth/github/login';
     };
@@ -154,9 +158,15 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                 </div>
 
                                 {authMode === 'register' && (
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-2 relative">
                                         <label className="text-gray-400 text-sm pl-1">{t('auth.confirmPassword')}</label>
-                                        <input type="password" placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                        <div className="relative">
+                                            {/* ДОБАВЛЕН ГЛАЗИК */}
+                                            <input type={showRepeatPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
+                                            <button type="button" onClick={() => setShowRepeatPassword(!showRepeatPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
+                                                {showRepeatPassword ? <EyeOn className='transition-colors duration-300'/> : <EyeOff className='transition-colors duration-300'/>}
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -297,11 +307,20 @@ export default function LoginCard({ onClose }: LoginCardProps) {
                                     <label className="text-gray-400 text-sm pl-1">{t('auth.newPasswordTitle')}</label>
                                     <div className="relative">
                                         <input type={showPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
+                                            {showPassword ? <EyeOn className='transition-colors duration-300'/> : <EyeOff className='transition-colors duration-300'/>}
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-2 relative">
                                     <label className="text-gray-400 text-sm pl-1">{t('auth.confirmPassword')}</label>
-                                    <input type="password" placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 text-white outline-none focus:border-brand-red" />
+                                    <div className="relative">
+                                        {/* ДОБАВЛЕН ГЛАЗИК */}
+                                        <input type={showRepeatPassword ? "text" : "password"} placeholder={t('auth.passwordPlaceholder')} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl p-3 pr-10 text-white outline-none focus:border-brand-red" />
+                                        <button type="button" onClick={() => setShowRepeatPassword(!showRepeatPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white cursor-pointer">
+                                            {showRepeatPassword ? <EyeOn className='transition-colors duration-300'/> : <EyeOff className='transition-colors duration-300'/>}
+                                        </button>
+                                    </div>
                                 </div>
                                 <button type="submit" disabled={!isNewPasswordValid} className={`w-full py-3.5 rounded-full font-bold uppercase tracking-wider transition-all mt-4 cursor-pointer ${isNewPasswordValid ? 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-white/10' : 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed border border-white/5'}`}>
                                     {t('auth.saveBtn')}

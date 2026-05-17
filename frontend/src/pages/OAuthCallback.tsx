@@ -14,6 +14,7 @@ export default function OAuthCallback() {
 
     const accessToken = searchParams.get('access_token');
     const rawRefresh = searchParams.get('refresh_token');
+    const emailParam = searchParams.get('email');
 
     if (accessToken && rawRefresh) {
       hasProcessed.current = true;
@@ -24,10 +25,14 @@ export default function OAuthCallback() {
       setAccessToken(accessToken);
       setRefreshToken(refreshToken);
       
-      // Авторизуем пользователя (эта функция сама подтянет профиль через /api/users)
-      login('Google User');
+      // Если почта пришла в ссылке, декодируем её (на случай спецсимволов).
+      // Если вдруг бэкенд почему-то её не передаст, используем наш старый фоллбэк.
+      const userEmail = emailParam ? decodeURIComponent(emailParam) : 'Google User';
 
-      // Мягко переходим в профиль, НЕ сбрасывая состояние приложения!
+      // Авторизуем пользователя СРАЗУ с правильной почтой
+      login(userEmail);
+
+      // Мягко переходим в профиль, очищая токены из URL
       navigate('/profile', { replace: true });
     } else {
       // Если токенов нет — редирект на главную
@@ -35,5 +40,5 @@ export default function OAuthCallback() {
     }
   }, [searchParams, login, navigate]);
 
-  return null; // Показывать ничего не нужно
+  return null;
 }
