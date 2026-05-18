@@ -1,33 +1,67 @@
 # utils/rag_engine.py
+import logging
 import lancedb
 from pathlib import Path
 from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
-from typing import List
+from typing import List, Optional
 
 class RagEngine:
     def __init__(self, table_name: str, db_path: str = None):
         if db_path is None:
             db_path = Path(__file__).parent.parent / "security_docs_lancedb"
-        
-        db_path_str = str(db_path.resolve())
-        
-        self.db = lancedb.connect(db_path_str)
-        self.embedder = SentenceTransformerEmbedder(id="all-MiniLM-L6-v2")
+        self.db_path_str = str(db_path.resolve())
         self.table_name = table_name
+        # 🔥 НЕ создаем embedder и db сразу
+        self._db = None
+        self._embedder = None
+        self._table = None
 
-        try:
-            self.table = self.db.open_table(table_name)
-        except Exception as e:
-            print(f"[!] Таблица '{table_name}' не найдена: {e}")
-            self.table = None
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = lancedb.connect(self.db_path_str)
+        return self._db
 
-    def search_payloads(self, query: str, limit: int = 5) -> List[str]:
-        if not self.table:
-            return []
+    @property
+    def embedder(self):
+        if self._embedder is None:
+            logging.info("🧠 Загрузка модели эмбеддингов для RAG (первый запрос)...")
+            self._embedder = SentenceTransformerEmbedder(id="all-MiniLM-L6-v2")
+        return self._embedder
+
+    @property
+    def table(self):
+        if self._table is None:
+            try:
+                self._table = self.db.open_table(self.table_name)
+            except Exception as e:
+                logging.warning(f"Таблица '{self.table_name}' не найдена: {e}")
+                self._table = None
+        return self._table
+
+    def search_payloads(self, query: str, tech_tags: Optional[List[str]] = None, limit: int = 5) -> List[str]:
+        if not self.table: return []
         try:
             query_vector = self.embedder.get_embedding(query)
-            results = self.table.search(query_vector).limit(limit).to_list()
-            return [row["text"] for row in results if row.get("text")]
+            # Берем с запасом, чтобы отфильтровать по тегам
+            results = self.table.search(query_vector).limit(limit * 3).to_list()
+            
+            matched, fallback = [], []
+            for row in results:
+                meta = row.get("metadata", {})
+                tags = meta.get("tech_tags", [])
+                payload = row.get("text", "")
+                
+                if not payload: continue
+                
+                # Приоритет: совпадение по технологии
+                if tech_tags and any(t in tech_tags for t in tags):
+                    matched.append(payload)
+                elif "GENERIC" in tags or not tech_tags:
+                    fallback.append(payload)
+                    
+            # Возвращаем сначала tech-specific, потом GENERIC, до лимита
+            return (matched + fallback)[:limit]
         except Exception as e:
             print(f"[!] Ошибка RAG поиска: {e}")
             return []

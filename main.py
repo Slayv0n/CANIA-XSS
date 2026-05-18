@@ -18,8 +18,7 @@ from ai_agent_scraper.ai_agent_scraper import parser_agent
 load_dotenv()
 
 def run_spider_sync(url):
-    """Обертка для запуска синхронного Паука в отдельном потоке"""
-    spider = Spider(max_depth=1)
+    spider = Spider(max_depth=2, max_pages=50)
     return spider.crawl(url)
 
 def orchestrator(target_url: str):
@@ -39,23 +38,22 @@ def orchestrator(target_url: str):
     # except Exception as e:
     #     print(f"⚠️ Шаг OSINT пропущен: {e}")
 
-    # --- ЭТАП 2: РАЗВЕДКА (Паук в потоке) ---
+ # --- ЭТАП 2: РАЗВЕДКА ---
     print("\n[2/5] Запуск Паука (поиск форм)...")
     try:
-        # Запускаем в отдельном потоке, чтобы не конфликтовать с asyncio
         with ThreadPoolExecutor() as executor:
             future = executor.submit(run_spider_sync, target_url)
             site_map = future.result()
     except Exception as e:
-        print(f"❌ Ошибка Паука: {e}")
+        print(f" ❌   Ошибка   Паука : {e}")
         return
 
     if not site_map:
-        print("❌ Формы на сайте не найдены.")
+        print(" ❌   Формы   на   сайте   не   найдены .  Проверьте   доступность   цели .")
         return
-    print(f"✅ Карта сайта построена. Найдено страниц: {len(site_map)}")
-
-# --- ЭТАП 3: ПЛАНИРОВАНИЕ АТАКИ (Exploiter + RAG) ---
+    print(f" ✅   Карта   сайта   построена .  Найдено   страниц : {len(site_map)}")
+    
+    # --- ЭТАП 3: ПЛАНИРОВАНИЕ АТАКИ (Exploiter + RAG) ---
     print("\n[3/5] Выбор стратегии атак (Exploiter)...")
     
     # Формируем промпт: передаем карту сайта

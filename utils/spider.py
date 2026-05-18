@@ -1,178 +1,182 @@
 import json
-from playwright.sync_api import sync_playwright
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
+import logging
+from urllib.parse import urljoin, urlparse, parse_qs
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-5s | %(message)s")
+logger = logging.getLogger(__name__)
+
+ALLOWED_SCHEMES = {"http", "https", ""}
+EXCLUDED_EXTENSIONS = {
+    ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".webp",
+    ".zip", ".rar", ".tar", ".gz", ".exe", ".dmg", ".apk", ".iso",
+    ".css", ".js", ".woff", ".woff2", ".ttf", ".eot", ".otf", ".map"
+}
+EXTERNAL_BLOCKLIST = {
+    "github.com", "facebook.com", "twitter.com", "x.com", "linkedin.com",
+    "instagram.com", "t.me", "telegram.me", "youtube.com", "youtu.be",
+    "google.com", "microsoft.com", "apple.com", "reddit.com", "medium.com",
+    "stackoverflow.com", "npmjs.com", "docker.com", "gitlab.com", "bitbucket.org"
+}
 
 class Spider:
-    def __init__(self, max_depth=2):
+    def __init__(self, max_depth: int = 2, max_pages: int = 50, user_agent: str = None):
         self.max_depth = max_depth
+        self.max_pages = max_pages
+        self.user_agent = user_agent or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         self.visited_urls = set()
-        self.site_map = {} # {url: [inputs]}
+        self.processed_urls = set()
+        self.site_map = {}
+        self.base_domain = None
+        self.base_scheme = None
 
-    def is_internal(self, base_url, target_url):
-        """
-        🔥 ЖЕСТКАЯ ПРОВЕРКА: разрешает только ссылки в пределах целевого домена
-        """
+    def _normalize_url(self, url: str, base_url: str) -> str | None:
+        if not url or url.startswith(("javascript:", "data:", "mailto:", "tel:")):
+            return None
         try:
-            base_parsed = urlparse(base_url)
-            target_parsed = urlparse(target_url)
-            
-            base_domain = base_parsed.netloc.lower()
-            target_domain = target_parsed.netloc.lower()
-            
-            # 🔥 Разрешаем только если домены совпадают
-            # (учитываем поддомены: app.example.com → example.com разрешено)
-            if target_domain == base_domain:
-                return True
-            
-            # 🔥 Разрешаем поддомены: blog.example.com → example.com
-            if target_domain.endswith('.' + base_domain):
-                return True
-            
-            # 🔥 Разрешаем относительные ссылки (без домена)
-            if not target_domain:
-                return True
-            
-            # ❌ Всё остальное — внешний домен, блокируем
-            return False
-            
+            if url.startswith("//"): url = f"{self.base_scheme}:{url}"
+            if not urlparse(url).netloc: url = urljoin(base_url, url)
+            parsed = urlparse(url)
+            if parsed.scheme not in ALLOWED_SCHEMES: return None
+            fragment = parsed.fragment if parsed.netloc.lower() == self.base_domain else ""
+            normalized = f"{parsed.scheme}://{parsed.netloc.lower()}{parsed.path}"
+            if parsed.query: normalized += f"?{parsed.query}"
+            if fragment: normalized += f"#{fragment}"
+            return normalized.rstrip("/")
         except Exception:
-            # При ошибке парсинга — блокируем ссылку (безопаснее)
+            return None
+
+    def is_allowed_url(self, target_url: str) -> bool:
+        try:
+            parsed = urlparse(target_url)
+            target_domain = parsed.netloc.lower()
+            if target_domain != self.base_domain: return False
+            if any(b in target_domain for b in EXTERNAL_BLOCKLIST): return False
+            if any(parsed.path.lower().endswith(ext) for ext in EXCLUDED_EXTENSIONS): return False
+            
+            query = parsed.query.lower()
+            if any(p in query for p in ["to=", "url=", "next=", "redirect=", "return_to=", "dest=", "goto="]):
+                params = parse_qs(parsed.query)
+                for key in ["to", "url", "next", "redirect", "return_to", "dest", "goto"]:
+                    if key in params and any("http" in v.lower() and self.base_domain not in v.lower() for v in params[key]):
+                        return False
+            
+            github_patterns = ["/commit/", "/pulls", "/issues", "/actions", "/blob/", "/tree/", "/stargazers", "/watchers", "/forks"]
+            if any(p in parsed.path.lower() for p in github_patterns): return False
+            return True
+        except Exception:
             return False
 
-    def get_forms_from_page(self, page, url):
-        """Извлекает текстовые поля с БОГАТЫМИ МЕТАДАННЫМИ для человеческого отчета"""
-        content = page.content()
-        soup = BeautifulSoup(content, 'html.parser')
-        
-        ALLOWED_INPUT_TYPES = {'text', 'search', 'email', 'password', 'url', 'tel', 'number', None, ''}
-        found_inputs = []
-        
-        for idx, tag in enumerate(soup.find_all(['input', 'textarea'])):
-            input_type = tag.get('type', '').lower().strip()
-            if tag.name == 'input' and input_type not in ALLOWED_INPUT_TYPES:
-                continue
-            
-            # 🔥 ИЗВЛЕКАЕМ ВИЗУАЛЬНЫЕ ПОДСКАЗКИ
-            name = tag.get('name', '')
-            field_id = tag.get('id', '')
-            placeholder = tag.get('placeholder', '')
-            aria_label = tag.get('aria-label', '')
-            
-            # 🔥 Ищем связанный <label> по атрибуту 'for'
-            associated_label = ''
-            if field_id:
-                label_tag = soup.find('label', attrs={'for': field_id})
-                if label_tag:
-                    associated_label = label_tag.get_text(strip=True)
-            
-            # 🔥 Формируем человеко-понятное описание поля
-            # Приоритет: label > aria-label > placeholder > name/id
-            human_name = associated_label or aria_label or placeholder or name or field_id or f"field_{idx}"
-            
-            field_info = {
-                "index": idx,
-                "tag": tag.name,
-                "type": input_type or 'text',
-                "name": name,
-                "id": field_id,
-                "placeholder": placeholder,
-                "aria_label": aria_label,
-                "associated_label": associated_label,
-                "human_name": human_name,  # 🔑 ГЛАВНОЕ: понятное имя
-                "url": url  # 🔑 Сохраняем URL поля
-            }
-            
-            found_inputs.append(field_info)
-        
-        if found_inputs:
-            self.site_map[url] = found_inputs
-            print(f"  [+] Найдено полей: {len(found_inputs)}")
-        else:
-            print(f"  [+] Полей для ввода текста не найдено")
+    def _wait_for_dynamic(self, page):
+        try:
+            page.wait_for_timeout(1500)
+            for sel in ["input", "textarea", "button", "[role='button']", "[data-testid]", "router-outlet", "app-root", "#root"]:
+                try:
+                    if page.locator(sel).count(timeout=2000) > 0:
+                        page.wait_for_timeout(300)
+                        return True
+                except: continue
+            return True
+        except: return True
 
-    def crawl(self, start_url):
-        print(f"[*] Запуск Паука на {start_url} (глубина: {self.max_depth})")
-        
-        with sync_playwright() as p:
-            # Оставляем headless=False, чтобы ты видел успех
-            browser = p.chromium.launch(headless=False) 
-            context = browser.new_context(viewport={'width': 1280, 'height': 720})
+    def _close_modals(self, page):
+        for sel in ["button[aria-label*='Close']", "button[aria-label*='Dismiss']", "button:has-text('Close')", "button:has-text('Accept')", ".cookie-accept", "[class*='close']"]:
+            try:
+                for el in page.locator(sel).all()[:3]:
+                    if el.is_visible(timeout=1000):
+                        el.click(timeout=1000)
+                        page.wait_for_timeout(200)
+            except: continue
+
+    def _extract_page_data(self, page, url):
+        try:
+            return page.evaluate("""() => {
+                const links = new Set();
+                document.querySelectorAll('a[href]').forEach(a => {
+                    const h = a.getAttribute('href');
+                    if (h && !h.startsWith('javascript:') && !h.startsWith('data:') && !h.startsWith('mailto:') && !h.startsWith('tel:')) links.add(h);
+                });
+                document.querySelectorAll('[routerLink]').forEach(el => {
+                    const rl = el.getAttribute('routerLink');
+                    if (rl) links.add(rl.startsWith('/') ? rl : '/' + rl);
+                });
+                document.querySelectorAll('a[href^="#"]').forEach(a => {
+                    const h = a.getAttribute('href');
+                    if (h && h.length > 1) links.add(h);
+                });
+
+                const fields = [];
+                document.querySelectorAll('input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), [role="textbox"]').forEach((el, idx) => {
+                    let labelText = '';
+                    const forId = el.getAttribute('aria-labelledby') || el.getAttribute('id');
+                    if (forId) { const lbl = document.querySelector(`label[for="${forId}"]`); if (lbl) labelText = lbl.innerText.trim(); }
+                    fields.push({
+                        index: idx, tag: el.tagName.toLowerCase(), type: el.type || 'text',
+                        name: el.name || '', id: el.id || '', placeholder: el.placeholder || '',
+                        aria_label: el.getAttribute('aria-label') || '',
+                        human_name: (labelText || el.getAttribute('aria-label') || el.placeholder || el.name || el.id || `field_${idx}`).trim()
+                    });
+                });
+                return { links: Array.from(links), fields };
+            }""")
+        except Exception as e:
+            logger.warning(f"Extraction error: {e}")
+            return {"links": [], "fields": []}
+
+    def crawl(self, start_url: str) -> dict:
+        parsed = urlparse(start_url)
+        self.base_domain = parsed.netloc.lower()
+        self.base_scheme = parsed.scheme or "https"
+        logger.info(f"Spider started: {start_url} | Domain: {self.base_domain}")
+
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+            context = browser.new_context(user_agent=self.user_agent, viewport={"width": 1280, "height": 800}, ignore_https_errors=True)
             page = context.new_page()
+            page.route("**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,otf,map}", lambda r: r.abort())
 
             queue = [(start_url, 0)]
-            
-            while queue:
-                current_url, depth = queue.pop(0)
-                if current_url in self.visited_urls or depth > self.max_depth:
-                    continue
-                
-                print(f"[*] Сканирую: {current_url} (ур. {depth})")
-                self.visited_urls.add(current_url)
+            self.visited_urls.add(start_url)
+            stats = {"pages": 0, "fields": 0, "links": 0}
+
+            while queue and stats["pages"] < self.max_pages:
+                url, depth = queue.pop(0)
+                if depth > self.max_depth or url in self.processed_urls: continue
+                logger.info(f"[{depth}/{self.max_depth}] {url}")
+                self.processed_urls.add(url)
 
                 try:
-                    # Устанавливаем время ожидания на 60с, но ждем только загрузку DOM
-                    page.goto(current_url, timeout=60000, wait_until="domcontentloaded")
-                    
-                    # Даем 3 секунды на отрисовку JS модалок
-                    page.wait_for_timeout(3000) 
+                    page.goto(url, wait_until="domcontentloaded", timeout=20000)
+                    self._wait_for_dynamic(page)
+                    self._close_modals(page)
 
-                    # --- АГРЕССИВНЫЙ ОБХОД ПРЕГРАД ---
-                    # 1. Специфичный селектор для Juice Shop (ускоряет процесс)
-                    try:
-                        selectors = [
-                            "button[aria-label='Close Welcome Banner']", 
-                            "button:has-text('Dismiss')", 
-                            "button:has-text('Me want it!')",
-                            ".close-dialog"
-                        ]
-                        for selector in selectors:
-                            if page.locator(selector).is_visible():
-                                page.locator(selector).click()
-                                print(f"  [+] Закрыта преграда через селектор: {selector}")
-                                page.wait_for_timeout(500)
-                    except: pass
+                    data = self._extract_page_data(page, url)
+                    if data["fields"]:
+                        for f in data["fields"]: f["url"] = url
+                        self.site_map[url] = data["fields"]
+                        stats["fields"] += len(data["fields"])
+                        logger.info(f"Found {len(data['fields'])} fields")
+                    stats["pages"] += 1
 
-                    # 2. Универсальный перебор (для других сайтов)
-                    common_words = ["close", "dismiss", "accept", "ok", "понятно", "принять", "allow"]
-                    for word in common_words:
-                        try:
-                            # Ищем только видимые кнопки
-                            btn = page.get_by_role("button").filter(has_text=word).filter(visible=True).first
-                            if btn.count() > 0:
-                                btn.click()
-                                print(f"  [+] Авто-клик по кнопке: '{word}'")
-                                page.wait_for_timeout(500)
-                        except: continue
-                    # ---------------------------------
-
-                    # Собираем формы
-                    self.get_forms_from_page(page, current_url)
-                    
-                    # Сбор ссылок
-                    # Сбор ссылок
                     if depth < self.max_depth:
-                        hrefs = page.eval_on_selector_all("a", "elements => elements.map(e => e.href)")
-                        for href in hrefs:
-                            full_url = urljoin(current_url, href).split('#')[0].rstrip('/')
-                            
-                            # 🔥 ПРОВЕРКА ДОМЕНА ПЕРЕД ДОБАВЛЕНИЕМ В ОЧЕРЕДЬ
-                            if not self.is_internal(start_url, full_url):
-                                # Отладочный лог (можно закомментировать в продакшене)
-                                # print(f"  [↗️] Пропущена внешняя ссылка: {full_url}")
-                                continue
-                            
-                            if full_url not in self.visited_urls:
-                                queue.append((full_url, depth + 1))
-
+                        for href in data["links"]:
+                            norm = self._normalize_url(href, url)
+                            if norm and self.is_allowed_url(norm) and norm not in self.visited_urls:
+                                self.visited_urls.add(norm)
+                                queue.append((norm, depth + 1))
+                                stats["links"] += 1
+                except PlaywrightTimeout:
+                    logger.warning(f"Timeout on {url}")
                 except Exception as e:
-                    print(f"  [!] Ошибка на {current_url}: {str(e)[:100]}")
-
+                    logger.warning(f"Skipping {url}: {str(e)[:80]}")
             browser.close()
+
+        logger.info(f"Scan complete. Visited: {stats['pages']} pages, Fields: {stats['fields']}")
         return self.site_map
 
-if __name__ == "__main__":
-    spider = Spider(max_depth=1)
-    results = spider.crawl("http://zero.webappsecurity.com/")
-    print("\n--- ИТОГ СКАНИРОВАНИЯ ---")
-    print(json.dumps(results, indent=2, ensure_ascii=False))
+    def get_summary(self) -> dict:
+        return {
+            "pages_scanned": len(self.site_map),
+            "total_input_fields": sum(len(f) for f in self.site_map.values()),
+            "urls": list(self.site_map.keys())
+        }
