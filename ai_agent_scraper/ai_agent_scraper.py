@@ -18,6 +18,9 @@ load_dotenv()
 # Настройка модели
 model = OpenRouter(
     id=os.getenv("ID_MODEL"),
+    timeout=120,
+    max_retries=3, 
+    temperature=0.0,
 )
 
 class DataParserToolkit(Toolkit):
@@ -99,64 +102,29 @@ class DataParserToolkit(Toolkit):
         return result
 
     def parse_gobuster_output(self, output: str) -> Dict[str, Any]:
-        """
-        Парсит вывод gobuster dir/dns.
-
-        Извлекает найденные директории и определяет критичные пути.
-
-        Args:
-            output (str): Вывод команды gobuster
-
-        Returns:
-            Dict[str, Any]: Структурированные данные
-        """
-        logger.info("Парсинг gobuster вывода")
-
-        result = {
-            "directories": [],
-            "files": [],
-            "critical_finds": []
-        }
-
-        # Критичные пути
-        critical_paths = [
-            'admin', 'phpmyadmin', 'wp-admin', 'backup', '.git', '.env',
-            'config', 'sql', 'database', 'login', 'panel', 'console'
+        result = {"directories": [], "files": [], "critical_finds": []}
+        critical_paths = ['admin', 'phpmyadmin', 'wp-admin', 'backup', '.git', '.env', 'config', 'login']
+        
+        # 🔥 Универсальный паттерн: ловит /path Status:200, /path 200, Found: /path
+        patterns = [
+            r'^(/\S+)\s+(?:Status:\s*)?(\d{3})',      # gobuster стандарт
+            r'^Found:\s*(/\S+)\s+-\s*(\d{3})',         # gobuster альтернатива
+            r'^\s*(/\S+)\s+\(Status:\s*(\d{3})\)',     # с скобками
         ]
-
-        try:
-            dir_pattern = r'/(\S+)\s+\(Status:\s+(\d+)\)'
-            for match in re.finditer(dir_pattern, output):
-                path, status = match.groups()
-                full_path = f"/{path}"
-                status_code = int(status)
-
-                item = {
-                    "path": full_path,
-                    "status": status_code,
-                    "type": "directory" if status_code == 200 else "redirect"
-                }
-
-                path_lower = full_path.lower()
-                is_critical = any(critical in path_lower for critical in critical_paths)
-
-                if status_code == 200:
-                    result["directories"].append(item)
-                    if is_critical:
-                        result["critical_finds"].append({
-                            "path": full_path,
-                            "type": "critical_directory",
-                            "reason": f"Critical directory exposed with status {status_code}"
-                        })
-                elif status_code in [301, 302, 307, 308]:
-                    result["directories"].append({**item, "redirect": True})
-                else:
-                    result["files"].append(item)
-
-        except Exception as e:
-            logger.error(f"Ошибка парсинга gobuster: {e}")
-            result["error"] = str(e)
-
+        
+        for line in output.splitlines():
+            line = line.strip()
+            for pattern in patterns:
+                match = re.match(pattern, line, re.IGNORECASE)
+                if match:
+                    path, status = match.groups()
+                    status_code = int(status)
+                    if status_code in (200, 301, 302, 403, 206):
+                        item = {"path": path, "status": status_code, "type": "directory" if status_code == 200 else "redirect"}
+                        result["directories"].append(item)
+                        if any(c in path.lower() for c in critical_paths):
+                            result["critical_finds"].append({"path": path, "reason": f"Critical path with status {status_code}"})
+                    break
         return result
 
     def parse_whatweb_output(self, output: str) -> Dict[str, Any]:
@@ -270,15 +238,13 @@ class DataParserToolkit(Toolkit):
     def extract_all_data(self, target: str, scan_outputs: Dict[str, str]) -> Dict[str, Any]:
         """
         Извлекает все данные из результатов сканирования.
-
-        Args:
-            target (str): Цель сканирования
-            scan_outputs (Dict[str, str]): Словарь с выводами инструментов
-
-        Returns:
-            Dict[str, Any]: Полная структурированная информация
         """
         logger.info(f"Извлечение всех данных для {target}")
+
+        # 🔥 Логируем ошибки команд, если они были
+        for tool, output in scan_outputs.items():
+            if output and "COMMAND_ERROR" in output:
+                logger.error(f"❌ Инструмент {tool} вернул ошибку выполнения!")
 
         results = {
             "target": target,
@@ -384,21 +350,12 @@ class DataParserToolkit(Toolkit):
         return "\n".join(report)
 
     def save_parsed_results(self, parsed_data: Dict[str, Any]) -> str:
-        """
-        Сохраняет распарсенные результаты в JSON файл.
-
-        Args:
-            parsed_data (Dict[str, Any]): Данные для сохранения
-
-        Returns:
-            str: Путь к сохраненному файлу
-        """
         target = parsed_data.get("target", "unknown")
+        # 🔥 Санитизация для Windows-совместимого имени файла
+        safe_target = re.sub(r'[<>:"/\\|?*]', '_', target)
         timestamp = parsed_data.get("timestamp", datetime.now().isoformat()).replace(":", "-")
-
-        filename = f"{target}_{timestamp}_parsed.json"
+        filename = f"{safe_target}_{timestamp}_parsed.json"
         filepath = self.results_dir / filename
-
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(parsed_data, f, ensure_ascii=False, indent=2)
@@ -411,26 +368,19 @@ class DataParserToolkit(Toolkit):
 # Создаем парсер-агента
 parser_agent = Agent(
     name='Data Parser',
-    role='Парсинг и структурирование данных сканирования',
+    role='Structured JSON Generator',
     model=model,
     tools=[DataParserToolkit(results_dir="execution_results")],
     instructions=[
-        "ТЫ: Специалист по парсингу данных OSINT сканирования",
-
-        "=== ДОСТУПНЫЕ ИНСТРУМЕНТЫ ===",
-        "- parse_nmap_output: парсит вывод nmap (порты, сервисы)",
-        "- parse_gobuster_output: парсит найденные директории",
-        "- parse_whatweb_output: определяет технологии и CMS",
-        "- parse_nikto_output: классифицирует уязвимости",
-        "- extract_all_data: полный анализ всех данных",
-        "- format_for_report: создает читаемый отчет",
-        "- save_parsed_results: сохраняет JSON результат",
-
-        "=== ПОРЯДОК РАБОТЫ ===",
-        "1. Получи результаты сканирования (nmap, gobuster, whatweb, nikto)",
-        "2. Вызови extract_all_data с целевым доменом и выводами",
-        "3. Сохрани результаты через save_parsed_results",
-        "4. Покажи отчет через format_for_report"
+        "YOU ARE A JSON GENERATOR. DO NOT CHAT.",
+        "INPUT will be raw tool logs.",
+        "1. CALL extract_all_data(target='<url>', scan_outputs={logs}).",
+        "2. CALL save_parsed_results(data).",
+        "3. CALL format_for_report(data).",
+        "4. RETURN ONLY the JSON output of extract_all_data.",
+        "NEVER wrap in markdown. NEVER add text before/after JSON."
+        "IF tool output is empty/timeout, set field to {'error': 'timeout', 'note': 'external_target'}"
     ],
-    markdown=True,
+    output_schema=None, # Отключаем схему, так как toolkit возвращает dict
+    markdown=False
 )

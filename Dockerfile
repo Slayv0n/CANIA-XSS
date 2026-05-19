@@ -20,4 +20,4 @@ COPY common.txt /usr/share/wordlists/dirb/common.txt
 WORKDIR /app
 
 # Команда по умолчанию
-CMD ["bash"]
+CMD ["sleep", "infinity"]

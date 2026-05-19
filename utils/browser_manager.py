@@ -207,21 +207,22 @@ class BrowserManager:
         Вводит пейлоад и детектирует XSS через множественные методы.
         """
         self.findings = []
+        # 🔥 Уникальный маркер для точного детекта (без ложных срабатываний)
+        probe_marker = f"XSS_PROBE_{hash(payload) % 10000:04d}"
+        test_payload = payload.replace("XSS", probe_marker) if "XSS" in payload else f"{probe_marker}{payload}"
         
-        # 🔥 Сохраняем исходное состояние для сравнения
         try:
             original_body = self.page.evaluate("() => document.body.innerHTML")
-            original_scripts = self.page.evaluate(f"() => {{ window.__originalScripts = {original_scripts}; }}")
+            original_scripts = self.page.evaluate("() => document.querySelectorAll('script').length")
+            self.page.evaluate(f"() => {{ window.__originalScripts = {original_scripts}; window.__xssDetected = false; }}")
         except:
-            original_body = ""
-            original_scripts = 0
+            original_body, original_scripts = "", 0
         
-        clean_payload_str = clean_payload(payload)
+        clean_payload_str = clean_payload(test_payload)
         decoded_payload = html.unescape(clean_payload_str)
-        print(f"   [🧹] Очищенный пейлоад: {decoded_payload[:60]}...")
+        print(f"   [🧹] Пейлоад с маркером: {decoded_payload[:60]}...")
         
         try:
-            # 🔥 Надёжное получение элементов
             all_inputs = self.page.locator("input, textarea").all()
         except Exception as e:
             return f"ERROR: Playwright crash caught — {str(e)[:100]}"
@@ -239,7 +240,6 @@ class BrowserManager:
         
         print(f"   [⌨️] Ввожу в поле '{field_name}' (#{index}): {decoded_payload[:50]}...")
         
-        # 🔥 Ввод с обработкой ошибок
         try:
             target.fill("", timeout=5000)
             target.type(decoded_payload, delay=30, timeout=15000)
@@ -251,68 +251,84 @@ class BrowserManager:
                 return "ERROR: Playwright crash caught"
             return f"ERROR: Input failed: {str(e)[:100]}"
         
-        # 🔥 Отправка формы (если возможно)
         try:
             target.press("Enter", timeout=5000)
         except:
             pass
         
-        # 🔥 Ждём выполнения скрипта
-        self.page.wait_for_timeout(2500)
+        # 🔥 Ждём выполнения скрипта + мониторим флаг в window
+        self.page.wait_for_timeout(2000)
+        try:
+            self.page.wait_for_function("() => window.__xssDetected === true", timeout=3000)
+        except:
+            pass  # Флаг не сработал — продолжаем проверки
         
-        # 🔥 Метод 1: Перехват диалогов (с повторной проверкой)
+        # 🔥 Метод 1: Перехват диалогов
         if self.findings:
             return f"🔴 {self.findings[0]}"
         
-        # 🔥 Метод 2: Проверка через evaluate() — наличие признаков выполнения
+        # 🔥 Метод 2: Проверка через evaluate() — только по маркеру
         try:
-            xss_detected = self.page.evaluate("""() => {
-                // Признак 1: появился img с src=x
-                if (document.querySelector('img[src="x"], img[src*="x:onerror"]')) return true;
+            xss_detected = self.page.evaluate(f"""() => {{
+                // Признак 1: появился img с src=x И нашим маркером
+                const imgs = document.querySelectorAll('img[src="x"]');
+                for (let img of imgs) {{
+                    if (img.getAttribute('onerror')?.includes('{probe_marker}')) return true;
+                }}
                 
-                // Признак 2: body.innerHTML содержит alert или onerror
-                const bodyHtml = document.body.innerHTML.toLowerCase();
-                if (bodyHtml.includes('alert(') || bodyHtml.includes('onerror')) return true;
+                // Признак 2: тело содержит наш уникальный маркер в опасном контексте
+                const bodyHtml = document.body.innerHTML;
+                if (bodyHtml.includes('{probe_marker}') && 
+                    (bodyHtml.includes('<script') || bodyHtml.includes('onerror') || bodyHtml.includes('onload'))) {{
+                    return true;
+                }}
                 
                 // Признак 3: появилось больше скриптов
                 if (document.querySelectorAll('script').length > window.__originalScripts) return true;
                 
-                // Признак 4: появился svg с onload
-                if (document.querySelector('svg[onload], svg onload')) return true;
+                // Признак 4: флаг установлен пейлоадом
+                if (window.__xssDetected) return true;
                 
                 return false;
-            }""")
+            }}""")
             if xss_detected:
-                return "🔴 XSS_CONFIRMED: DOM manipulation detected"
+                return "🔴 XSS_CONFIRMED: DOM manipulation with probe marker"
         except Exception as e:
-            print(f"   [⚠️] Ошибка проверки через evaluate: {e}")
+            print(f"   [⚠️] Ошибка проверки evaluate: {e}")
         
-        # 🔥 Метод 3: Сравнение body.innerHTML до/после
+        # 🔥 Метод 3: Сравнение body.innerHTML до/после (по маркеру)
         try:
             new_body = self.page.evaluate("() => document.body.innerHTML")
-            if original_body and new_body != original_body:
-                # Проверяем, что изменение связано с нашим пейлоадом
-                if any(keyword in new_body.lower() for keyword in ['alert', 'onerror', 'onload', 'src=x']):
-                    return "🔴 XSS_CONFIRMED: Body content changed with suspicious code"
+            if original_body and new_body != original_body and probe_marker in new_body:
+                return "🔴 XSS_CONFIRMED: Body changed with probe marker"
         except:
             pass
         
-        # 🔥 Метод 4: Проверка отражения в источнике страницы
+        # 🔥 Метод 4: Проверка отражения в источнике (точный поиск маркера)
         try:
-            page_source = self.page.content().lower()
-            # Ищем не сам пейлоад, а его декодированные компоненты
-            suspicious_patterns = ['<img', 'onerror=', 'alert(', 'src=x', 'onload=']
-            if any(pattern in page_source for pattern in suspicious_patterns):
-                return "🟡 Reflected: Suspicious pattern in page source"
+            page_source = self.page.content()
+            if probe_marker in page_source:
+                # Проверяем, что маркер не в исходном пейлоаде, а в новом контексте
+                if page_source.count(probe_marker) > decoded_payload.count(probe_marker):
+                    return "🟡 Reflected: Probe marker found in new context"
         except:
             pass
         
-        # 🔥 Метод 5: Проверка в URL (для отражённых атак)
+        # 🔥 Метод 5: Проверка в URL
         try:
-            # Декодируем для сравнения
-            decoded_for_url = decoded_payload.replace("'", "").replace('"', "").replace('<', '').replace('>', '')
-            if decoded_for_url and decoded_for_url[:20] in self.page.url:
-                return "🟡 Reflected in URL"
+            if probe_marker in self.page.url:
+                return "🟡 Reflected in URL with probe marker"
+        except:
+            pass
+
+        try:
+            page_source = self.page.content()
+            # Ищем маркер в новом контексте (не в исходном значении поля)
+            if probe_marker in page_source:
+                # Проверяем, что маркер появился вне исходного input
+                input_values = [el.get_attribute("value") for el in self.page.locator("input, textarea").all()]
+                if not any(probe_marker in str(v) for v in input_values):
+                    return "🟡 Reflected: Probe marker found in page context"
         except:
             pass
         

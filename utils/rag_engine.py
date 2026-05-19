@@ -1,4 +1,3 @@
-# utils/rag_engine.py
 import logging
 import lancedb
 from pathlib import Path
@@ -11,7 +10,6 @@ class RagEngine:
             db_path = Path(__file__).parent.parent / "security_docs_lancedb"
         self.db_path_str = str(db_path.resolve())
         self.table_name = table_name
-        # 🔥 НЕ создаем embedder и db сразу
         self._db = None
         self._embedder = None
         self._table = None
@@ -43,7 +41,6 @@ class RagEngine:
         if not self.table: return []
         try:
             query_vector = self.embedder.get_embedding(query)
-            # Берем с запасом, чтобы отфильтровать по тегам
             results = self.table.search(query_vector).limit(limit * 3).to_list()
             
             matched, fallback = [], []
@@ -54,13 +51,11 @@ class RagEngine:
                 
                 if not payload: continue
                 
-                # Приоритет: совпадение по технологии
                 if tech_tags and any(t in tech_tags for t in tags):
                     matched.append(payload)
                 elif "GENERIC" in tags or not tech_tags:
                     fallback.append(payload)
                     
-            # Возвращаем сначала tech-specific, потом GENERIC, до лимита
             return (matched + fallback)[:limit]
         except Exception as e:
             print(f"[!] Ошибка RAG поиска: {e}")
