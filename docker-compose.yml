@@ -1,13 +1,74 @@
+version: '3.8'
+
 services:
+  # --- ИНФРАСТРУКТУРА (БАЗЫ И ОЧЕРЕДИ) ---
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672"
-      - "15672"
+      - "5672:5672"
+      - "15672:15672"
     networks:
       - cania-network
 
+  auth-db:
+    image: postgres:15
+    container_name: auth-db
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: AuthDb }
+    networks:
+      - cania-network
+
+  user-db:
+    image: postgres:15
+    container_name: user-db
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: UserDb }
+    networks:
+      - cania-network
+
+  task-db:
+    image: postgres:15
+    container_name: task-db
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: TaskDb }
+    networks:
+      - cania-network
+
+  password-db:
+    image: postgres:15
+    container_name: password-db
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: PasswordDb }
+    networks:
+      - cania-network
+
+  subscribe-db:
+    image: postgres:15
+    container_name: subscribe-db
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: SubscribeDb }
+    networks:
+      - cania-network
+
+  notification-db:
+    image: postgres:15
+    container_name: notification-db
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: NotificationDb }
+    networks:
+      - cania-network
+
+  mongodb:
+    image: mongo:7.0
+    container_name: cania-xss-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: cania
+      MONGO_INITDB_ROOT_PASSWORD: xss_scanner_2026
+      MONGO_INITDB_DATABASE: cania_xss
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - cania-network
+
+  # --- API СЕРВИСЫ ---
   api-gateway:
     build:
       context: .
@@ -28,7 +89,7 @@ services:
   auth-api:
     build: { context: ., dockerfile: AuthService/Dockerfile }
     ports:
-      - "8081"
+      - "8081:8081"
     environment:
       - ASPNETCORE_HTTP_PORTS=8081
       - AUTH_DB_CONNECTION=Host=auth-db;Port=5432;Database=AuthDb;Username=postgres;Password=password;
@@ -38,51 +99,38 @@ services:
       - JWT_AUDIENCE=Services
       - JwtSettings_ExpirationAccessTokenMinutes=15
       - JwtSettings_ExpirationRefreshTokenDays=7
-
       - Google_ClientId=${Google_ClientId}
       - Google_SecretKey=${Google_SecretKey}
       - GitHub_ClientId=${GitHub_ClientId}
       - GitHub_SecretKey=${GitHub_SecretKey}
       - AUTH_HOST=localhost:8081
     depends_on: [auth-db, rabbitmq]
-    networks: [cania-network]
-
-  auth-db:
-    image: postgres:15
-    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: AuthDb }
-    networks: [cania-network]
+    networks:
+      - cania-network
 
   user-api:
     build: { context: ., dockerfile: UserService/Dockerfile }
     ports:
-      - "8082"
+      - "8082:8082"
     environment:
       - ASPNETCORE_HTTP_PORTS=8082
       - User_Db_Connection=Host=user-db;Port=5432;Database=UserDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
     depends_on: [user-db, rabbitmq]
-    networks: [cania-network]
-
-  user-db:
-    image: postgres:15
-    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: UserDb }
-    networks: [cania-network]
+    networks:
+      - cania-network
 
   task-api:
     build: { context: ., dockerfile: TaskService/Dockerfile }
     ports:
-      - "8086"
+      - "8086:8086"
     environment:
       - ASPNETCORE_HTTP_PORTS=8086
       - TASK_DB_CONNECTION=Host=task-db;Port=5432;Database=TaskDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
     depends_on: [task-db, rabbitmq]
-    networks: [cania-network]
-
-  task-db:
-    image: postgres:15
-    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: TaskDb }
-    networks: [cania-network]
+    networks:
+      - cania-network
 
   password-api:
     build: { context: ., dockerfile: PasswordService/Dockerfile }
@@ -91,12 +139,8 @@ services:
       - PASSWORD_DB_CONNECTION=Host=password-db;Port=5432;Database=PasswordDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
     depends_on: [password-db, rabbitmq]
-    networks: [cania-network]
-
-  password-db:
-    image: postgres:15
-    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: PasswordDb }
-    networks: [cania-network]
+    networks:
+      - cania-network
 
   subscribe-api:
     build: { context: ., dockerfile: SubscribeService/Dockerfile }
@@ -105,12 +149,8 @@ services:
       - SUBSCRIBE_DB_CONNECTION=Host=subscribe-db;Port=5432;Database=SubscribeDb;Username=postgres;Password=password;
       - RabbitMQ_Host=rabbitmq
     depends_on: [subscribe-db, rabbitmq]
-    networks: [cania-network]
-
-  subscribe-db:
-    image: postgres:15
-    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: SubscribeDb }
-    networks: [cania-network]
+    networks:
+      - cania-network
 
   notification-api:
     build: { context: ., dockerfile: NotificationService/Dockerfile }
@@ -122,13 +162,30 @@ services:
       - Email__Smtp__Username=caniapentest@gmail.com
       - Email__FromEmail=caniapentest@gmail.com
     depends_on: [notification-db, rabbitmq]
-    networks: [cania-network]
+    networks:
+      - cania-network
 
-  notification-db:
-    image: postgres:15
-    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: password, POSTGRES_DB: NotificationDb }
-    networks: [cania-network]
+  # --- AI АГЕНТЫ (ИЗ ВЕТКИ I-HATE-THIS-BRANCH) ---
+  osint-runner:
+    build:
+      context: ./docker/osint-runner
+      dockerfile: Dockerfile
+    container_name: cania-xss-runner
+    command: sleep infinity
+    environment:
+      - TERM=xterm
+    volumes:
+      - ./reports:/app/reports
+      - ./execution_results:/app/execution_results
+      - ./security_docs_lancedb:/app/security_docs_lancedb
+    depends_on:
+      - mongodb
+    networks:
+      - cania-network
 
 networks:
   cania-network:
     driver: bridge
+
+volumes:
+  mongo_data:
