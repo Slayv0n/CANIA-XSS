@@ -1,38 +1,41 @@
 import os
 
-def merge_important_files(directory, output_file, max_depth=3):
+def merge_important_files(directory, output_file, max_depth=6):
     """
-    max_depth: Глубина вложенности. 
-    0 - только файлы в корне
-    1 - корень + папки первого уровня
-    2 - корень + 2 уровня вложенности
+    directory: Корень проекта
+    output_file: Имя итогового файла
+    max_depth: Глубина (увеличил до 6, чтобы достать до payloads)
     """
     
-    # Расширенный список системных папок фреймворков и мусора
+    # Папки, которые мы игнорируем (бинарники, библиотеки, кэш)
     IGNORE_DIRS = {
         'node_modules', '.git', 'dist', 'build', 
-        'bin', 'obj', 'Migrations', 'Properties', # Для C# / .NET
+        'bin', 'obj', 'Migrations', 'Properties',
         '.vs', '.idea', 'venv', 'env', '__pycache__', 
-        '.qodo' # Папка из твоего скриншота
+        '.qodo', '.claude', '.openclaude',
+        'security_docs_lancedb' # Игнорируем базу данных LanceDB (там бинарные файлы)
     }
     
-    # Файлы, которые точно не нужны
+    # Файлы, которые мы игнорируем
     IGNORE_FILES = {
-        'package-lock.json', 'yarn.lock', 'script.py', 'backend.txt', 
-        'backend1.txt', 'ocelot.json' # ocelot.json можно убрать отсюда, если хочешь чтобы он копировался
+        'package-lock.json', 'yarn.lock', 'script.py', 
+        'backend1.txt', 'CANIA-XSS.sln', 'package.json'
     }
     
-    # Разрешенные расширения
+    # Разрешенные расширения (добавил .py, .bat, .txt)
     ALLOWED_EXTENSIONS = {
         '.js', '.jsx', '.ts', '.tsx',
         '.css', '.scss',
         '.html', '.json',
-        '.env', '.cs', '.yml', '.yaml', '.md'
+        '.env', '.cs', '.yml', '.yaml', '.md',
+        '.py', '.bat', '.sh', '.txt' # Добавлено для ИИ-агентов
     }
 
-    # Файлы без расширений или со специфичными именами, которые нам нужны
+    # Файлы, которые берем обязательно по имени
     ALLOWED_EXACT_FILES = {
-        '.gitignore', 'Dockerfile', 'docker-compose.yml'
+        '.gitignore', 'Dockerfile', 'docker-compose.yml', 
+        'requirements.txt', '.env.example', 'AGENTS.md',
+        'common.txt'
     }
 
     if not os.path.exists(directory):
@@ -40,22 +43,18 @@ def merge_important_files(directory, output_file, max_depth=3):
         return
 
     directory = os.path.abspath(directory)
-    
-    # Сюда будем складывать кортежи: (относительный_путь, содержимое_файла)
-    collected_files =[]
+    collected_files = []
 
     for root, dirs, files in os.walk(directory):
-        
-        # Вычисляем текущую глубину
         rel_path = os.path.relpath(root, directory)
         depth = 0 if rel_path == "." else len(rel_path.split(os.sep))
 
-        # Если глубина превышает заданную, очищаем dirs, чтобы не идти глубже
         if depth >= max_depth:
-            dirs[:] =[]
+            dirs[:] = []
+            continue
         
-        # Удаляем из списка сканирования запрещенные папки (bin, obj и т.д.)
-        dirs[:] =[d for d in dirs if d not in IGNORE_DIRS]
+        # Фильтруем папки
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
         
         for file in files:
             if file in IGNORE_FILES:
@@ -63,7 +62,7 @@ def merge_important_files(directory, output_file, max_depth=3):
             
             ext = os.path.splitext(file)[1].lower()
             
-            # Проверяем, подходит ли файл (либо по расширению, либо по точному имени)
+            # Проверяем, подходит ли файл
             if ext not in ALLOWED_EXTENSIONS and file not in ALLOWED_EXACT_FILES:
                 continue
 
@@ -71,30 +70,23 @@ def merge_important_files(directory, output_file, max_depth=3):
             relative_name = os.path.relpath(file_path, directory)
             
             try:
-                with open(file_path, 'r', encoding='utf-8') as in_file:
+                # Пытаемся прочитать файл
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as in_file:
                     content = in_file.read()
-                    # Сохраняем в память
                     collected_files.append((relative_name, content))
             except Exception as e:
                 print(f"Пропущен файл (ошибка чтения): {relative_name}")
 
-    # Теперь записываем всё в файл в нужном порядке
+    # Запись в файл
     with open(output_file, 'w', encoding='utf-8') as out_file:
-        
-        # === 1. ПИШЕМ ОГЛАВЛЕНИЕ ===
         out_file.write(f"{'='*60}\n")
         out_file.write("ОГЛАВЛЕНИЕ (СКОПИРОВАННЫЕ ФАЙЛЫ):\n")
         out_file.write(f"{'='*60}\n")
         
-        if not collected_files:
-            out_file.write("Ни одного файла не найдено. Проверьте пути и глубину.\n")
-            
         for relative_name, _ in collected_files:
             out_file.write(f"- {relative_name}\n")
             
         out_file.write("\n\n")
-        
-        # === 2. ПИШЕМ СОДЕРЖИМОЕ ФАЙЛОВ ===
         out_file.write(f"{'='*60}\n")
         out_file.write("СОДЕРЖИМОЕ ФАЙЛОВ:\n")
         out_file.write(f"{'='*60}\n\n")
@@ -109,14 +101,10 @@ def merge_important_files(directory, output_file, max_depth=3):
     print(f"Успешно собрано файлов: {len(collected_files)}")
 
 if __name__ == "__main__":
-    # Теперь можешь смело натравливать его на корневую папку всего проекта
+    # Укажи путь к папке CANIA-XSS
     target_directory = r"D:\VScode_projects\CANIA-XSS" 
-    result_filename = "backend1.txt"
+    result_filename = "full_project_code.txt"
     
-    # Ставь глубину 4 или 5. Благодаря IGNORE_DIRS он проигнорирует 
-    # тяжелые bin/obj внутри микросервисов и соберет только нужные .cs файлы
-    max_d = 5 
-    print(f"Собираю код (глубина поиска: {max_d})...")
-    
-    merge_important_files(target_directory, result_filename, max_depth=max_d)
-    print(f"Готово! Результат сохранен в: {result_filename}")
+    print(f"Собираю полный код проекта (Backend + Frontend + AI Agents)...")
+    merge_important_files(target_directory, result_filename)
+    print(f"Готово! Скидывай содержимое файла {result_filename}")

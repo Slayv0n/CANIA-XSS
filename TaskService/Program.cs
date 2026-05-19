@@ -7,6 +7,8 @@ using Task_API.Models.Request;
 using Task_API.Services;
 using TaskDb;
 using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
+using Microsoft.AspNetCore.Mvc;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,26 +46,26 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.MapPost("/task/create", async (CreateRequest request, ITaskService taskService) =>
+app.MapPost("/task/create", async (HttpContext context, CreateRequest request, ITaskService taskService) =>
 {
     try
     {
+        // ВАЖНО: Берем реальный ID пользователя из заголовка X-User-Id
+        if (!Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId))
+        {
+            return Results.Unauthorized();
+        }
+
         var validationContext = new ValidationContext(request);
         var results = new List<ValidationResult>();
 
         if (!Validator.TryValidateObject(request, validationContext, results, validateAllProperties: true))
         {
-            return Results.BadRequest(new
-            {
-                errors = results.Select(r => new
-                {
-                    field = string.Join(", ", r.MemberNames),
-                    message = r.ErrorMessage
-                })
-            });
+            return Results.BadRequest(new { errors = results });
         }
 
-        var task = await taskService.CreateAsync(Guid.NewGuid(), request.Host, request.TypeOfAttacks, request.Depth);
+        // Передаем userId вместо Guid.NewGuid()
+        var task = await taskService.CreateAsync(userId, request.Host, request.TypeOfAttacks, request.Depth);
         return Results.Ok(task);
     }
     catch
@@ -71,6 +73,7 @@ app.MapPost("/task/create", async (CreateRequest request, ITaskService taskServi
         return Results.BadRequest();
     }
 });
+
 app.MapGet("/task/{taskId:Guid}", async (Guid taskId, ITaskService taskService) =>
 {
     try
@@ -122,6 +125,48 @@ app.MapDelete("/task/cancel/{taskId:Guid}", async (Guid taskId, ITaskService tas
     catch (NotFoundException ex)
     {
         return Results.NotFound(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+// Этот эндпоинт будет дергать наш Python-скрипт!
+app.MapPut("/task/{taskId:Guid}/report", async (Guid taskId, [FromBody] Task_API.Models.Request.ReportRequest request, ITaskService taskService) =>
+{
+    try
+    {
+        await taskService.UpdateReportAsync(taskId, request.ReportContent);
+        return Results.Ok();
+    }
+    catch (NotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+app.MapGet("/task/all", async (ITaskService taskService, HttpContext context) =>
+{
+    try
+    {
+        bool verify = Guid.TryParse(context.Request.Headers["X-User-Id"].ToString(), out Guid userId);
+
+        if (!verify)
+        {
+            throw new AuthException("User");
+        }
+
+        var tasks = await taskService.GetUserTasksAsync(userId);
+        return Results.Ok(tasks);
+    }
+    catch (AuthException)
+    {
+        return Results.Unauthorized();
     }
     catch (Exception ex)
     {

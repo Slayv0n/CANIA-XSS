@@ -168,8 +168,8 @@ services:
   # --- AI АГЕНТЫ (ИЗ ВЕТКИ I-HATE-THIS-BRANCH) ---
   osint-runner:
     build:
-      context: ./docker/osint-runner
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/osint-runner/Dockerfile
     container_name: cania-xss-runner
     command: sleep infinity
     environment:

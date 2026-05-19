@@ -17,7 +17,11 @@ namespace Task_API.Services
         Task<TaskResponse> GetAsync(Guid taskId);
         IAsyncEnumerable<string> GetUpdateTaskAsync(Guid taskId, CancellationToken cancellationToken);
         Task CancellAsync(Guid taskId);
+        Task UpdateReportAsync(Guid taskId, string reportContent);
+
+        Task<List<TaskResponse>> GetUserTasksAsync(Guid userId);
     }
+
     public class TaskService : ITaskService
     {
         private readonly IDbContextFactory<TaskContext> _dbContextFactory;
@@ -31,6 +35,32 @@ namespace Task_API.Services
             _dbContextFactory = dbContextFactory;
             _publishEndpoint = publishEndpoint;
             _logger = logger;
+        }
+
+        // --- ТОТ САМЫЙ НОВЫЙ МЕТОД (Теперь он ВНУТРИ класса) ---
+        public async Task UpdateReportAsync(Guid taskId, string reportContent)
+        {
+            using var db = await _dbContextFactory.CreateDbContextAsync();
+            var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId);
+
+            if (task == null)
+            {
+                _logger.LogWarning($"Task not found: {taskId}");
+                throw new NotFoundException("Task not found");
+            }
+
+            task.ReportContent = reportContent;
+            task.Status = StatusTask.Completed; // Ставим статус "Готово!"
+            task.LastUpdate = DateTime.UtcNow;
+
+            await db.SaveChangesAsync();
+
+            // Оповещаем SSE, что статус изменился на Completed
+            await _publishEndpoint.Publish<TaskStatusUpdated>(new
+            {
+                Id = taskId,
+                Status = StatusTask.Completed
+            });
         }
 
         public async Task CancellAsync(Guid taskId)
@@ -89,7 +119,9 @@ namespace Task_API.Services
                 Host = task.Host,
                 TypeOfAttacks = task.TypeOfAttacks,
                 Depth = task.Depth,
-                Status = task.Status
+                Status = task.Status,
+                ReportContent = task.ReportContent,
+                CreatedTime = task.CreatedTime
             };
 
             return response;
@@ -113,7 +145,9 @@ namespace Task_API.Services
                 Host = task.Host,
                 TypeOfAttacks = task.TypeOfAttacks,
                 Depth = task.Depth,
-                Status = task.Status
+                Status = task.Status,
+                ReportContent = task.ReportContent,
+                CreatedTime = task.CreatedTime
             };
 
             return response;
@@ -132,6 +166,28 @@ namespace Task_API.Services
 
                 await Task.Delay(1000);
             }
+        }
+
+        public async Task<List<TaskResponse>> GetUserTasksAsync(Guid userId)
+        {
+            using var db = await _dbContextFactory.CreateDbContextAsync();
+            
+            // Получаем все задачи юзера (кроме отмененных), сортируем от новых к старым
+            var tasks = await db.Tasks
+                .Where(t => t.UserId == userId && t.Status != StatusTask.Cancelled)
+                .OrderByDescending(t => t.CreatedTime)
+                .ToListAsync();
+
+            return tasks.Select(task => new TaskResponse
+            {
+                Id = task.Id,
+                Host = task.Host,
+                TypeOfAttacks = task.TypeOfAttacks,
+                Depth = task.Depth,
+                Status = task.Status,
+                ReportContent = task.ReportContent,
+                CreatedTime = task.CreatedTime
+            }).ToList();
         }
     }
 }

@@ -11,5 +11,7 @@ namespace Task_API.Models.Response
         public StatusTask Status { get; set; }
 
         public string? ReportContent { get; set; }
+         // --- ДОБАВЛЕНО ДЛЯ ФРОНТЕНДА ---
+        public DateTime CreatedTime { get; init; } 
     }
 }

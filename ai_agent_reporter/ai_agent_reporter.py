@@ -1,25 +1,18 @@
 import os
-import uuid
-from datetime import datetime
+import requests
 from pathlib import Path
 from dotenv import load_dotenv
-
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from pymongo import MongoClient
 
 load_dotenv()
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-MONGO_DB = os.getenv("MONGO_DB", "cania_xss")
-MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "reports")
-
-mongo_client = MongoClient(MONGO_URI)
-mongo_db = mongo_client[MONGO_DB]
-reports_collection = mongo_db[MONGO_COLLECTION]
+# Мы стучимся напрямую в TaskService (порт 8086), минуя APIGateway, 
+# потому что у питона нет JWT токена юзера, и Gateway нас отфутболит (401 Unauthorized)
+TASK_API_URL = os.getenv("TASK_API_URL", "http://localhost:8086")
 
 def save_report_to_disk(report_content: str, filename: str = "xss_audit_report.md") -> str:
-    """Сохраняет отчет в Markdown-файл на диск"""
+    """Сохраняет отчет в Markdown-файл локально (для истории)"""
     try:
         reports_dir = Path("reports")
         reports_dir.mkdir(exist_ok=True)
@@ -30,22 +23,32 @@ def save_report_to_disk(report_content: str, filename: str = "xss_audit_report.m
     except Exception as e:
         return f"❌ Ошибка сохранения на диск: {e}"
 
-
 def save_report_to_db(report_content: str, target_url: str, task_id: str) -> str:
-    """Сохраняет отчет в MongoDB"""
+    """Отправляет готовый отчет обратно в C# микросервис и делает локальную копию"""
+    
+    # 1. Принудительное локальное сохранение
     try:
-        doc = {
-            "task_id": task_id,
-            "target": target_url,
-            "timestamp": datetime.utcnow().isoformat(),
-            "report_content": report_content,
-            "format": "markdown",
-            "status": "completed"
-        }
-        result = reports_collection.insert_one(doc)
-        return f"✅ Отчет сохранен в MongoDB ({MONGO_DB}.{MONGO_COLLECTION}). ID: {result.inserted_id}"
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        safe_domain = target_url.replace('https://', '').replace('http://', '').split('/')[0]
+        file_path = reports_dir / f"report_{safe_domain}.md"
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(report_content)
+        print(f"📁 Отчет также сохранен локально: {file_path}")
     except Exception as e:
-        return f"❌ Ошибка сохранения в MongoDB: {e}"
+        print(f"⚠️ Ошибка локального сохранения: {e}")
+
+    # 2. Отправка на бэкенд
+    try:
+        url = f"{TASK_API_URL}/task/{task_id}/report"
+        payload = {
+            "reportContent": report_content
+        }
+        response = requests.put(url, json=payload)
+        response.raise_for_status()
+        return f"✅ Отчет успешно отправлен на C# Бэкенд!"
+    except Exception as e:
+        return f"❌ Ошибка отправки на бэкенд C#: {e}"
 
 model = OpenAIChat(
     id=os.getenv("ID_MODEL", "google/gemini-flash-1.5"),
@@ -67,40 +70,14 @@ reporter_agent = Agent(
         "🔥 ТРЕБОВАНИЯ К ФОРМАТУ:",
         "1. Весь отчет НА РУССКОМ языке",
         "2. Строго следуй этой структуре:",
-        "",
         "# 📋 Отчет по аудиту XSS",
         "## 🎯 Цель: {target_url}",
-        "## 🕐 Дата: {timestamp}",
-        "",
         "### 🔍 Краткий обзор",
-        "- Методика: автоматизированное сканирование с AI-планированием атак",
-        "- Объем: {N} полей протестировано на {M} страницах",
-        "- Результат: {X} уязвимостей обнаружено",
-        "",
         "### 🚨 Найденные уязвимости",
-        "#### Уязвимость #{N}",
-        "- **Где**: Страница `/path`, поле `{human_name}`",
-        "- **Тип**: Reflected XSS / Stored XSS / DOM XSS",
-        "- **Пейлоад**: `{payload}`",
-        "- **Доказательство**: [Опиши, что произошло при вводе]",
-        "- **Риск**: Низкий / Средний / Высокий",
-        "- **Рекомендация**: [Конкретный шаг по исправлению]",
-        "",
         "### 📊 Статистика",
-        "| Метрика | Значение |",
-        "|---------|----------|",
-        "| Протестировано полей | {N} |",
-        "| Успешных атак | {X} |",
-        "| Отражено без выполнения | {Y} |",
-        "| Пропущено (лимит/ошибка) | {Z} |",
-        "",
         "### 🛡️ Общие рекомендации",
-        "1. Внедрить контекстное экранирование вывода",
-        "2. Настроить Content-Security-Policy заголовок",
-        "3. Проводить регулярное тестирование",
         "⚠️ ПРАВИЛА:",
         "- Не используй индексы типа 'поле #0' — только human_name",
-        "- Не выдумывай уязвимости — пиши только то, что подтверждено",
         "- Если уязвимостей нет — честно напиши 'Уязвимостей не обнаружено'",
         "🔧 ДЕЙСТВИЯ:",
         "1. Сгенерируй отчет по шаблону выше",

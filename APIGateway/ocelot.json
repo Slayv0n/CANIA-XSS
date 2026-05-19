@@ -89,7 +89,7 @@
     // 7. ЗАДАЧИ СКАНИРОВАНИЯ (TaskService - 8086, НУЖЕН ТОКЕН)
     {
       "UpstreamPathTemplate": "/api/task/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "DELETE" ],
+      "UpstreamHttpMethod": [ "GET", "POST", "DELETE", "PUT" ],
       "DownstreamPathTemplate": "/task/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "task-api", "Port": 8086 }],

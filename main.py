@@ -1,10 +1,20 @@
 import os
+import sys           # <--- ДОБАВИТЬ
+import asyncio       # <--- ДОБАВИТЬ
 import json
 import time
-import uuid
+import pika
 import traceback
 from datetime import datetime
 from dotenv import load_dotenv
+import requests
+
+# === ФИКС ДЛЯ ОШИБКИ PLAYWRIGHT НА WINDOWS ===
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+# 1. ЗАСТАВЛЯЕМ ПИТОН ЧИТАТЬ НОВЫЙ .env!
+load_dotenv(override=True)
 
 from utils.spider import Spider
 from utils.browser_manager import BrowserManager
@@ -16,8 +26,6 @@ from ai_agent_terminal.ai_agent_terminal import agent_terminal
 from ai_agent_scraper.ai_agent_scraper import parser_agent
 from models.schemas import AttackResults
 
-load_dotenv()
-
 def safe_agent_run(agent, prompt: str):
     sanitized_prompt = sanitize_for_llm(prompt)
     try:
@@ -27,15 +35,14 @@ def safe_agent_run(agent, prompt: str):
         print(f"[!] Agent fallback triggered: {e}")
         return "{}"
 
-def orchestrator(target_url: str):
-    print(f"\n🚀 ЗАПУСК ПОЛНОГО АУДИТА: {target_url}")
+def orchestrator(target_url: str, task_id: str):
+    print(f"\n🚀 ЗАПУСК ПОЛНОГО АУДИТА: {target_url} (Task ID: {task_id})")
     osint_data_content = "Данные OSINT отсутствуют."
     final_attack_results = []
 
     # --- ЭТАП 1: OSINT ---
     print("\n[1/5] Сбор сетевой информации (OSINT)...")
     try:
-        # 🔥 Безопасный вызов с проверкой на None
         osint_raw = agent_terminal.run(f"Просканируй инфраструктуру {target_url}")
         
         osint_raw_str = ""
@@ -58,9 +65,7 @@ def orchestrator(target_url: str):
                 osint_data_content = osint_parsed.content if hasattr(osint_parsed, 'content') else str(osint_parsed)
             except Exception as e:
                 print(f" ⚠️  Парсинг OSINT пропущен: {e}")
-        
-        print(" ✅  OSINT  завершен .")
-        
+        print(" ✅  OSINT завершен.")
     except Exception as e:
         print(f" ⚠️  Шаг OSINT пропущен: {e}")
         osint_data_content = "Данные OSINT отсутствуют."
@@ -80,7 +85,8 @@ def orchestrator(target_url: str):
             if found:
                 site_map.update(found)
     except Exception as e:
-        print(f"❌ Ошибка Паука: {e}")
+        print(f"❌ Ошибка Паука: {repr(e)}")
+        traceback.print_exc() # <--- ЭТО ВЫВЕДЕТ ПОЛНУЮ ОШИБКУ КРАСНЫМ ТЕКСТОМ
         return
 
     if not site_map:
@@ -90,14 +96,15 @@ def orchestrator(target_url: str):
 
     # --- ЭТАП 3: ПЛАНИРОВАНИЕ АТАК ---
     print("\n[3/5] Выбор стратегии атак (Exploiter)...")
-    prompt = (
-        f"Данные OSINT-разведки:\n{osint_data_content[:3000]}\n\n"
-        f"Карта найденных форм (Site Map):\n{json.dumps(site_map, ensure_ascii=False)}"
-    )
-
     try:
-        raw_exploit_output = safe_agent_run(exploiter_agent, prompt)
+        limited_site_map = {k: v for i, (k, v) in enumerate(site_map.items()) if i < 15}
         
+        prompt = (
+            f"Данные OSINT-разведки:\n{osint_data_content[:2000]}\n\n"
+            f"Карта найденных форм (Site Map):\n{json.dumps(limited_site_map, ensure_ascii=False)}"
+        )
+
+        raw_exploit_output = safe_agent_run(exploiter_agent, prompt)
         if isinstance(raw_exploit_output, AttackResults):
             attack_data = raw_exploit_output
         else:
@@ -105,93 +112,83 @@ def orchestrator(target_url: str):
             attack_data = AttackResults.model_validate(exploit_json)
 
         if not attack_data.results:
-            print("⚠️ Агент не смог составить план атак (пустой results).")
-            return
+            print("⚠️ Векторы атак не найдены. Генерирую 'чистый' отчет...")
+            report_prompt = (
+                f"Цель: {target_url}\n"
+                f"Результат: Уязвимостей не обнаружено.\n"
+                "Напиши короткий отчет на русском языке, что сканирование проведено, "
+                "но явных векторов XSS на найденных страницах не обнаружено."
+            )
+            safe_agent_run(reporter_agent, report_prompt)
+            return # Теперь бэкенд получит отчет и закроет задачу
 
-        print(f"✅ План сформирован. Векторов: {len(attack_data.results)}")
     except Exception as e:
-        print(f"❌ Сбой на этапе планирования: {e}")
+        print(f"❌ Сбой планирования: {e}")
+        # Если совсем всё упало — тоже шлем отчет об ошибке
+        requests.put(f"http://localhost:8086/task/{task_id}/report", 
+                     json={"reportContent": f"Ошибка при анализе сайта: {str(e)}"})
         return
     
     # --- ЭТАП 4: ИСПОЛНЕНИЕ ---
     print("\n[4/5] Выполнение инъекций (оптимизировано)...")
-    browser = BrowserManager(headless=False)
+    try:
+        browser = BrowserManager(headless=False)
 
-    def find_url_for_field(site_map: dict, field_index: int) -> str:
-        for url, fields in site_map.items():
-            if any(f.get("index") == field_index or idx == field_index for idx, f in enumerate(fields)):
-                return url
-        return list(site_map.keys())[0] if site_map else target_url
+        def find_url_for_field(site_map: dict, field_index: int) -> str:
+            for url, fields in site_map.items():
+                if any(f.get("index") == field_index or idx == field_index for idx, f in enumerate(fields)):
+                    return url
+            return list(site_map.keys())[0] if site_map else target_url
 
-    attacks_by_url = {}
-    for vector in attack_data.results:
-        target_page = find_url_for_field(site_map, vector.field_index)
-        attacks_by_url.setdefault(target_page, []).append(vector)
+        attacks_by_url = {}
+        for vector in attack_data.results:
+            target_page = find_url_for_field(site_map, vector.field_index)
+            attacks_by_url.setdefault(target_page, []).append(vector)
 
-    print(f"📋 План атак: {len(attacks_by_url)} страниц, {len(attack_data.results)} векторов")
+        print(f"📋 План атак: {len(attacks_by_url)} страниц, {len(attack_data.results)} векторов")
 
-    payloads_per_field = {}
-    for url, vectors in attacks_by_url.items():
-        print(f"\n{'='*60}")
-        print(f"🌐 СТРАНИЦА: {url}")
-        print(f"📦 Векторов: {len(vectors)}")
-        print('='*60)
+        payloads_per_field = {}
+        for url, vectors in attacks_by_url.items():
+            nav_result = browser.navigate(url)
+            current_inputs = browser.get_page_inputs()
 
-        nav_result = browser.navigate(url)
-        print(f"  {nav_result}")
-        current_inputs = browser.get_page_inputs()
-        print(f"  Найдено полей на странице: {len(current_inputs)}")
+            for idx, vector in enumerate(vectors, 1):
+                field_key = f"{url}_{vector.field_index}"
+                if payloads_per_field.get(field_key, 0) >= 5:
+                    vector.result = "Skipped (limit)"
+                    final_attack_results.append(vector)
+                    continue
 
-        for idx, vector in enumerate(vectors, 1):
-            field_key = f"{url}_{vector.field_index}"
-            if payloads_per_field.get(field_key, 0) >= 5:
-                vector.result = "Skipped (limit)"
+                payloads_per_field[field_key] = payloads_per_field.get(field_key, 0) + 1
+
+                if vector.field_index >= len(current_inputs):
+                    vector.result = "Skipped (field not found)"
+                    final_attack_results.append(vector)
+                    continue
+
+                result_msg = browser.inject_payload(vector.field_index, vector.field_name, vector.payload)
+
+                if "XSS_CONFIRMED" in result_msg:
+                    vector.result = "Success (Alert!)"
+                elif "Reflected" in result_msg:
+                    vector.result = "Reflected"
+                elif "Playwright crash" in result_msg:
+                    vector.result = "Error (Browser)"
+                else:
+                    vector.result = "Failed"
+
                 final_attack_results.append(vector)
-                continue
+                time.sleep(0.5)
 
-            payloads_per_field[field_key] = payloads_per_field.get(field_key, 0) + 1
-            print(f"\n  [{idx}/{len(vectors)}] Поле #{vector.field_index}: {vector.payload[:40]}...")
-
-            if vector.field_index >= len(current_inputs):
-                vector.result = "Skipped (field not found)"
-                final_attack_results.append(vector)
-                continue
-
-            result_msg = browser.inject_payload(vector.field_index, vector.field_name, vector.payload)
-
-            if "XSS_CONFIRMED" in result_msg:
-                vector.result = "Success (Alert!)"
-                print("  🔴🔴🔴 XSS ОБНАРУЖЕНА! 🔴🔴🔴")
-            elif "Reflected" in result_msg:
-                vector.result = "Reflected"
-            elif "Playwright crash" in result_msg:
-                vector.result = "Error (Browser)"
-            else:
-                vector.result = "Failed"
-
-            final_attack_results.append(vector)
-            time.sleep(0.5)
-
-    browser.close()
-
-    counts = {k: 0 for k in ["Success", "Reflected", "Failed", "Skipped", "Error"]}
-    for v in final_attack_results:
-        for k in counts:
-            if k in v.result:
-                counts[k] += 1
-
-    print(f"\n📊 СТАТИСТИКА:")
-    print(f"✅ Успешных XSS: {counts['Success']}")
-    print(f"⚠️ Отражено: {counts['Reflected']}")
-    print(f"❌ Неудачных: {counts['Failed']}")
-    print(f"⚪ Пропущено: {counts['Skipped']}")
-    print(f"💥 Ошибок: {counts['Error']}")
-    print(f"📦 Всего: {len(final_attack_results)}")
+        browser.close()
+    except Exception as e:
+        print(f"❌ Ошибка во время выполнения инъекций: {repr(e)}")
+        traceback.print_exc()
+        return
 
     # --- ЭТАП 5: ОТЧЕТ ---
     print("\n[5/5] 📝 Генерация отчета...")
     try:
-        task_id = f"scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
         safe_results = []
         for v in final_attack_results:
             safe_results.append({
@@ -213,14 +210,58 @@ def orchestrator(target_url: str):
             f"Затем вызови save_report_to_db(report_content=отчет, target_url='{target_url}', task_id='{task_id}')."
         )
         safe_agent_run(reporter_agent, report_prompt)
-        print("✅ Отчет сгенерирован и сохранен в /reports + MongoDB")
+        print("✅ Отчет сгенерирован и отправлен на Бэкенд C#")
     except Exception as e:
         print(f"⚠️ Ошибка генерации отчета: {e}")
 
+def process_rabbitmq_message(ch, method, properties, body):
+    try:
+        data = json.loads(body)
+        message = data.get("message", {})
+        
+        task_id = message.get("id", str(message.get("Id")))
+        host = message.get("host", str(message.get("Host")))
+        
+        if not task_id or not host:
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return
+
+        print(f"\n[RABBITMQ] Поймал задачу! ID: {task_id} | HOST: {host}")
+        
+        orchestrator(host, task_id)
+        
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception as e:
+        print(f"[!] Ошибка при обработке сообщения: {e}")
+        traceback.print_exc()
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+def start_worker():
+    rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
+    print(f"⏳ Подключение к RabbitMQ на {rabbitmq_host}...")
+    
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host=rabbitmq_host, 
+            heartbeat=0, 
+            blocked_connection_timeout=300
+        ))
+        channel = connection.channel()
+        
+        queue_name = 'python-scanner-queue'
+        channel.queue_declare(queue=queue_name, durable=True)
+        
+        exchange_name = 'SharedModels.Events.Tasks:TaskCreated'
+        channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
+        channel.queue_bind(exchange=exchange_name, queue=queue_name)
+        
+        channel.basic_qos(prefetch_count=1)
+        channel.basic_consume(queue=queue_name, on_message_callback=process_rabbitmq_message)
+        
+        print("🤖 [OK] AI Agent готов! Жду задачи от фронтенда (C#)... Нажми CTRL+C для выхода.")
+        channel.start_consuming()
+    except Exception as e:
+        print(f"❌ Ошибка подключения к RabbitMQ: {e}")
+
 if __name__ == "__main__":
-    print("-" * 60)
-    print("🤖 AI XSS SCANNER (OSINT + RAG + PLAYWRIGHT)")
-    print("-" * 60)
-    target = input("🎯 Введите URL цели: ").strip()
-    if target:
-        orchestrator(target)
+    start_worker()
