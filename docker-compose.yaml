@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: cania-xss-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: cania
+      MONGO_INITDB_ROOT_PASSWORD: xss_scanner_2026
+      MONGO_INITDB_DATABASE: cania_xss
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/cania_xss --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  osint-runner:
+    build:
+      context: ./docker/osint-runner
+      dockerfile: Dockerfile
+    container_name: cania-xss-runner
+    command: sleep infinity
+    environment:
+      - TERM=xterm
+    volumes:
+      - ./reports:/app/reports
+      - ./execution_results:/app/execution_results
+      - ./security_docs_lancedb:/app/security_docs_lancedb
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo_data:

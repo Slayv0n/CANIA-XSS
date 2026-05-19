@@ -1,0 +1,4 @@
+[ANGULAR] [ANGULAR] {{ $scope.constructor('alert(1)')() }}
+[ANGULAR] [ANGULAR] <b/ng-click=window.alert(1)>click me</b>
+[ANGULAR] [ANGULAR] {{constructor.constructor('alert(1)')()}}
+[ANGULAR] [VUE] {{ $scopedSlots.constructor.constructor('alert(1)')() }}

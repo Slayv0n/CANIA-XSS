@@ -368,3 +368,50 @@ FodyWeavers.xsd
 AGENTS.md
 .claude
 backend1.txt
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.log
+
+# Secrets — НИКОГДА не коммитить
+.env
+*.key
+*.pem
+*.crt
+secrets/
+
+# Runtime data
+reports/
+execution_results/
+logs/
+*.sqlite
+*.db
+
+# LanceDB (векторная БД — генерируется локально)
+security_docs_lancedb/
+
+# MongoDB data (если запускать локально)
+mongo_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.egg-info/

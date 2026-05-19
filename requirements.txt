@@ -1,0 +1,17 @@
+# Core & LLM
+python-dotenv>=1.0.1
+pydantic>=2.5.0
+agno>=0.1.0
+openai>=1.30.0
+
+# Browser & Parsing
+playwright>=1.44.0
+beautifulsoup4>=4.12.3
+
+# Vector DB & RAG
+lancedb>=0.8.0
+sentence-transformers>=2.2.2
+
+# Storage & Utils
+pymongo>=4.6.1
+requests>=2.31.0

