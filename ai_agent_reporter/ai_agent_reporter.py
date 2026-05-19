@@ -1,4 +1,3 @@
-# ai_agent_reporter/ai_agent_reporter.py
 import os
 import uuid
 from datetime import datetime
@@ -11,7 +10,6 @@ from pymongo import MongoClient
 
 load_dotenv()
 
-# === MongoDB Config ===
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB = os.getenv("MONGO_DB", "cania_xss")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "reports")
@@ -20,8 +18,6 @@ mongo_client = MongoClient(MONGO_URI)
 mongo_db = mongo_client[MONGO_DB]
 reports_collection = mongo_db[MONGO_COLLECTION]
 
-
-# === Инструменты для агента (стандартные функции, без декораторов) ===
 def save_report_to_disk(report_content: str, filename: str = "xss_audit_report.md") -> str:
     """Сохраняет отчет в Markdown-файл на диск"""
     try:
@@ -51,19 +47,16 @@ def save_report_to_db(report_content: str, target_url: str, task_id: str) -> str
     except Exception as e:
         return f"❌ Ошибка сохранения в MongoDB: {e}"
 
-
-# === Модель LLM ===
 model = OpenAIChat(
     id=os.getenv("ID_MODEL", "google/gemini-flash-1.5"),
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
-    temperature=0.0,  # Детерминизм для инструментов
+    temperature=0.0,
     timeout=120,
-    max_retries=3
+    max_retries=3,
+    max_tokens=10000
 )
 
-
-# === Агент Reporter ===
 reporter_agent = Agent(
     name="Reporter",
     role="Аналитик безопасности",

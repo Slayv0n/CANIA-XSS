@@ -38,7 +38,6 @@ def orchestrator(target_url: str):
         # 🔥 Безопасный вызов с проверкой на None
         osint_raw = agent_terminal.run(f"Просканируй инфраструктуру {target_url}")
         
-        # Конвертация в строку для дальнейшей обработки
         osint_raw_str = ""
         if osint_raw is None:
             print(" ⚠️  Агент вернул None — пропускаем OSINT")
@@ -48,12 +47,10 @@ def orchestrator(target_url: str):
         else:
             osint_raw_str = str(osint_raw)
         
-        # 🔥 Безопасное извлечение путей (защита от None)
         osint_paths = extract_osint_paths(osint_raw_str, target_url)
         if osint_paths:
             print(f"    ➕  Найдено путей из OSINT: {len(osint_paths)}")
         
-        # Парсинг для отчета
         osint_data_content = "Данные OSINT отсутствуют."
         if osint_raw_str and osint_raw_str != "Данные OSINT отсутствуют.":
             try:
@@ -101,7 +98,6 @@ def orchestrator(target_url: str):
     try:
         raw_exploit_output = safe_agent_run(exploiter_agent, prompt)
         
-        # 🔥 FIX: Agno с output_schema возвращает объект, а не JSON-строку
         if isinstance(raw_exploit_output, AttackResults):
             attack_data = raw_exploit_output
         else:
@@ -122,7 +118,6 @@ def orchestrator(target_url: str):
     browser = BrowserManager(headless=False)
 
     def find_url_for_field(site_map: dict, field_index: int) -> str:
-        # Поиск URL по индексу поля (эвристика на основе данных Spider)
         for url, fields in site_map.items():
             if any(f.get("index") == field_index or idx == field_index for idx, f in enumerate(fields)):
                 return url
@@ -179,7 +174,6 @@ def orchestrator(target_url: str):
 
     browser.close()
 
-    # --- СТАТИСТИКА ---
     counts = {k: 0 for k in ["Success", "Reflected", "Failed", "Skipped", "Error"]}
     for v in final_attack_results:
         for k in counts:

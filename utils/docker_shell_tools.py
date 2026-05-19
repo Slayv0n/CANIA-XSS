@@ -1,4 +1,3 @@
-# utils/docker_shell_tools.py
 import subprocess
 from typing import Optional
 
@@ -12,10 +11,9 @@ class DockerShellTools:
         docker_command = ["docker", "exec", self.container_name, "bash", "-c", command]
         try:
             result = subprocess.run(docker_command, capture_output=True, text=True, check=True, timeout=120)
-            # 🔥 Санитизация: экранируем спецсимволы для безопасной передачи в JSON
             output = result.stdout.strip()
             output = output.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '').replace('"', '\\"')
-            return output[:8000]  # 🔥 Обрезаем, чтобы не превысить контекст
+            return output[:8000]
         except subprocess.TimeoutExpired:
             return "COMMAND_ERROR: TIMEOUT"
         except subprocess.CalledProcessError as e:

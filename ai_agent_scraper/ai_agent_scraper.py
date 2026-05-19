@@ -1,5 +1,3 @@
-# ai_agent_scraper/ai_agent_scraper.py
-
 from agno.agent import Agent
 from agno.tools import Toolkit
 from agno.tools.shell import ShellTools
@@ -15,7 +13,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Настройка модели
 model = OpenRouter(
     id=os.getenv("ID_MODEL"),
     timeout=120,
@@ -36,7 +33,6 @@ class DataParserToolkit(Toolkit):
         self.results_dir = Path(results_dir)
         self.results_dir.mkdir(exist_ok=True)
 
-        # Определяем инструменты
         tools = [
             self.parse_nmap_output,
             self.parse_gobuster_output,
@@ -70,7 +66,6 @@ class DataParserToolkit(Toolkit):
         }
 
         try:
-            # Парсим открытые порты
             port_pattern = r'(\d+)/(tcp|udp)\s+(open|filtered)\s+(\S+)'
             for match in re.finditer(port_pattern, output):
                 port, protocol, state, service = match.groups()
@@ -89,7 +84,6 @@ class DataParserToolkit(Toolkit):
                         "protocol": protocol
                     })
 
-            # Определение ОС
             os_pattern = r'OS guess:\s+(.+?)(?:\n|$)'
             os_match = re.search(os_pattern, output)
             if os_match:
@@ -105,11 +99,10 @@ class DataParserToolkit(Toolkit):
         result = {"directories": [], "files": [], "critical_finds": []}
         critical_paths = ['admin', 'phpmyadmin', 'wp-admin', 'backup', '.git', '.env', 'config', 'login']
         
-        # 🔥 Универсальный паттерн: ловит /path Status:200, /path 200, Found: /path
         patterns = [
-            r'^(/\S+)\s+(?:Status:\s*)?(\d{3})',      # gobuster стандарт
-            r'^Found:\s*(/\S+)\s+-\s*(\d{3})',         # gobuster альтернатива
-            r'^\s*(/\S+)\s+\(Status:\s*(\d{3})\)',     # с скобками
+            r'^(/\S+)\s+(?:Status:\s*)?(\d{3})',   
+            r'^Found:\s*(/\S+)\s+-\s*(\d{3})',
+            r'^\s*(/\S+)\s+\(Status:\s*(\d{3})\)',
         ]
         
         for line in output.splitlines():
@@ -152,20 +145,17 @@ class DataParserToolkit(Toolkit):
                 tech = match.group(1)
                 result["technologies"].append(tech)
 
-                # Определяем CMS
                 cms_list = ['WordPress', 'Joomla', 'Drupal', 'Magento', 'Shopify']
                 for cms in cms_list:
                     if cms.lower() in tech.lower():
                         result["cms"] = tech
                         break
 
-                # Определяем фреймворки
                 frameworks = ['Laravel', 'Django', 'Rails', 'Symfony', 'Express']
                 for fw in frameworks:
                     if fw.lower() in tech.lower():
                         result["frameworks"].append(tech)
 
-            # Поиск сервера
             server_pattern = r'Server:\s+(\S+)'
             server_match = re.search(server_pattern, output)
             if server_match:
@@ -241,7 +231,6 @@ class DataParserToolkit(Toolkit):
         """
         logger.info(f"Извлечение всех данных для {target}")
 
-        # 🔥 Логируем ошибки команд, если они были
         for tool, output in scan_outputs.items():
             if output and "COMMAND_ERROR" in output:
                 logger.error(f"❌ Инструмент {tool} вернул ошибку выполнения!")
@@ -307,14 +296,12 @@ class DataParserToolkit(Toolkit):
         report.append(f"🕐 ВРЕМЯ: {parsed_data.get('timestamp', 'Unknown')[:19]}")
         report.append("")
 
-        # Открытые порты
         if parsed_data.get("nmap", {}).get("open_ports"):
             report.append("🔓 ОТКРЫТЫЕ ПОРТЫ:")
             for port in parsed_data["nmap"]["open_ports"][:10]:
                 report.append(f"  - {port['port']}/{port['protocol']} ({port['service']})")
             report.append("")
 
-        # Критические находки
         critical_finds = parsed_data.get("gobuster", {}).get("critical_finds", [])
         critical_vulns = parsed_data.get("nikto", {}).get("vulnerabilities", {}).get("critical", [])
 
@@ -326,7 +313,6 @@ class DataParserToolkit(Toolkit):
                 report.append(f"  - {vuln['title']}")
             report.append("")
 
-        # Технологии
         if parsed_data.get("whatweb", {}).get("technologies"):
             report.append("🛠 ТЕХНОЛОГИИ:")
             for tech in parsed_data["whatweb"]["technologies"][:10]:
@@ -337,7 +323,6 @@ class DataParserToolkit(Toolkit):
                 report.append(f"  🖥️ Сервер: {parsed_data['whatweb']['server']}")
             report.append("")
 
-        # Статистика
         summary = parsed_data.get("summary", {})
         report.append("📊 СТАТИСТИКА:")
         report.append(f"  - Открытых портов: {summary.get('open_ports_count', 0)}")
@@ -351,7 +336,6 @@ class DataParserToolkit(Toolkit):
 
     def save_parsed_results(self, parsed_data: Dict[str, Any]) -> str:
         target = parsed_data.get("target", "unknown")
-        # 🔥 Санитизация для Windows-совместимого имени файла
         safe_target = re.sub(r'[<>:"/\\|?*]', '_', target)
         timestamp = parsed_data.get("timestamp", datetime.now().isoformat()).replace(":", "-")
         filename = f"{safe_target}_{timestamp}_parsed.json"
@@ -365,7 +349,6 @@ class DataParserToolkit(Toolkit):
             logger.error(f"Ошибка сохранения: {e}")
             return f"❌ Ошибка сохранения: {e}"
 
-# Создаем парсер-агента
 parser_agent = Agent(
     name='Data Parser',
     role='Structured JSON Generator',
@@ -381,6 +364,6 @@ parser_agent = Agent(
         "NEVER wrap in markdown. NEVER add text before/after JSON."
         "IF tool output is empty/timeout, set field to {'error': 'timeout', 'note': 'external_target'}"
     ],
-    output_schema=None, # Отключаем схему, так как toolkit возвращает dict
+    output_schema=None, 
     markdown=False
 )

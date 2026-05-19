@@ -1,0 +1,22 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Git & IDE
+.git/
+.idea/
+.vscode/
+*.swp
+
+# Runtime data
+reports/
+execution_results/
+security_docs_lancedb/
+logs/
+
+# Secrets
+.env
+*.key

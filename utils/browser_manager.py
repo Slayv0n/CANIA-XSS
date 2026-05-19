@@ -1,4 +1,3 @@
-# utils/browser_manager.py
 import html
 import time
 from playwright.sync_api import sync_playwright
@@ -10,7 +9,6 @@ def clean_payload(raw_payload: str) -> str:
     Удаляет префиксы вида [TAG] из пейлоадов, полученных из RAG.
     Пример: "[WAF_BYPASS] <script>alert(1)</script>" → "<script>alert(1)</script>"
     """
-    # Удаляем префикс [СЛОВА_ЦИФРЫ_ПОДЧЕРКИВАНИЯ] в начале строки
     cleaned = re.sub(r'^\[[A-Z0-9_]+\]\s*', '', raw_payload.strip())
     return cleaned
 class BrowserManager:
@@ -20,13 +18,11 @@ class BrowserManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             
-            # 🔥 ЗАПУСКАЕМ PLAYWRIGHT
             cls._instance.pw = sync_playwright().start()
             
-            # 🔑 headless=False — браузер должен быть ВИДИМ
             cls._instance.browser = cls._instance.pw.chromium.launch(
                 headless=headless,
-                args=['--disable-blink-features=AutomationControlled']  # Обход детекта ботов
+                args=['--disable-blink-features=AutomationControlled']
             )
             
             cls._instance.context = cls._instance.browser.new_context(
@@ -36,7 +32,6 @@ class BrowserManager:
             cls._instance.page = cls._instance.context.new_page()
             cls._instance.findings = []
             
-            # Ловим алерты (главный признак успешной XSS)
             cls._instance.page.on("dialog", lambda d: [
                 cls._instance.findings.append(f"XSS_CONFIRMED: {d.message}"), 
                 d.dismiss()
@@ -50,9 +45,8 @@ class BrowserManager:
         try:
             print(f"   [→] Переход на {url}...")
             self.page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            self.page.wait_for_timeout(2000)  # Ждем рендеринга JS
+            self.page.wait_for_timeout(2000)
             
-            # 🔥 УСИЛЕННОЕ закрытие модалок: 3 попытки с паузами
             modal_selectors = [
                 'button:has-text("Dismiss")',
                 'button[aria-label="Close Welcome Banner"]',
@@ -72,7 +66,6 @@ class BrowserManager:
                         continue
                 self.page.wait_for_timeout(500)
             
-            # Закрытие cookie banner
             try:
                 self.page.click('button:has-text("Me want it!")', timeout=2000)
             except:
@@ -92,14 +85,12 @@ class BrowserManager:
                 if tag.get('type') == 'hidden' or tag.get('hidden'):
                     continue
                     
-                # Собираем label
                 label = None
                 if tag.get('id'):
                     lbl = soup.find('label', attrs={'for': tag.get('id')})
                     if lbl:
                         label = lbl.get_text(strip=True)
                 
-                # Формируем human_name
                 human_name = (
                     label or 
                     tag.get('aria-label', '') or 
@@ -118,8 +109,8 @@ class BrowserManager:
                     "placeholder": tag.get('placeholder', ''),
                     "aria_label": tag.get('aria-label', ''),
                     "label": label,
-                    "human_name": human_name,  # 🔥 КЛЮЧЕВОЕ
-                    "url": self.page.url,       # 🔥 Для точной привязки
+                    "human_name": human_name,
+                    "url": self.page.url,
                     "required": tag.has_attr('required'),
                 })
             return inputs
@@ -194,20 +185,16 @@ class BrowserManager:
                     });
                 }
             ''')
-            # Небольшая пауза для применения стилей
             self.page.wait_for_timeout(100)
             
         except Exception as e:
-            # Не критично, если не получится — просто продолжим работу
             print(f"   [⚠️] Не удалось убрать все оверлеи: {e}")
 
-    # utils/browser_manager.py — метод inject_payload (полная замена)
     def inject_payload(self, index: int, field_name: str, payload: str):
         """
         Вводит пейлоад и детектирует XSS через множественные методы.
         """
         self.findings = []
-        # 🔥 Уникальный маркер для точного детекта (без ложных срабатываний)
         probe_marker = f"XSS_PROBE_{hash(payload) % 10000:04d}"
         test_payload = payload.replace("XSS", probe_marker) if "XSS" in payload else f"{probe_marker}{payload}"
         
@@ -256,18 +243,15 @@ class BrowserManager:
         except:
             pass
         
-        # 🔥 Ждём выполнения скрипта + мониторим флаг в window
         self.page.wait_for_timeout(2000)
         try:
             self.page.wait_for_function("() => window.__xssDetected === true", timeout=3000)
         except:
-            pass  # Флаг не сработал — продолжаем проверки
+            pass
         
-        # 🔥 Метод 1: Перехват диалогов
         if self.findings:
             return f"🔴 {self.findings[0]}"
         
-        # 🔥 Метод 2: Проверка через evaluate() — только по маркеру
         try:
             xss_detected = self.page.evaluate(f"""() => {{
                 // Признак 1: появился img с src=x И нашим маркером
@@ -296,7 +280,6 @@ class BrowserManager:
         except Exception as e:
             print(f"   [⚠️] Ошибка проверки evaluate: {e}")
         
-        # 🔥 Метод 3: Сравнение body.innerHTML до/после (по маркеру)
         try:
             new_body = self.page.evaluate("() => document.body.innerHTML")
             if original_body and new_body != original_body and probe_marker in new_body:
@@ -304,17 +287,14 @@ class BrowserManager:
         except:
             pass
         
-        # 🔥 Метод 4: Проверка отражения в источнике (точный поиск маркера)
         try:
             page_source = self.page.content()
             if probe_marker in page_source:
-                # Проверяем, что маркер не в исходном пейлоаде, а в новом контексте
                 if page_source.count(probe_marker) > decoded_payload.count(probe_marker):
                     return "🟡 Reflected: Probe marker found in new context"
         except:
             pass
         
-        # 🔥 Метод 5: Проверка в URL
         try:
             if probe_marker in self.page.url:
                 return "🟡 Reflected in URL with probe marker"
@@ -323,9 +303,7 @@ class BrowserManager:
 
         try:
             page_source = self.page.content()
-            # Ищем маркер в новом контексте (не в исходном значении поля)
             if probe_marker in page_source:
-                # Проверяем, что маркер появился вне исходного input
                 input_values = [el.get_attribute("value") for el in self.page.locator("input, textarea").all()]
                 if not any(probe_marker in str(v) for v in input_values):
                     return "🟡 Reflected: Probe marker found in page context"
@@ -338,10 +316,8 @@ class BrowserManager:
         """🔥 Переинициализация браузера при краше"""
         try:
             print("   [🔄] Переинициализация контекста...")
-            # Закрываем старый контекст
             if hasattr(self, 'context'):
                 self.context.close()
-            # Создаем новый
             self.context = self.browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 viewport={"width": 1280, "height": 800}
@@ -355,7 +331,6 @@ class BrowserManager:
             print("   [✅] Контекст переинициализирован")
         except Exception as e:
             print(f"   [❌] Не удалось переинициализировать контекст: {e}")
-            # Последняя попытка: полный рестарт Playwright
             try:
                 if hasattr(self, 'pw'):
                     self.pw.stop()

@@ -1,4 +1,3 @@
-# ai-agents/init_lancedb.py
 import shutil
 import re
 import logging
@@ -6,19 +5,14 @@ import lancedb
 from pathlib import Path
 from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 
-# 🔒 Настройка логирования
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-5s | %(message)s")
 logger = logging.getLogger(__name__)
 
-# 🔍 Пути (относительно папки ai-agents)
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent # CANIA-XSS root
-# База данных будет создана здесь: ai-agents/security_docs_lancedb
+PROJECT_ROOT = SCRIPT_DIR.parent
 DB_URI = SCRIPT_DIR / "security_docs_lancedb"
-# Исходники лежат здесь: ai-agents/ai_agent_terminal/security_docs_db
 SOURCE_DIR = SCRIPT_DIR / "ai_agent_terminal" / "security_docs_db"
 
-# 🏷️ Маппинг для fallback (если в строке нет тега, но файл называется generic.txt)
 FILENAME_TAG_MAP = {
     'generic': 'GENERIC', 'angular': 'ANGULAR', 'react': 'REACT',
     'vue': 'VUE', 'jquery': 'JQUERY', 'dom_xss': 'DOM_XSS',
@@ -60,7 +54,6 @@ def run_manual_ingest():
     xss_data = []
     tool_data = []
 
-    # --- 1. Обработка XSS Пейлоадов ---
     xss_files = list(xss_folder.glob("*.txt"))
     logger.info(f"📄 Найдено XSS файлов: {len(xss_files)}")
 
@@ -76,7 +69,6 @@ def run_manual_ingest():
                      if line.strip() and not line.startswith("#")]
             
             for line in lines:
-                # Проверка на наличие тега в начале строки [TAG] payload
                 match = TECH_TAG_PATTERN.match(line)
                 if match:
                     tag, payload = match.group(1), match.group(2).strip()
@@ -92,7 +84,6 @@ def run_manual_ingest():
         except Exception as e:
             logger.error(f"⚠️ Ошибка обработки файла {txt_file}: {e}")
 
-    # --- 2. Обработка Документации (Tool Docs) ---
     tool_files = list(tool_folder.glob("*.txt"))
     logger.info(f"📄 Найдено Doc файлов: {len(tool_files)}")
 
@@ -101,7 +92,6 @@ def run_manual_ingest():
             with open(txt_file, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # Документацию бьем на чанки по 1000 символов
             chunks = [content[i:i+1000] for i in range(0, len(content), 1000)]
             for chunk in chunks:
                 if chunk.strip():
@@ -113,7 +103,6 @@ def run_manual_ingest():
         except Exception as e:
             logger.error(f"⚠️ Ошибка обработки файла {txt_file}: {e}")
 
-    # 🛠 Создание таблиц в LanceDB
     if xss_data:
         db.create_table("xss_payloads", data=xss_data)
         logger.info(f"✅ Таблица 'xss_payloads': {len(xss_data)} записей")

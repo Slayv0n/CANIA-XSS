@@ -1,7 +1,6 @@
 from agno.agent import Agent
 from agno.models.openrouter import OpenRouter
 
-# from agno.tools.shell import DockerShellTools
 from utils.docker_shell_tools import DockerShellTools
 
 from agno.knowledge import Knowledge
@@ -15,7 +14,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Настройка модели
 model = OpenRouter(
     id=os.getenv("ID_MODEL"),   
     temperature=0.0,
@@ -27,7 +25,6 @@ docker_tools = DockerShellTools(container_name="cania-xss-runner")
 embedder = SentenceTransformerEmbedder(
     id="all-MiniLM-L6-v2",
 )
-
 
 vector_db = LanceDb(
     table_name="tool_docs",  
@@ -41,11 +38,8 @@ knowledge = Knowledge(
     vector_db=vector_db,
 )
 
-
 docs_folder = Path(__file__).parent / "security_docs_db"
 
-
-# Список всех файлов для добавления
 files_to_add = [
     "curl_docs.txt",
     "dig_docs.txt",
@@ -58,8 +52,6 @@ files_to_add = [
     "whatweb_docs.txt",
     "whois_docs.txt"
 ]
-
-
 
 agent_terminal = Agent(
     name='OSINT Scanner (Containerized)',
@@ -110,10 +102,8 @@ agent_terminal = Agent(
     markdown=True
 )
 
-
 results_dir = Path(__file__).parent / "execution_results"
 results_dir.mkdir(exist_ok=True)
-
 
 agent_terminal = Agent(
     name='OSINT Scanner (Containerized)',
@@ -137,5 +127,5 @@ agent_terminal = Agent(
     tools=[docker_tools.run_docker_command],
     knowledge=knowledge,
     search_knowledge=True,
-    markdown=False  # Отключаем markdown-форматирование для сырых логов
+    markdown=False
 )
