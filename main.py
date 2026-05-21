@@ -105,11 +105,28 @@ def orchestrator(target_url: str, task_id: str):
         )
 
         raw_exploit_output = safe_agent_run(exploiter_agent, prompt)
-        if isinstance(raw_exploit_output, AttackResults):
-            attack_data = raw_exploit_output
-        else:
-            exploit_json = safe_parse_json(raw_exploit_output, {"results": []})
-            attack_data = AttackResults.model_validate(exploit_json)
+        
+        # 1. Парсим то, что выдал ИИ
+        exploit_json = safe_parse_json(raw_exploit_output, {"results": []})
+        
+        # --- СИСТЕМНЫЙ ФИКС: НОРМАЛИЗАЦИЯ JSON ---
+        # Если ИИ вернул просто список [{}, {}], оборачиваем его в словарь
+        if isinstance(exploit_json, list):
+            exploit_json = {"results": exploit_json}
+            
+        # Если ИИ назвал ключ иначе (vulnerabilities, payloads, vectors), переименовываем его
+        if "results" not in exploit_json:
+            for possible_key in ["vulnerabilities", "payloads", "vectors", "attacks"]:
+                if possible_key in exploit_json:
+                    exploit_json["results"] = exploit_json[possible_key]
+                    break
+            # Если вообще ничего не нашли, делаем пустой список
+            if "results" not in exploit_json:
+                exploit_json["results"] = []
+        # -----------------------------------------
+
+        # Теперь Pydantic не упадет, так как ключ "results" 100% существует
+        attack_data = AttackResults.model_validate(exploit_json)
 
         if not attack_data.results:
             print("⚠️ Векторы атак не найдены. Генерирую 'чистый' отчет...")
@@ -120,7 +137,9 @@ def orchestrator(target_url: str, task_id: str):
                 "но явных векторов XSS на найденных страницах не обнаружено."
             )
             safe_agent_run(reporter_agent, report_prompt)
-            return # Теперь бэкенд получит отчет и закроет задачу
+            return
+
+        print(f"✅ План сформирован. Векторов: {len(attack_data.results)}")
 
     except Exception as e:
         print(f"❌ Сбой планирования: {e}")

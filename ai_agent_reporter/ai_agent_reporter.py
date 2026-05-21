@@ -3,8 +3,8 @@ import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from agno.agent import Agent
-from agno.models.openai import OpenAIChat
-
+# from agno.models.ollama import Ollama
+from agno.models.ollama import Ollama
 load_dotenv()
 
 # Мы стучимся напрямую в TaskService (порт 8086), минуя APIGateway, 
@@ -50,14 +50,19 @@ def save_report_to_db(report_content: str, target_url: str, task_id: str) -> str
     except Exception as e:
         return f"❌ Ошибка отправки на бэкенд C#: {e}"
 
-model = OpenAIChat(
-    id=os.getenv("ID_MODEL", "google/gemini-flash-1.5"),
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
-    temperature=0.0,
-    timeout=120,
-    max_retries=3,
-    max_tokens=10000
+# model = OpenAIChat(
+#     id=os.getenv("ID_MODEL", "google/gemini-flash-1.5"),
+#     api_key=os.getenv("OPENROUTER_API_KEY"),
+#     base_url="https://openrouter.ai/api/v1",
+#     temperature=0.0,
+#     timeout=120,
+#     max_retries=3,
+#     max_tokens=10000
+# )
+
+model = Ollama(
+    id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
+    host="http://localhost:11434", # Стандартный порт Ollama
 )
 
 reporter_agent = Agent(

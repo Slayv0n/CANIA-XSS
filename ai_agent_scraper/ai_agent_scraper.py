@@ -2,7 +2,8 @@ from agno.agent import Agent
 from agno.tools import Toolkit
 from agno.tools.shell import ShellTools
 from agno.utils.log import logger
-from agno.models.openrouter import OpenRouter # Изменено на OpenRouter
+# from agno.models.openrouter import OpenRouter
+from agno.models.ollama import Ollama
 import re
 import json
 from pathlib import Path
@@ -13,11 +14,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-model = OpenRouter(
-    id=os.getenv("ID_MODEL"),
-    timeout=120,
-    max_retries=3, 
-    temperature=0.0,
+# model = OpenRouter(
+#     id=os.getenv("ID_MODEL"),
+#     timeout=120,
+#     max_retries=3, 
+#     temperature=0.0,
+# )
+
+model = Ollama(
+    id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
+    host="http://localhost:11434", # Стандартный порт Ollama
 )
 
 class DataParserToolkit(Toolkit):

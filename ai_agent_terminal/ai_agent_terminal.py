@@ -1,6 +1,6 @@
 from agno.agent import Agent
-from agno.models.openrouter import OpenRouter
-
+# from agno.models.openrouter import OpenRouter
+from agno.models.ollama import Ollama
 from utils.docker_shell_tools import DockerShellTools
 
 from agno.knowledge import Knowledge
@@ -14,10 +14,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-model = OpenRouter(
-    id=os.getenv("ID_MODEL"),   
-    temperature=0.0,
-    max_retries=3
+# model = OpenRouter(
+#     id=os.getenv("ID_MODEL"),   
+#     temperature=0.0,
+#     max_retries=3
+# )
+
+model = Ollama(
+    id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
+    host="http://localhost:11434", # Стандартный порт Ollama
 )
 
 docker_tools = DockerShellTools(container_name="cania-xss-runner")
