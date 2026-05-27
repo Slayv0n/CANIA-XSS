@@ -106,27 +106,33 @@ def orchestrator(target_url: str, task_id: str):
 
         raw_exploit_output = safe_agent_run(exploiter_agent, prompt)
         
-        # 1. Парсим то, что выдал ИИ
-        exploit_json = safe_parse_json(raw_exploit_output, {"results": []})
-        
-        # --- СИСТЕМНЫЙ ФИКС: НОРМАЛИЗАЦИЯ JSON ---
-        # Если ИИ вернул просто список [{}, {}], оборачиваем его в словарь
-        if isinstance(exploit_json, list):
-            exploit_json = {"results": exploit_json}
+        # --- СИСТЕМНЫЙ ФИКС: ПРОВЕРЯЕМ ТИП ДАННЫХ ---
+        # Если DeepSeek уже вернул готовый объект Pydantic (AttackResults)
+        if isinstance(raw_exploit_output, AttackResults):
+            print("🎯 DeepSeek успешно вернул нативный объект AttackResults.")
+            attack_data = raw_exploit_output
+        else:
+            # 1. Парсим то, что выдал ИИ, если это строка
+            exploit_json = safe_parse_json(raw_exploit_output, {"results": []})
             
-        # Если ИИ назвал ключ иначе (vulnerabilities, payloads, vectors), переименовываем его
-        if "results" not in exploit_json:
-            for possible_key in ["vulnerabilities", "payloads", "vectors", "attacks"]:
-                if possible_key in exploit_json:
-                    exploit_json["results"] = exploit_json[possible_key]
-                    break
-            # Если вообще ничего не нашли, делаем пустой список
+            # --- СИСТЕМНЫЙ ФИКС: НОРМАЛИЗАЦИЯ JSON ---
+            # Если ИИ вернул просто список [{}, {}], оборачиваем его в словарь
+            if isinstance(exploit_json, list):
+                exploit_json = {"results": exploit_json}
+                
+            # Если ИИ назвал ключ иначе, переименовываем его в "results"
             if "results" not in exploit_json:
-                exploit_json["results"] = []
-        # -----------------------------------------
+                for possible_key in ["vulnerabilities", "payloads", "vectors", "attacks", "AttackResults"]:
+                    if possible_key in exploit_json:
+                        exploit_json["results"] = exploit_json[possible_key]
+                        break
+                # Если вообще ничего не нашли, делаем пустой список
+                if "results" not in exploit_json:
+                    exploit_json["results"] = []
+            # -----------------------------------------
 
-        # Теперь Pydantic не упадет, так как ключ "results" 100% существует
-        attack_data = AttackResults.model_validate(exploit_json)
+            # Теперь Pydantic не упадет, так как ключ "results" 100% существует
+            attack_data = AttackResults.model_validate(exploit_json)
 
         if not attack_data.results:
             print("⚠️ Векторы атак не найдены. Генерирую 'чистый' отчет...")
@@ -143,7 +149,7 @@ def orchestrator(target_url: str, task_id: str):
 
     except Exception as e:
         print(f"❌ Сбой планирования: {e}")
-        # Если совсем всё упало — тоже шлем отчет об ошибке
+        # Если совсем всё упало — тоже шлем отчет об ошибке напрямую в C#
         requests.put(f"http://localhost:8086/task/{task_id}/report", 
                      json={"reportContent": f"Ошибка при анализе сайта: {str(e)}"})
         return

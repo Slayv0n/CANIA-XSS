@@ -2,6 +2,7 @@ from agno.agent import Agent
 # from agno.models.openrouter import OpenRouter
 from agno.models.ollama import Ollama
 from utils.docker_shell_tools import DockerShellTools
+from agno.models.deepseek import DeepSeek # Специальный импорт для официального API
 
 from agno.knowledge import Knowledge
 from agno.vectordb.lancedb import LanceDb, SearchType
@@ -20,9 +21,14 @@ load_dotenv()
 #     max_retries=3
 # )
 
-model = Ollama(
-    id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
-    host="http://localhost:11434", # Стандартный порт Ollama
+# model = Ollama(
+#     id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
+#     host="http://localhost:11434", # Стандартный порт Ollama
+# )
+
+model = DeepSeek(
+    id=os.getenv("ID_MODEL", "deepseek-chat"),
+    api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 
 docker_tools = DockerShellTools(container_name="cania-xss-runner")
@@ -74,7 +80,7 @@ agent_terminal = Agent(
         "=== 2. ДОСТУПНЫЕ ИНСТРУМЕНТЫ ===",
         "🔹 NMAP: nmap -F --open {target}",
         "🔹 WHATWEB: whatweb -a 3 {target}",
-        "🔹 GOBUSTER: gobuster dir -u {target} -w /usr/share/wordlists/dirb/common.txt --wildcard",
+        "🔹 GOBUSTER: gobuster dir -u {target} -w -t 50 /usr/share/wordlists/dirb/common.txt --wildcard",
         "🔹 DIG: dig {domain} ANY",
         "🔹 WHOIS: whois {domain}",
 

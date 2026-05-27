@@ -4,6 +4,7 @@ from agno.tools.shell import ShellTools
 from agno.utils.log import logger
 # from agno.models.openrouter import OpenRouter
 from agno.models.ollama import Ollama
+from agno.models.deepseek import DeepSeek
 import re
 import json
 from pathlib import Path
@@ -21,9 +22,14 @@ load_dotenv()
 #     temperature=0.0,
 # )
 
-model = Ollama(
-    id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
-    host="http://localhost:11434", # Стандартный порт Ollama
+# model = Ollama(
+#     id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
+#     host="http://localhost:11434", # Стандартный порт Ollama
+# )
+
+model = DeepSeek(
+    id=os.getenv("ID_MODEL", "deepseek-chat"),
+    api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 
 class DataParserToolkit(Toolkit):

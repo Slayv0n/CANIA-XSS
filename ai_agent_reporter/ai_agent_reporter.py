@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from agno.agent import Agent
 # from agno.models.ollama import Ollama
 from agno.models.ollama import Ollama
+from agno.models.deepseek import DeepSeek # Специальный импорт для официального API
+
 load_dotenv()
 
 # Мы стучимся напрямую в TaskService (порт 8086), минуя APIGateway, 
@@ -60,9 +62,14 @@ def save_report_to_db(report_content: str, target_url: str, task_id: str) -> str
 #     max_tokens=10000
 # )
 
-model = Ollama(
-    id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
-    host="http://localhost:11434", # Стандартный порт Ollama
+# model = Ollama(
+#     id=os.getenv("ID_MODEL", "gemma4:e4b"), # Берет из .env, если не нашел - ставит gemma4
+#     host="http://localhost:11434", # Стандартный порт Ollama
+# )
+
+model = DeepSeek(
+    id=os.getenv("ID_MODEL", "deepseek-chat"),
+    api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 
 reporter_agent = Agent(
