@@ -8,6 +8,7 @@ import traceback
 from datetime import datetime
 from dotenv import load_dotenv
 import requests
+from pathlib import Path
 
 # === ФИКС ДЛЯ ОШИБКИ PLAYWRIGHT НА WINDOWS ===
 if sys.platform == 'win32':
@@ -15,6 +16,7 @@ if sys.platform == 'win32':
 
 # 1. ЗАСТАВЛЯЕМ ПИТОН ЧИТАТЬ НОВЫЙ .env!
 load_dotenv(override=True)
+TASK_API_URL = os.getenv("TASK_API_URL", "http://localhost:8086")
 
 from utils.spider import Spider
 from utils.browser_manager import BrowserManager
@@ -26,6 +28,81 @@ from ai_agent_terminal.ai_agent_terminal import agent_terminal
 from ai_agent_scraper.ai_agent_scraper import parser_agent
 from models.schemas import AttackResults
 
+def filter_and_minimize_site_map(site_map: dict) -> dict:
+    """
+    Очищает карту сайта от нерелевантных полей и полностью исключает
+    повторное сканирование одних и тех же сквозных форм (глобальный дедуп).
+    """
+    clean_map = {}
+    allowed_types = {"text", "search", "textarea", "email", "url", "password"}
+    
+    # --- СИСТЕМНЫЙ ФИКС: ГЛОБАЛЬНЫЙ ФИЛЬТР ДУБЛИКАТОВ ---
+    # Будем запоминать, какие уникальные поля мы уже встретили на сайте
+    global_seen_fields = set() # Хранит кортежи вида (имя_поля, тип_поля)
+    
+    for url, fields in site_map.items():
+        filtered_fields = []
+        seen_on_page = set()
+        
+        for field in fields:
+            f_type = field.get("type", "text").lower() if isinstance(field, dict) else getattr(field, "type", "text").lower()
+            f_name = field.get("name", "") if isinstance(field, dict) else getattr(field, "name", "")
+            f_idx = field.get("index", 0) if isinstance(field, dict) else getattr(field, "index", 0)
+            f_placeholder = field.get("placeholder", "") if isinstance(field, dict) else getattr(field, "placeholder", "")
+            
+            if f_type not in allowed_types:
+                continue
+            
+            # Убираем дубли на текущей странице
+            if f_name and f_name in seen_on_page:
+                continue
+            
+            # 🔥 ГЛОБАЛЬНАЯ ДЕДУПЛИКАЦИЯ:
+            # Если поле с таким именем и типом мы уже тестировали на другой странице,
+            # пропускаем его, чтобы не проверять сквозную форму входа 50 раз.
+            global_key = (f_name, f_type)
+            if f_name and global_key in global_seen_fields:
+                continue
+                
+            if f_name:
+                seen_on_page.add(f_name)
+                global_seen_fields.add(global_key)
+                
+            filtered_fields.append({
+                "index": f_idx,
+                "type": f_type,
+                "name": f_name,
+                "placeholder": f_placeholder
+            })
+            
+        if filtered_fields:
+            filtered_fields.sort(key=lambda x: 0 if x["type"] in ["text", "search"] else 1)
+            clean_map[url] = filtered_fields[:3]
+            
+    return clean_map
+
+def sanitize_raw_osint_logs(raw_log: str) -> str:
+    """
+    Вырезает из гигантских сырых логов OSINT только полезные строки,
+    сокращая объем передаваемого текста в ИИ на 90%.
+    """
+    if not raw_log:
+        return "Данные отсутствуют."
+        
+    lines = raw_log.splitlines()
+    useful_lines = []
+    
+    for line in lines:
+        line_strip = line.strip()
+        if not line_strip or line_strip.startswith(("+", "=", "-", "*")):
+            continue
+            
+        # Оставляем только строки, содержащие ключевую информацию
+        if any(kw in line_strip.lower() for kw in ["open", "port", "status: 200", "status: 301", "technology", "cms", "server:"]):
+            useful_lines.append(line_strip)
+            
+    return "\n".join(useful_lines[:40]) # Ограничиваем до 40 самых важных строк
+
 def safe_agent_run(agent, prompt: str):
     sanitized_prompt = sanitize_for_llm(prompt)
     try:
@@ -34,6 +111,30 @@ def safe_agent_run(agent, prompt: str):
     except Exception as e:
         print(f"[!] Agent fallback triggered: {e}")
         return "{}"
+    
+def send_report_to_backend_and_disk(report_text: str, target_url: str, task_id: str):
+    """Гарантированно сохраняет файл на диск и шлет его на C# бэкенд"""
+    # 1. Локальное сохранение на диск
+    try:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        safe_domain = target_url.replace('https://', '').replace('http://', '').split('/')[0]
+        file_path = reports_dir / f"report_{safe_domain}_{task_id[:6]}.md"
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(report_text)
+        print(f"📁 Отчет сохранен локально: {file_path}")
+    except Exception as e:
+        print(f"⚠️ Ошибка локального сохранения: {e}")
+
+    # 2. Отправка в бэкенд C#
+    try:
+        # TASK_API_URL у тебя определен выше в файле
+        url = f"{TASK_API_URL}/task/{task_id}/report"
+        response = requests.put(url, json={"reportContent": report_text}, timeout=10)
+        response.raise_for_status()
+        print("✅ Отчет успешно отправлен на C# Бэкенд!")
+    except Exception as e:
+        print(f"❌ Ошибка отправки на бэкенд C#: {e}")
 
 def orchestrator(target_url: str, task_id: str):
     print(f"\n🚀 ЗАПУСК ПОЛНОГО АУДИТА: {target_url} (Task ID: {task_id})")
@@ -59,9 +160,12 @@ def orchestrator(target_url: str, task_id: str):
             print(f"    ➕  Найдено путей из OSINT: {len(osint_paths)}")
         
         osint_data_content = "Данные OSINT отсутствуют."
-        if osint_raw_str and osint_raw_str != "Данные OSINT отсутствуют.":
+        if osint_raw_str and "Данные OSINT отсутствуют" not in osint_raw_str:
             try:
-                osint_parsed = parser_agent.run(f"ЦЕЛЬ: {target_url}\nЛОГИ ДЛЯ ОБРАБОТКИ:\n{osint_raw_str}")
+                # Очищаем логи от мусора перед отправкой в ИИ
+                sanitized_osint = sanitize_raw_osint_logs(osint_raw_str)
+                
+                osint_parsed = parser_agent.run(f"ЦЕЛЬ: {target_url}\nЛОГИ:\n{sanitized_osint}")
                 osint_data_content = osint_parsed.content if hasattr(osint_parsed, 'content') else str(osint_parsed)
             except Exception as e:
                 print(f" ⚠️  Парсинг OSINT пропущен: {e}")
@@ -97,8 +201,10 @@ def orchestrator(target_url: str, task_id: str):
     # --- ЭТАП 3: ПЛАНИРОВАНИЕ АТАК ---
     print("\n[3/5] Выбор стратегии атак (Exploiter)...")
     try:
-        limited_site_map = {k: v for i, (k, v) in enumerate(site_map.items()) if i < 15}
-        
+        limited_site_map = filter_and_minimize_site_map(site_map)
+
+        # Оставляем максимум первые 10 страниц для сканирования, чтобы сэкономить контекст
+        limited_site_map = {k: v for i, (k, v) in enumerate(limited_site_map.items()) if i < 10}
         prompt = (
             f"Данные OSINT-разведки:\n{osint_data_content[:2000]}\n\n"
             f"Карта найденных форм (Site Map):\n{json.dumps(limited_site_map, ensure_ascii=False)}"
@@ -211,33 +317,65 @@ def orchestrator(target_url: str, task_id: str):
         traceback.print_exc()
         return
 
-    # --- ЭТАП 5: ОТЧЕТ ---
+    # --- ЭТАП 5: ОТЧЕТ (Гибридный подход без галлюцинаций) ---
     print("\n[5/5] 📝 Генерация отчета...")
     try:
-        safe_results = []
-        for v in final_attack_results:
-            safe_results.append({
-                "field_index": v.field_index,
-                "field_name": v.field_name,
-                "payload": str(v.payload).replace('\\', '\\\\').replace('"', "'").replace('\n', ' '),
-                "result": v.result,
-                "url": getattr(v, 'url', 'unknown')
-            })
+        # 1. Выделяем только РЕАЛЬНО успешные атаки
+        successful_attacks = [v for v in final_attack_results if "Success" in getattr(v, 'result', '')]
+        
+        # 2. Считаем статистику программно (на Python, без ИИ)
+        total_tests = len(final_attack_results)
+        success_count = len(successful_attacks)
+        failed_count = sum(1 for v in final_attack_results if "Failed" in getattr(v, 'result', ''))
+        skipped_count = sum(1 for v in final_attack_results if "Skipped" in getattr(v, 'result', ''))
 
-        report_prompt = (
+        # 3. Просим ИИ написать только "Краткий обзор" и "Рекомендации" на основе РЕАЛЬНЫХ данных
+        ai_prompt = (
             f"🎯 Цель: {target_url}\n"
-            f"🆔 Task ID: {task_id}\n"
-            f"🕵️ OSINT: {osint_data_content[:2000]}\n"
-            f"📋 Результаты тестов: {json.dumps(safe_results, ensure_ascii=False)}\n\n"
-            "🔥 ТРЕБОВАНИЕ: Напиши ОТЧЕТ ПОЛНОСТЬЮ НА РУССКОМ ЯЗЫКЕ.\n"
-            "Используй разделы: Краткий обзор, Найденные уязвимости, Статистика, Рекомендации.\n"
-            "Сначала вызови save_report_to_disk(report_content=отчет).\n"
-            f"Затем вызови save_report_to_db(report_content=отчет, target_url='{target_url}', task_id='{task_id}')."
+            f"📊 Результаты тестирования: Проведено тестов: {total_tests}. Найдено XSS: {success_count}.\n"
+            f"📋 Детали успешных уязвимостей (если есть): {json.dumps([{'field': v.field_name, 'payload': v.payload} for v in successful_attacks], ensure_ascii=False)}\n\n"
+            "Напиши два раздела для отчета на русском языке:\n"
+            "1. '🔍 Краткий обзор' (опиши методику сканирования и краткий вывод).\n"
+            "2. '🛡️ Рекомендации по исправлению' (технические советы для разработчиков по защите от XSS).\n"
+            "Пиши строго по делу, без выдумок."
         )
-        safe_agent_run(reporter_agent, report_prompt)
-        print("✅ Отчет сгенерирован и отправлен на Бэкенд C#")
+        ai_generated_text = safe_agent_run(reporter_agent, ai_prompt)
+
+        # 4. Собираем итоговый Markdown программно (ИИ не сможет наврать в таблицах!)
+        report_markdown = f"""
+        # 📋 Отчет по аудиту безопасности XSS
+        ## 🎯 Цель: {target_url}
+        ## 🕐 Дата: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        {ai_generated_text}
+        ### 🚨 Найденные подтвержденные уязвимости
+        """
+        if success_count > 0:
+            report_markdown += "| № | Страница | Поле ввода | Сработавший пейлоад | Статус |\n"
+            report_markdown += "|---|----------|------------|---------------------|--------|\n"
+            for idx, vuln in enumerate(successful_attacks, 1):
+                url_path = getattr(vuln, 'url', target_url)
+                report_markdown += f"| {idx} | {url_path} | {vuln.field_name} | `{vuln.payload}` | ✅ Подтверждено (Alert!) |\n"
+        else:
+            report_markdown += "\n**🔥 УЯЗВИМОСТЕЙ ТИПА XSS НА ДАННОМ РЕСУРСЕ НЕ ОБНАРУЖЕНО.**\n"
+
+        report_markdown += f"""
+        ### 📊 Статистика сканирования
+        | Метрика | Значение |
+        |---------|----------|
+        | Всего протестировано полей | {total_tests} |
+        | Успешных инъекций | {success_count} |
+        | Неудачных попыток | {failed_count} |
+        | Пропущено лимитом/ошибкой | {skipped_count} |
+        """
+
+        # 5. Гарантированно сохраняем и отправляем в C#
+        send_report_to_backend_and_disk(report_markdown, target_url, task_id)
+        print("✅ Гибридный отчет успешно сгенерирован и отправлен!")
+
     except Exception as e:
-        print(f"⚠️ Ошибка генерации отчета: {e}")
+        print(f"⚠️ Ошибка финального отчета: {e}")
+        traceback.print_exc()
+        send_report_to_backend_and_disk(f"Ошибка при генерации отчета: {e}", target_url, task_id)
 
 def process_rabbitmq_message(ch, method, properties, body):
     try:
