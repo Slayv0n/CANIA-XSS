@@ -11,6 +11,13 @@
 
 Структура проекта
 
+## Интерфейс системы
+![alt text](image.png)
+![alt text](image-1.png)
+![alt text](image-2.png)
+![alt text](image-3.png)
+![alt text](image-4.png)
+
 ai-agents/
 ├── main.py                          # Точка входа, оркестрация всего пайплайна
 ├── init_lancedb.py                  # Инициализация векторной базы данных
