@@ -55,7 +55,9 @@ export interface LoginResponse {
 // --- НОВЫЙ КОД УПРАВЛЕНИЯ ТОКЕНАМИ ---
 
 
-export const getAccessToken = () => Cookies.get(ACCESS_TOKEN_KEY) || null;
+// export const getAccessToken = () => Cookies.get(ACCESS_TOKEN_KEY) || null;
+// ВРЕМЕННО: всегда возвращаем фейковый токен
+export const getAccessToken = () => 'fake-jwt-token';
 export const getRefreshToken = () => Cookies.get(REFRESH_TOKEN_KEY) || null;
 
 // Проверяем, запущен ли сайт по HTTPS
@@ -150,14 +152,30 @@ async function authFetch(input: RequestInfo, init: RequestInit = {}, attempt = 0
 
   const response = await fetch(input, { ...init, headers });
 
+  // if (response.status === 401 && attempt === 0) {
+  //   const refreshed = await refreshToken();
+  //   if (refreshed) {
+  //     return authFetch(input, init, 1);
+  //   }
+  //   clearTokens();
+  //   window.dispatchEvent(new Event('auth-expired'));
+  //   throw new Error('Unauthorized');
+  // }
+
   if (response.status === 401 && attempt === 0) {
     const refreshed = await refreshToken();
     if (refreshed) {
       return authFetch(input, init, 1);
     }
-    clearTokens();
-    window.dispatchEvent(new Event('auth-expired'));
-    throw new Error('Unauthorized');
+    // clearTokens();
+    // window.dispatchEvent(new Event('auth-expired'));
+    return response; // или throw new Error('Unauthorized');
+  }
+
+  if (response.status === 401) {
+    // clearTokens();
+    // window.dispatchEvent(new Event('auth-expired'));
+    return response;
   }
 
   if (response.status === 401) {
@@ -242,23 +260,32 @@ export const api = {
     return response.json();
   },
 
+  // async getMySubscription(token?: string): Promise<Tariff | null> {
+  //   try {
+  //     const response = await authFetch(`${API_BASE}/subscribes/account`, {
+  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //     });
+  //     if (!response.ok) {
+  //       // If endpoint missing (404) or other error, return null as stub
+  //       if (response.status === 404) return null;
+  //       throw new Error('Ошибка получения подписки');
+  //     }
+  //     const text = await response.text();
+  //     if (!text || text === '"Data is empty"') return null;
+  //     return JSON.parse(text);
+  //   } catch (e) {
+  //     // Network or other errors fallback to null
+  //     return null;
+  //   }
+  // },
+
+
   async getMySubscription(token?: string): Promise<Tariff | null> {
-    try {
-      const response = await authFetch(`${API_BASE}/subscribes/account`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!response.ok) {
-        // If endpoint missing (404) or other error, return null as stub
-        if (response.status === 404) return null;
-        throw new Error('Ошибка получения подписки');
-      }
-      const text = await response.text();
-      if (!text || text === '"Data is empty"') return null;
-      return JSON.parse(text);
-    } catch (e) {
-      // Network or other errors fallback to null
-      return null;
-    }
+    return {
+      name: 'Pro План (Тест)',
+      description: 'Безлимитный доступ к сканированию',
+      cost: 0,
+    };
   },
 
   async cancelSubscription(token?: string) {
@@ -271,21 +298,33 @@ export const api = {
   },
 
   // Временная заглушка: если бекенд‑эндпоинт ещё не реализован, функция возвращает пустой массив
-async getMyTasks(token?: string): Promise<TaskItem[]> {
-    try {
-      const response = await authFetch(`${API_BASE}/task/all`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!response.ok) {
-        // If endpoint missing, return empty array
-        if (response.status === 404) return [];
-        throw new Error('Ошибка получения отчетов');
-      }
-      return response.json();
-    } catch (e) {
-      // Network or other errors fallback to empty list
-      return [];
-    }
+  // async getMyTasks(token?: string): Promise<TaskItem[]> {
+  //   try {
+  //     const response = await authFetch(`${API_BASE}/task/all`, {
+  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //     });
+  //     if (!response.ok) {
+  //       // If endpoint missing, return empty array
+  //       if (response.status === 404) return [];
+  //       throw new Error('Ошибка получения отчетов');
+  //     }
+  //     return response.json();
+  //   } catch (e) {
+  //     // Network or other errors fallback to empty list
+  //     return [];
+  //   }
+  // },
+
+  async getMyTasks(token?: string): Promise<TaskItem[]> {
+    return [
+      {
+        id: '1',
+        host: 'https://test-target.local',
+        status: 2,
+        createdTime: '2026-09-14 12:00',
+        reportContent: 'Уязвимостей не обнаружено',
+      },
+    ];
   },
 
   async register(data: RegisterRequest): Promise<User> {
@@ -303,35 +342,55 @@ async getMyTasks(token?: string): Promise<TaskItem[]> {
     return response.json();
   },
 
+  // async login(data: LoginRequest): Promise<LoginResponse> {
+  //   const response = await fetch(`${API_BASE}/auth/login`, {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify(data),
+  //   });
+
+  //   if (!response.ok) {
+  //     if (response.status === 401) {
+  //       throw new Error('Неверный email или пароль');
+  //     }
+  //     const error = await response.text();
+  //     throw new Error(error || 'Ошибка сети');
+  //   }
+
+  //   return response.json();
+  // },
+
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Неверный email или пароль');
-      }
-      const error = await response.text();
-      throw new Error(error || 'Ошибка сети');
-    }
-
-    return response.json();
+    // ВРЕМЕННО: мгновенный успешный вход без обращения к бэкенду
+    setAccessToken('fake-jwt-token');
+    setRefreshToken('fake-refresh-token');
+    return {
+      userId: 'test-user-id',
+      accessToken: 'fake-jwt-token',
+      refreshToken: 'fake-refresh-token',
+    };
   },
 
+  // async getProfile(token?: string): Promise<User> {
+  //   const response = await authFetch(`${API_BASE}/users`, {
+  //     headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //   });
+
+  //   if (!response.ok) {
+  //     const error = await response.text();
+  //     throw new Error(error);
+  //   }
+
+  //   return response.json();
+  // },
   async getProfile(token?: string): Promise<User> {
-    const response = await authFetch(`${API_BASE}/users`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error);
-    }
-
-    return response.json();
+    // ВРЕМЕННО: возвращаем тестового пользователя без запроса на сервер
+    return {
+      id: 'test-user-id',
+      email: 'student-tester@sfedu.ru',
+      status: 1,
+      version: 1,
+    };
   },
 
   async createTask(data: CreateTaskRequest, token?: string) {
